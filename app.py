@@ -19,6 +19,9 @@ Responde de forma corta y amigable, máximo 2 oraciones."""
 AUDIO_DIR = '/tmp/plushmate_audio'
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
+# Guarda el último WAV recibido para debug
+LAST_WAV_PATH = '/tmp/plushmate_audio/last_debug.wav'
+
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +46,9 @@ def process_audio():
             tmp_path = f.name
 
         print(f"[PlushMate] WAV recibido: {len(wav_bytes)} bytes")
+        # Guardar copia para debug
+        with open(LAST_WAV_PATH, 'wb') as dbg:
+            dbg.write(wav_bytes)
 
         # DEBUG WAV header
         if len(wav_bytes) >= 44:
@@ -82,6 +88,13 @@ def process_audio():
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
+
+@app.route('/debug_audio')
+def debug_audio():
+    """Descarga el último WAV recibido para verificar que el audio es correcto."""
+    if not os.path.exists(LAST_WAV_PATH):
+        return jsonify({'error': 'No hay audio guardado aún'}), 404
+    return send_file(LAST_WAV_PATH, mimetype='audio/wav', as_attachment=True, download_name='debug.wav')
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
