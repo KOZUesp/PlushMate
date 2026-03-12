@@ -79,24 +79,28 @@ def stt(wav_path: str) -> str:
         )
     return r.json().get('text', '').strip()
 
-def chat(text: str) -> str:
-    r = requests.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        headers={
-            'Authorization': f'Bearer {OPENROUTER_API_KEY}',
-            'Content-Type': 'application/json',
-            'X-Title': 'PlushMate'
-        },
-        json={
-            'model': 'meta-llama/llama-3.1-8b-instruct:free',
-            'messages': [
-                {'role': 'system', 'content': PERSONA},
-                {'role': 'user',   'content': text}
-            ],
-            'max_tokens': 120
-        }
-    )
-    return r.json()['choices'][0]['message']['content']
+def chat(transcript):
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    body = {
+        "model": "meta-llama/llama-4-scout",   # ← verifica que sea exacto
+        "messages": [{"role": "user", "content": transcript}]
+    }
+    r = requests.post("https://openrouter.ai/api/v1/chat/completions",
+                      headers=headers, json=body)
+    
+    data = r.json()
+    
+    # Imprime la respuesta completa para debug
+    print(f"OpenRouter response: {data}")
+    
+    if 'error' in data:
+        print(f"ERROR OpenRouter: {data['error']}")
+        return "Lo siento, no pude procesar eso."
+    
+    return data['choices'][0]['message']['content']
 
 def tts(text: str) -> str:
     r = requests.post(
@@ -123,3 +127,4 @@ def keep_alive():
 if __name__ == '__main__':
     threading.Thread(target=keep_alive, daemon=True).start()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
