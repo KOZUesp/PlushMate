@@ -1,15 +1,16 @@
 # app.py — PlushMate AI Server
-# Stack: Deepgram Nova-2 (STT) → OpenRouter (LLM) → ElevenLabs (TTS)
+# Stack: Deepgram Nova-2 (STT) → OpenRouter (LLM) → edge-tts Microsoft (TTS)
 
 from flask import Flask, request, jsonify, send_file
-import requests, os, tempfile, uuid, threading, time, struct
+import requests, os, tempfile, uuid, threading, time, struct, asyncio
+import edge_tts
 
 app = Flask(__name__)
 
 DEEPGRAM_API_KEY   = os.environ.get('DEEPGRAM_API_KEY', '').strip()
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '').strip()
-ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '').strip()
-ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'EXAVITQu4vr4xnSDxMaL').strip()
+# Voz de edge-tts para español (sin API key necesaria)
+EDGE_TTS_VOICE = os.environ.get('EDGE_TTS_VOICE', 'es-MX-DaliaNeural').strip()
 SERVER_URL         = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
 
 PERSONA = """Eres PlushMate, un peluche mágico con inteligencia artificial.
@@ -112,7 +113,7 @@ def stt(wav_path: str) -> str:
         audio_data = f.read()
 
     r = requests.post(
-        'https://api.deepgram.com/v1/listen?model=nova-2&language=es&smart_format=true',
+        'https://api.deepgram.com/v1/listen?model=nova-2&detect_language=true&smart_format=true&no_delay=true',
         headers={
             'Authorization': f'Token {DEEPGRAM_API_KEY}',
             'Content-Type': 'audio/wav'
@@ -169,27 +170,16 @@ def chat(text: str) -> str:
 
 
 def tts(text: str) -> str:
-    """Genera MP3 con ElevenLabs."""
-    r = requests.post(
-        f'https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}',
-        headers={
-            'xi-api-key': ELEVENLABS_API_KEY,
-            'Content-Type': 'application/json'
-        },
-        json={
-            'text': text,
-            'model_id': 'eleven_turbo_v2_5',
-            'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75}
-        },
-        timeout=30
-    )
-    if r.status_code != 200:
-        print(f"[TTS] ElevenLabs error {r.status_code}: {r.text}")
-        raise Exception(f"ElevenLabs error: {r.status_code}")
-
+    """Genera MP3 con edge-tts (Microsoft Edge, sin API key)."""
     name = f"{uuid.uuid4()}.mp3"
-    with open(os.path.join(AUDIO_DIR, name), 'wb') as f:
-        f.write(r.content)
+    out_path = os.path.join(AUDIO_DIR, name)
+
+    async def _synth():
+        communicate = edge_tts.Communicate(text, EDGE_TTS_VOICE)
+        await communicate.save(out_path)
+
+    asyncio.run(_synth())
+    print(f"[TTS] edge-tts OK → {name}")
     return name
 
 
