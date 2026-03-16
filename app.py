@@ -134,6 +134,10 @@ Nuevo resumen:"""
 def index():
     return send_file('static/index.html')
 
+@app.route('/manifest.json')
+def manifest():
+    return send_file('static/manifest.json', mimetype='application/manifest+json')
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'ok', 'version': '4.0', 'history_len': len(conversation_history)})
