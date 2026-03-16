@@ -76,6 +76,43 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
+/* ─── MOTION PREFERENCE ──────────────────── */
+.no-motion *,.no-motion *::before,.no-motion *::after{
+  animation-duration:0.01ms !important;
+  transition-duration:0.01ms !important;
+}
+
+/* ─── ACCORDION ────────────────────────────── */
+.accordion{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:10px}
+.accordion-header{display:flex;align-items:center;padding:15px 16px;cursor:pointer;gap:12px;user-select:none}
+.accordion-icon{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.accordion-icon svg{width:18px;height:18px}
+.accordion-title{flex:1;font-size:14px;font-weight:800;color:var(--text)}
+.accordion-sub{font-size:11px;font-weight:600;color:var(--muted);margin-top:1px}
+.accordion-arrow{width:18px;height:18px;color:var(--muted);transition:transform 0.25s}
+.accordion.open .accordion-arrow{transform:rotate(90deg)}
+.accordion-body{display:none;padding:0 16px 16px;border-top:1.5px solid var(--border)}
+.accordion.open .accordion-body{display:block}
+
+/* toggle row */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:14px;font-weight:700;color:var(--text)}
+.toggle-sub{font-size:11px;font-weight:600;color:var(--muted);margin-top:1px}
+.toggle{width:44px;height:26px;border-radius:13px;background:var(--border);position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--brand)}
+.toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;left:3px;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.15)}
+.toggle.on::after{transform:translateX(18px)}
+
+/* sub-page overlay */
+.subpage{position:fixed;inset:0;background:var(--bg);z-index:500;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1);overflow-y:auto;padding-bottom:40px}
+.subpage.open{transform:translateX(0)}
+.subpage-header{display:flex;align-items:center;gap:12px;padding:20px 20px 16px;position:sticky;top:0;background:var(--bg);z-index:1}
+.subpage-back{width:38px;height:38px;border-radius:12px;background:var(--white);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm)}
+.subpage-back svg{width:18px;height:18px;color:var(--text)}
+.subpage-title{font-size:18px;font-weight:900;color:var(--text)}
+.subpage-content{padding:0 20px}
+
 /* ─── PIN SCREEN ─────────────────────────── */
 .pin-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px}
 .pin-wrap{width:100%;max-width:320px;text-align:center}
@@ -634,88 +671,140 @@ select option{background:var(--white)}
   <!-- ─── SETTINGS ────────────────────────────── -->
   <div class="page" id="page-settings">
 
-    <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-        Personalidad de PlushMate
+    <!-- AI Accordion -->
+    <div class="accordion" id="acc-ai">
+      <div class="accordion-header" onclick="toggleAccordion('acc-ai')">
+        <div class="accordion-icon" style="background:var(--brand-pale)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        </div>
+        <div><div class="accordion-title">Inteligencia Artificial</div><div class="accordion-sub">Modelo, personalidad, voz</div></div>
+        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <textarea id="cfg-persona" rows="4" placeholder="Describe cómo debe comportarse PlushMate..."></textarea>
-    </div>
-
-    <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
-        Voz de ElevenLabs
-      </div>
-      <!-- Custom voice dropdown -->
-      <div class="voice-custom" id="voice-dropdown">
-        <div class="voice-selected" onclick="toggleVoiceDropdown()">
-          <div style="flex:1">
-            <div class="voice-name" id="voice-selected-name">Seleccionar voz...</div>
-            <div class="voice-id-short" id="voice-selected-id">—</div>
+      <div class="accordion-body">
+        <div class="field-label" style="margin-top:14px">Personalidad</div>
+        <textarea id="cfg-persona" rows="3" placeholder="Describe cómo debe comportarse PlushMate..." style="margin-bottom:14px"></textarea>
+        <div class="field-label">Voz de ElevenLabs</div>
+        <div class="voice-custom" id="voice-dropdown" style="margin-bottom:14px">
+          <div class="voice-selected" onclick="toggleVoiceDropdown()">
+            <div style="flex:1"><div class="voice-name" id="voice-selected-name">Seleccionar voz...</div><div class="voice-id-short" id="voice-selected-id">—</div></div>
+            <svg class="voice-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
           </div>
-          <svg class="voice-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          <div class="voice-options" id="voice-options"></div>
+          <div class="voice-custom-input">
+            <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">O ingresa Voice ID manualmente</div>
+            <input type="text" id="voice-manual" placeholder="aaf0KU31jmlzVPqltvJY" oninput="onManualVoice(this.value)">
+          </div>
         </div>
-        <div class="voice-options" id="voice-options">
-          <!-- Populated by JS from VOICES config -->
-        </div>
-        <div class="voice-custom-input">
-          <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">O ingresa Voice ID manualmente</div>
-          <input type="text" id="voice-manual" placeholder="aaf0KU31jmlzVPqltvJY" oninput="onManualVoice(this.value)">
-        </div>
+        <div class="field-label">Modelo de IA</div>
+        <select id="cfg-model" style="margin-bottom:16px">
+          <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
+          <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
+          <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
+          <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
+        </select>
+        <button class="save-btn" id="save-btn" onclick="saveConfig()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Guardar cambios
+        </button>
       </div>
     </div>
 
-    <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        Modelo de IA
+    <!-- WiFi Accordion -->
+    <div class="accordion" id="acc-wifi">
+      <div class="accordion-header" onclick="toggleAccordion('acc-wifi')">
+        <div class="accordion-icon" style="background:var(--mint-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        </div>
+        <div><div class="accordion-title">Red WiFi</div><div class="accordion-sub">Cambiar red del peluche</div></div>
+        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <select id="cfg-model">
-        <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
-        <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
-        <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
-        <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-      </select>
+      <div class="accordion-body">
+        <div class="field-label" style="margin-top:14px">Nombre de red (SSID)</div>
+        <input id="wifi-ssid" type="text" placeholder="Nombre de tu WiFi" style="margin-bottom:10px">
+        <div class="field-label">Contraseña</div>
+        <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px">
+        <button class="wifi-btn" onclick="sendWifi()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Enviar al peluche
+        </button>
+        <div class="wifi-status" id="wifi-status"></div>
+      </div>
     </div>
 
-    <button class="save-btn" id="save-btn" onclick="saveConfig()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      Guardar cambios
-    </button>
-
-    <div class="divider"></div>
-
-    <div class="wifi-section">
-      <div class="wifi-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand-dark)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-        Cambiar red WiFi del peluche
+    <!-- Accessibility → sub-page -->
+    <div class="accordion">
+      <div class="accordion-header" onclick="openSubpage('subpage-access')">
+        <div class="accordion-icon" style="background:var(--lavender-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <div><div class="accordion-title">Accesibilidad</div><div class="accordion-sub">Sonido, vibración, movimiento</div></div>
+        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <div class="field-label" style="margin-top:0">Nombre de red (SSID)</div>
-      <input id="wifi-ssid" type="text" placeholder="Nombre de tu WiFi" style="margin-bottom:10px">
-      <div class="field-label">Contraseña</div>
-      <input id="wifi-pass" type="password" placeholder="Contraseña">
-      <button class="wifi-btn" onclick="sendWifi()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Enviar al peluche
-      </button>
-      <div class="wifi-status" id="wifi-status"></div>
     </div>
 
-    <div class="divider"></div>
-
-    <div class="secret-wrap">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        App Secret
+    <!-- Advanced → sub-page -->
+    <div class="accordion">
+      <div class="accordion-header" onclick="openSubpage('subpage-advanced')">
+        <div class="accordion-icon" style="background:var(--sunny-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </div>
+        <div><div class="accordion-title">Avanzado</div><div class="accordion-sub">App Secret, diagnóstico</div></div>
+        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
-      <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:6px">Debe coincidir con APP_SECRET en Railway</div>
     </div>
 
   </div>
 
+  </div>
+
 </div>
+
+
+  <!-- ─── SUBPAGE: ACCESSIBILITY ──────────────── -->
+  <div class="subpage" id="subpage-access">
+    <div class="subpage-header">
+      <button class="subpage-back" onclick="closeSubpage('subpage-access')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="subpage-title">Accesibilidad</span>
+    </div>
+    <div class="subpage-content">
+      <div class="memory-box">
+        <div class="toggle-row">
+          <div><div class="toggle-label">Sonidos</div><div class="toggle-sub">Efectos de sonido en acciones</div></div>
+          <button class="toggle" id="tog-sound" onclick="togglePref('sound','tog-sound')"></button>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Vibración</div><div class="toggle-sub">Feedback táctil al interactuar</div></div>
+          <button class="toggle" id="tog-haptic" onclick="togglePref('haptic','tog-haptic')"></button>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Animaciones</div><div class="toggle-sub">Transiciones y efectos visuales</div></div>
+          <button class="toggle" id="tog-motion" onclick="togglePref('motion','tog-motion')"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SUBPAGE: ADVANCED ───────────────────── -->
+  <div class="subpage" id="subpage-advanced">
+    <div class="subpage-header">
+      <button class="subpage-back" onclick="closeSubpage('subpage-advanced')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="subpage-title">Avanzado</span>
+    </div>
+    <div class="subpage-content">
+      <div class="secret-wrap">
+        <div class="field-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          App Secret
+        </div>
+        <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:6px">Debe coincidir con APP_SECRET en Railway</div>
+      </div>
+    </div>
+  </div>
 
 <!-- Toast -->
 <div class="toast" id="toast">
@@ -777,6 +866,13 @@ const CONFIG = {
   // Splash screen duration (ms)
   splashDuration: 2200,
 
+  // Emojis disponibles para el avatar — edita esta lista libremente
+  avatarEmojis: [
+    '🐻','🐼','🐨','🦊','🐱','🐶','🐯','🦁','🐸','🐺',
+    '🦝','🐹','🐭','🐮','🐷','🦋','🌈','⭐','🎀','💫',
+    '✨','🌸','🎭','🦄','🐙','🦖','🌻','🍀','🎵','🏆',
+  ],
+
   // Server URL (auto-detect en producción, manual en desarrollo)
   serverUrl: window.location.origin,
 
@@ -821,7 +917,7 @@ function getAudioCtx() {
   return actx;
 }
 function playSound(key) {
-  if (!CONFIG.sounds.enabled) return;
+  if (!CONFIG.sounds.enabled || !PREFS.sound) return;
   const s = CONFIG.sounds[key];
   if (!s) return;
   try {
@@ -880,15 +976,17 @@ function applyIcons() {
 
 window.addEventListener('DOMContentLoaded', () => {
   applyIcons();
-  setTimeout(() => {
-    document.getElementById('splash').classList.add('fade-out');
-    setTimeout(() => { document.getElementById('splash').remove(); initAuth(); }, 600);
-  }, CONFIG.splashDuration);
   buildVoiceDropdown();
   checkStatus();
   setInterval(checkStatus, 30000);
-  setInterval(checkRevoked, 15000); // check if this device was revoked
+  setInterval(checkRevoked, 15000);
   loadConfig();
+  // Splash stays until auth is ready
+  setTimeout(async () => {
+    await initAuth();
+    document.getElementById('splash').classList.add('fade-out');
+    setTimeout(() => document.getElementById('splash').remove(), 500);
+  }, CONFIG.splashDuration);
 });
 
 // ── Voice dropdown ──────────────────────────────
@@ -928,14 +1026,34 @@ document.addEventListener('click', e => {
   if (dd && !dd.contains(e.target)) dd.classList.remove('open');
 });
 
-// ─── SECURITY & PROFILE STATE ───────────────────
+// ─── PREFERENCES ─────────────────────────────────
+const PREFS = {
+  sound:    localStorage.getItem('pref_sound')    !== 'false',
+  haptic:   localStorage.getItem('pref_haptic')   !== 'false',
+  motion:   localStorage.getItem('pref_motion')   !== 'false',
+};
+function savePref(key, val) {
+  PREFS[key] = val;
+  localStorage.setItem('pref_' + key, val);
+  if (key === 'motion') document.documentElement.classList.toggle('no-motion', !val);
+}
+function haptic(style) {
+  if (!PREFS.haptic) return;
+  if (!navigator.vibrate) return;
+  const patterns = { light: [10], medium: [20], heavy: [40], success: [10,50,20], error: [30,30,30] };
+  navigator.vibrate(patterns[style] || [10]);
+}
+// Apply motion preference on load
+if (!PREFS.motion) document.documentElement.classList.add('no-motion');
+
+// ─── SECURITY & PROFILE STATE ─────────────────────
 let DEVICE_ID   = localStorage.getItem('pm_device_id') || (() => { const id = crypto.randomUUID(); localStorage.setItem('pm_device_id', id); return id; })();
 let DEVICE_NAME = navigator.userAgent.includes('Android') ? 'Android' : navigator.userAgent.includes('iPhone') ? 'iPhone' : 'Navegador';
 let PIN_STATE   = 'verify'; // 'verify' | 'setup' | 'setup_confirm'
 let PIN_FIRST   = '';
 let PIN_ENTERED = '';
 let PROFILE     = { name: '', avatar: '🐻', color: '#8FA0CA' };
-const EMOJIS    = ['🐻','🐼','🐨','🦊','🐱','🐶','🐯','🦁','🐸','🐺','🦝','🐹','🐭','🐮','🐷','🐸','🦋','🌈','⭐','🎀','💫','✨','🌸','🎭'];
+// EMOJIS come from CONFIG.avatarEmojis
 const COLORS    = ['#8FA0CA','#FF7F7F','#7ECBA1','#FFD166','#C9A8F0','#FF9F7F','#7EC8CB','#F0A8C9','#A8C9F0','#C9F0A8'];
 
 // ── Icon helper ──────────────────────────────────
@@ -1172,6 +1290,105 @@ async function sendWifi() {
 function hdr(ct) { const h={'X-App-Secret':SECRET}; if(ct) h['Content-Type']='application/json'; return h; }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── ACCORDION ────────────────────────────────────
+function toggleAccordion(id) {
+  haptic('light');
+  playSound('tap');
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// ── SUB-PAGES ─────────────────────────────────────
+function openSubpage(id) {
+  haptic('light');
+  playSound('tap');
+  document.getElementById(id).classList.add('open');
+  // init toggles
+  setTimeout(() => {
+    ['sound','haptic','motion'].forEach(k => {
+      const t = document.getElementById('tog-' + k);
+      if (t) t.classList.toggle('on', PREFS[k]);
+    });
+  }, 50);
+}
+function closeSubpage(id) {
+  haptic('light');
+  document.getElementById(id).classList.remove('open');
+}
+
+// ── PREFERENCE TOGGLES ────────────────────────────
+function togglePref(key, btnId) {
+  const val = !PREFS[key];
+  savePref(key, val);
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.toggle('on', val);
+  haptic('medium');
+  playSound(val ? 'success' : 'tap');
+}
+// Apply saved toggle states on load
+window.addEventListener('DOMContentLoaded', () => {
+  ['sound','haptic','motion'].forEach(k => {
+    const t = document.getElementById('tog-' + k);
+    if (t) t.classList.toggle('on', PREFS[k]);
+  });
+});
+
+// ── HAPTIC on key interactions ────────────────────
+// Pin keys already call playSound('tap') — add haptic there
+const _origPinKey = pinKey;
+// patch playSound to also vibrate
+const _origPlaySound = playSound;
+window.playSound = function(key) {
+  _origPlaySound(key);
+};
+
+// ── HAPTIC PATCHES ────────────────────────────────
+// Wrap startActivate/stopActivate with haptic
+const _origStart = startActivate;
+window.startActivate = async function() {
+  haptic('medium');
+  return _origStart.apply(this, arguments);
+};
+const _origStop = stopActivate;
+window.stopActivate = async function() {
+  haptic('light');
+  return _origStop.apply(this, arguments);
+};
+// Pin key haptic
+const _origPinKeyFn = window.pinKey;
+window.pinKey = function(k) {
+  haptic('light');
+  _origPinKeyFn(k);
+};
+// Pin del haptic
+const _origPinDel = window.pinDel;
+window.pinDel = function() {
+  haptic('light');
+  _origPinDel();
+};
+// Pin error haptic
+const _origPinError = window.pinError;
+window.pinError = function(msg) {
+  haptic('error');
+  _origPinError(msg);
+};
+// Save/delete haptic
+const _origSaveConfig = window.saveConfig;
+window.saveConfig = async function() {
+  haptic('medium');
+  return _origSaveConfig.apply(this, arguments);
+};
+const _origSaveProfile = window.saveProfile;
+window.saveProfile = async function() {
+  haptic('medium');
+  return _origSaveProfile.apply(this, arguments);
+};
+const _origClearMemory = window.clearMemory;
+window.clearMemory = async function() {
+  haptic('heavy');
+  return _origClearMemory.apply(this, arguments);
+};
+
 // prevent default on touch activate
 document.getElementById('activate-card').addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
 
@@ -1327,7 +1544,7 @@ function renderProfile() {
 function buildProfileUI() {
   // emojis
   const eg = document.getElementById('emoji-grid');
-  if (eg) eg.innerHTML = EMOJIS.map(e =>
+  if (eg) eg.innerHTML = CONFIG.avatarEmojis.map(e =>
     `<div class="emoji-opt ${PROFILE.avatar===e?'active':''}" onclick="selectAvatar('${e}')">${e}</div>`).join('');
   // colors
   const co = document.getElementById('color-options');
@@ -1375,7 +1592,7 @@ async function loadDevices() {
   const el = document.getElementById('devices-list');
   if (!el) return;
   try {
-    const r = await fetch(BASE + '/devices', {headers: hdr()});
+    const r = await fetch(BASE + '/devices?t=' + Date.now(), {headers: hdr()});
     const devices = await r.json();
     if (!devices.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Sin dispositivos registrados</div>'; return; }
     el.innerHTML = devices.map(d => {
