@@ -165,14 +165,14 @@
   <!-- HOME -->
   <div class="page active" id="page-home">
     <div class="activate-section">
-      <button class="activate-btn" id="activate-btn" onclick="activatePlush()">
+      <button class="activate-btn" id="activate-btn" onmousedown="startActivate()" onmouseup="stopActivate()" onmouseleave="stopActivate()" ontouchstart="startActivate()" ontouchend="stopActivate()" ontouchcancel="stopActivate()">
         <div class="activate-inner">
           <div class="mic-circle">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
           </div>
           <div class="btn-texts">
             <div class="btn-title" id="btn-title">Activar PlushMate</div>
-            <div class="btn-sub" id="btn-sub">El peluche comenzará a escuchar</div>
+            <div class="btn-sub" id="btn-sub">Mantén presionado para hablar</div>
           </div>
         </div>
       </button>
@@ -369,46 +369,56 @@ function setStatus(txt, isRed, isOrange) {
 }
 
 // ── Activate ─────────────────────────────────────────────────────────────────
-let activating = false;
-async function activatePlush() {
-  if (activating) return;
-  activating = true;
+let isHolding = false;
+
+async function startActivate() {
+  if (isHolding) return;
+  isHolding = true;
   const btn = document.getElementById('activate-btn');
   const title = document.getElementById('btn-title');
   const sub = document.getElementById('btn-sub');
   btn.classList.add('listening');
-  title.textContent = 'Enviando comando...';
-  sub.textContent = 'El peluche escuchará en un momento';
-  setStatus('Activando peluche...', false, true);
+  title.textContent = 'Escuchando...';
+  sub.textContent = 'Suelta para enviar';
+  setStatus('PlushMate escuchando...', false, true);
   try {
-    const r = await fetch(BASE + '/command', {
+    await fetch(BASE + '/command', {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ action: 'activate' })
     });
-    if (r.ok) {
-      title.textContent = '¡Listo!';
-      sub.textContent = 'PlushMate está escuchando...';
-      setStatus('Escuchando...', false, false);
-      toast('✓ PlushMate está escuchando');
-      setTimeout(() => {
-        btn.classList.remove('listening');
-        title.textContent = 'Activar PlushMate';
-        sub.textContent = 'El peluche comenzará a escuchar';
-        setStatus('Conectado · listo', false, false);
-        activating = false;
-      }, 4000);
-    } else {
-      throw new Error('Error ' + r.status);
-    }
+    toast('🎙️ PlushMate escuchando...');
   } catch(e) {
-    btn.classList.remove('listening');
-    title.textContent = 'Activar PlushMate';
-    sub.textContent = 'El peluche comenzará a escuchar';
-    toast('Error al conectar con el servidor', true);
-    setStatus('Error de conexión', true, false);
-    activating = false;
+    toast('Error al conectar', true);
+    resetBtn();
   }
+}
+
+async function stopActivate() {
+  if (!isHolding) return;
+  isHolding = false;
+  try {
+    await fetch(BASE + '/command', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ action: 'stop' })
+    });
+    toast('✓ Procesando respuesta...');
+  } catch(e) {
+    toast('Error al detener', true);
+  }
+  resetBtn();
+}
+
+function resetBtn() {
+  isHolding = false;
+  const btn = document.getElementById('activate-btn');
+  const title = document.getElementById('btn-title');
+  const sub = document.getElementById('btn-sub');
+  btn.classList.remove('listening');
+  title.textContent = 'Activar PlushMate';
+  sub.textContent = 'Mantén presionado para hablar';
+  setStatus('Conectado · listo', false, false);
 }
 
 // ── History ──────────────────────────────────────────────────────────────────
