@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.railway.up.plushmate_server_production.twa",
+        "sha256_cert_fingerprints": ["C7:B5:1A:BD:EC:BA:37:39:FB:FB:77:C8:26:63:7B:89:70:80:B8:B8:48:61:38:E6:4B:EE:1B:42:26:C2:97:E5"]
+      }
+    }]
