@@ -255,7 +255,7 @@ def send_command():
     global pending_command
     data = request.json or {}
     action = data.get('action', '')
-    if action not in ('activate', 'wifi_change'):
+    if action not in ('activate', 'stop', 'wifi_change'):
         return jsonify({'error': 'Unknown action'}), 400
     with pending_command_lock:
         pending_command = data
