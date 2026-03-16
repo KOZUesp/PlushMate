@@ -1,0 +1,27 @@
+{
+  "name": "PlushMate",
+  "short_name": "PlushMate",
+  "description": "Tu peluche mágico con inteligencia artificial",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#8FA0CA",
+  "theme_color": "#8FA0CA",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/static/icons/Logo.svg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/Logo.svg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "entertainment"],
+  "screenshots": []
+}
