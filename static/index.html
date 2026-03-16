@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a0533">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PlushMate</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{--purple:#7F77DD;--pink:#D4537E;--teal:#5DCAA5;--bg:#1a0533;--bg2:rgba(255,255,255,0.07);--bg3:rgba(255,255,255,0.12);--border:rgba(255,255,255,0.1);--text:rgba(255,255,255,0.9);--muted:rgba(255,255,255,0.45);--faint:rgba(255,255,255,0.1)}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto}
+  
+  /* header */
+  .header{padding:28px 20px 16px;text-align:center}
+  .plush-wrap{position:relative;width:88px;height:88px;margin:0 auto 12px}
+  .plush-ring{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));display:flex;align-items:center;justify-content:center;font-size:42px}
+  .pulse{position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--purple);opacity:0;animation:pulse 2.5s ease-in-out infinite}
+  .pulse2{animation-delay:1.25s}
+  @keyframes pulse{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.3);opacity:0}}
+  .title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
+  .status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .dot.red{background:#E24B4A;animation:none}
+  .dot.orange{background:#EF9F27;animation:none}
+  .status-txt{font-size:12px;color:var(--teal)}
+  .status-txt.red{color:#E24B4A}
+  .status-txt.orange{color:#EF9F27}
+
+  /* nav */
+  .nav{display:flex;padding:0 20px;gap:4px;margin-bottom:4px}
+  .nav-btn{flex:1;padding:8px 4px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;border-radius:8px;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .nav-btn svg{opacity:0.5;transition:opacity 0.2s}
+  .nav-btn.active{color:var(--text)}
+  .nav-btn.active svg{opacity:1}
+  .nav-indicator{width:4px;height:4px;border-radius:50%;background:var(--purple);opacity:0;transition:opacity 0.2s}
+  .nav-btn.active .nav-indicator{opacity:1}
+
+  /* pages */
+  .pages{flex:1;overflow:hidden;position:relative}
+  .page{position:absolute;inset:0;overflow-y:auto;padding:0 20px 100px;opacity:0;pointer-events:none;transform:translateX(20px);transition:all 0.25s ease}
+  .page.active{opacity:1;pointer-events:all;transform:translateX(0)}
+
+  /* activate button */
+  .activate-section{padding:8px 0 20px}
+  .activate-btn{width:100%;padding:20px;border:none;border-radius:20px;cursor:pointer;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--purple),var(--pink));transition:transform 0.15s,opacity 0.15s}
+  .activate-btn:active{transform:scale(0.97);opacity:0.9}
+  .activate-btn.listening{animation:btn-pulse 1s ease-in-out infinite}
+  @keyframes btn-pulse{0%,100%{opacity:1}50%{opacity:0.75}}
+  .activate-inner{display:flex;align-items:center;justify-content:center;gap:12px}
+  .mic-circle{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .btn-texts{text-align:left}
+  .btn-title{color:#fff;font-size:16px;font-weight:600}
+  .btn-sub{color:rgba(255,255,255,0.7);font-size:12px;margin-top:2px}
+
+  /* cards */
+  .section{margin-bottom:20px}
+  .section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+  .card{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;overflow:hidden}
+  .card-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:0.5px solid var(--faint)}
+  .card-row:last-child{border-bottom:none}
+  .card-row-left{display:flex;align-items:center;gap:10px}
+  .row-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .row-label{font-size:14px;color:var(--text)}
+  .row-sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .row-right{display:flex;align-items:center;gap:8px}
+  .tag{font-size:11px;padding:3px 9px;border-radius:20px}
+  .tag.purple{background:rgba(127,119,221,0.25);color:#AFA9EC;border:0.5px solid rgba(127,119,221,0.4)}
+  .tag.green{background:rgba(93,202,165,0.2);color:var(--teal);border:0.5px solid rgba(93,202,165,0.3)}
+  .tag.red{background:rgba(226,75,74,0.2);color:#F09595;border:0.5px solid rgba(226,75,74,0.3)}
+  .chevron{color:var(--muted);font-size:16px}
+
+  /* history */
+  .msg{margin-bottom:14px;display:flex;flex-direction:column}
+  .msg.user{align-items:flex-end}
+  .msg-label{font-size:10px;color:var(--muted);margin-bottom:4px;padding:0 4px}
+  .bubble{max-width:82%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5}
+  .bubble.plush{background:rgba(127,119,221,0.25);color:#CCC9F5;border-bottom-left-radius:4px}
+  .bubble.user{background:var(--bg3);color:var(--text);border-bottom-right-radius:4px}
+  .empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px}
+
+  /* memory */
+  .memory-box{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;padding:16px;min-height:80px}
+  .memory-text{font-size:14px;color:var(--text);line-height:1.6}
+  .memory-empty{font-size:13px;color:var(--muted);font-style:italic}
+  .danger-btn{width:100%;padding:14px;background:rgba(226,75,74,0.15);border:0.5px solid rgba(226,75,74,0.3);border-radius:12px;color:#F09595;font-size:14px;cursor:pointer;transition:background 0.2s}
+  .danger-btn:active{background:rgba(226,75,74,0.25)}
+
+  /* settings */
+  .field-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  textarea,input,select{width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;padding:12px 14px;outline:none;font-family:inherit;resize:none;-webkit-appearance:none;appearance:none}
+  textarea:focus,input:focus,select:focus{border-color:var(--purple)}
+  select option{background:#2a1248;color:var(--text)}
+  .save-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+  .save-btn:active{opacity:0.85}
+  .save-btn:disabled{opacity:0.5;cursor:not-allowed}
+  .field{margin-bottom:16px}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(93,202,165,0.9);color:#04342C;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:100}
+  .toast.show{opacity:1}
+  .toast.error{background:rgba(226,75,74,0.9);color:#fff}
+
+  /* wifi */
+  .wifi-status{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+
+  /* confirm modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s}
+  .modal-bg.show{opacity:1;pointer-events:all}
+  .modal{background:#2a1248;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s ease}
+  .modal-bg.show .modal{transform:translateY(0)}
+  .modal-title{font-size:17px;font-weight:600;margin-bottom:8px}
+  .modal-desc{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+  .modal-btns{display:flex;gap:10px}
+  .modal-btn{flex:1;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none}
+  .modal-btn.cancel{background:var(--bg3);color:var(--text)}
+  .modal-btn.confirm{background:rgba(226,75,74,0.8);color:#fff}
+
+  /* scrollbar */
+  ::-webkit-scrollbar{width:0}
+
+  /* bottom safe area */
+  .bottompad{height:env(safe-area-inset-bottom,0)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="plush-wrap">
+    <div class="pulse"></div>
+    <div class="pulse pulse2"></div>
+    <div class="plush-ring">🧸</div>
+  </div>
+  <div class="title">PlushMate</div>
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span class="status-txt" id="status-txt">Conectando...</span>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="goPage('home',this)">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
+    <span>Inicio</span>
+    <div class="nav-indicator"></div>
+  </button>
+  <button class="nav-btn" onclick="goPage('history',this)">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 10h8M8 14h5M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+    <span>Chat</span>
+    <div class="nav-indicator"></div>
+  </button>
+  <button class="nav-btn" onclick="goPage('memory',this)">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
+    <span>Memoria</span>
+    <div class="nav-indicator"></div>
+  </button>
+  <button class="nav-btn" onclick="goPage('settings',this)">
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <span>Ajustes</span>
+    <div class="nav-indicator"></div>
+  </button>
+</div>
+
+<div class="pages">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="activate-section">
+      <button class="activate-btn" id="activate-btn" onclick="activatePlush()">
+        <div class="activate-inner">
+          <div class="mic-circle">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
+          </div>
+          <div class="btn-texts">
+            <div class="btn-title" id="btn-title">Activar PlushMate</div>
+            <div class="btn-sub" id="btn-sub">El peluche comenzará a escuchar</div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Estado del sistema</div>
+      <div class="card">
+        <div class="card-row">
+          <div class="card-row-left">
+            <div class="row-icon" style="background:rgba(127,119,221,0.2)">🤖</div>
+            <div><div class="row-label">Modelo IA</div><div class="row-sub" id="status-model">—</div></div>
+          </div>
+          <span class="tag purple">activo</span>
+        </div>
+        <div class="card-row">
+          <div class="card-row-left">
+            <div class="row-icon" style="background:rgba(93,202,165,0.2)">🎙️</div>
+            <div><div class="row-label">Reconocimiento de voz</div><div class="row-sub">Deepgram Nova-2</div></div>
+          </div>
+          <span class="tag green">listo</span>
+        </div>
+        <div class="card-row" style="border-bottom:none">
+          <div class="card-row-left">
+            <div class="row-icon" style="background:rgba(212,83,126,0.2)">🔊</div>
+            <div><div class="row-label">Voz</div><div class="row-sub">ElevenLabs v3</div></div>
+          </div>
+          <span class="tag green">listo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Última conversación</div>
+      <div class="card" id="home-preview">
+        <div class="card-row" style="border-bottom:none">
+          <span style="color:var(--muted);font-size:13px">Sin conversaciones aún</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="section" style="margin-top:8px">
+      <div class="section-label" id="history-count">Historial · 0 mensajes</div>
+      <div id="history-list"><div class="empty-state">Sin conversaciones en esta sesión</div></div>
+    </div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="page" id="page-memory">
+    <div class="section" style="margin-top:8px">
+      <div class="section-label">Resumen persistente</div>
+      <div class="memory-box">
+        <div id="memory-content" class="memory-empty">Cargando...</div>
+      </div>
+      <div style="color:var(--muted);font-size:11px;margin-top:8px;padding:0 4px">Se actualiza automáticamente cada 5 interacciones</div>
+    </div>
+    <div class="section">
+      <div class="section-label">Acciones</div>
+      <div class="card">
+        <div class="card-row" style="border-bottom:none">
+          <div class="card-row-left">
+            <div class="row-icon" style="background:rgba(127,119,221,0.2)">💬</div>
+            <div><div class="row-label">Mensajes en sesión actual</div><div class="row-sub" id="session-count">0 mensajes</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="danger-btn" onclick="confirmClear()">🗑️ Borrar toda la memoria</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div style="margin-top:8px">
+
+      <div class="section">
+        <div class="section-label">Personalidad</div>
+        <div class="field">
+          <textarea id="cfg-persona" rows="4" placeholder="Describe cómo debe comportarse PlushMate..."></textarea>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Voz de ElevenLabs</div>
+        <div class="field">
+          <input id="cfg-voice" type="text" placeholder="Voice ID (ej: aaf0KU31jmlzVPqltvJY)">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Modelo de IA (OpenRouter)</div>
+        <div class="field">
+          <select id="cfg-model">
+            <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
+            <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
+            <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
+            <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="save-btn" id="save-btn" onclick="saveConfig()">Guardar cambios</button>
+
+      <div style="margin-top:28px">
+        <div class="section-label">Red WiFi del peluche</div>
+        <div class="field">
+          <div class="field-label">Nombre de red (SSID)</div>
+          <input id="wifi-ssid" type="text" placeholder="Mi red WiFi">
+        </div>
+        <div class="field">
+          <div class="field-label">Contraseña</div>
+          <input id="wifi-pass" type="password" placeholder="Contraseña">
+        </div>
+        <button class="save-btn" onclick="sendWifi()" style="background:rgba(127,119,221,0.5);border:0.5px solid var(--purple)">📶 Enviar al peluche</button>
+        <div class="wifi-status" id="wifi-status"></div>
+      </div>
+
+      <div style="margin-top:28px;margin-bottom:12px">
+        <div class="section-label">Seguridad</div>
+        <div class="field">
+          <div class="field-label">App Secret (APP_SECRET en Railway)</div>
+          <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-title">¿Borrar toda la memoria?</div>
+    <div class="modal-desc">Se eliminará el historial de esta sesión y el resumen guardado en Supabase. PlushMate olvidará todo lo que sabe de ti.</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-btn confirm" onclick="clearMemory()">Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottompad"></div>
+
+<script>
+const BASE = window.location.origin;
+let SECRET = localStorage.getItem('pm_secret') || 'plushmate2024';
+
+function headers() {
+  return { 'Content-Type': 'application/json', 'X-App-Secret': SECRET };
+}
+
+// ── Nav ──────────────────────────────────────────────────────────────────────
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'history') loadHistory();
+  if (id === 'memory') loadMemory();
+  if (id === 'settings') loadConfig();
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Status ───────────────────────────────────────────────────────────────────
+async function checkStatus() {
+  try {
+    const r = await fetch(BASE + '/health');
+    const d = await r.json();
+    setStatus('Conectado · listo', false, false);
+  } catch(e) {
+    setStatus('Sin conexión', true, false);
+  }
+}
+function setStatus(txt, isRed, isOrange) {
+  const dot = document.getElementById('status-dot');
+  const label = document.getElementById('status-txt');
+  dot.className = 'dot' + (isRed ? ' red' : isOrange ? ' orange' : '');
+  label.className = 'status-txt' + (isRed ? ' red' : isOrange ? ' orange' : '');
+  label.textContent = txt;
+}
+
+// ── Activate ─────────────────────────────────────────────────────────────────
+let activating = false;
+async function activatePlush() {
+  if (activating) return;
+  activating = true;
+  const btn = document.getElementById('activate-btn');
+  const title = document.getElementById('btn-title');
+  const sub = document.getElementById('btn-sub');
+  btn.classList.add('listening');
+  title.textContent = 'Enviando comando...';
+  sub.textContent = 'El peluche escuchará en un momento';
+  setStatus('Activando peluche...', false, true);
+  try {
+    const r = await fetch(BASE + '/command', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ action: 'activate' })
+    });
+    if (r.ok) {
+      title.textContent = '¡Listo!';
+      sub.textContent = 'PlushMate está escuchando...';
+      setStatus('Escuchando...', false, false);
+      toast('✓ PlushMate está escuchando');
+      setTimeout(() => {
+        btn.classList.remove('listening');
+        title.textContent = 'Activar PlushMate';
+        sub.textContent = 'El peluche comenzará a escuchar';
+        setStatus('Conectado · listo', false, false);
+        activating = false;
+      }, 4000);
+    } else {
+      throw new Error('Error ' + r.status);
+    }
+  } catch(e) {
+    btn.classList.remove('listening');
+    title.textContent = 'Activar PlushMate';
+    sub.textContent = 'El peluche comenzará a escuchar';
+    toast('Error al conectar con el servidor', true);
+    setStatus('Error de conexión', true, false);
+    activating = false;
+  }
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const r = await fetch(BASE + '/memory');
+    const d = await r.json();
+    const history = d.history || [];
+    document.getElementById('history-count').textContent = `Historial · ${history.length} mensajes`;
+    document.getElementById('session-count').textContent = `${history.length} mensajes`;
+    const el = document.getElementById('history-list');
+    if (history.length === 0) {
+      el.innerHTML = '<div class="empty-state">Sin conversaciones en esta sesión</div>';
+    } else {
+      el.innerHTML = history.map(m => `
+        <div class="msg ${m.role === 'user' ? 'user' : ''}">
+          <div class="msg-label">${m.role === 'user' ? 'Tú' : 'PlushMate'}</div>
+          <div class="bubble ${m.role === 'user' ? 'user' : 'plush'}">${escHtml(m.content)}</div>
+        </div>`).join('');
+      el.scrollTop = el.scrollHeight;
+    }
+    updateHomePreview(history);
+  } catch(e) { console.error(e); }
+}
+
+function updateHomePreview(history) {
+  const el = document.getElementById('home-preview');
+  const last = history.slice(-2);
+  if (last.length === 0) return;
+  el.innerHTML = last.map(m => `
+    <div class="card-row" style="${m === last[last.length-1] ? 'border-bottom:none' : ''}">
+      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--muted)">${m.role === 'user' ? 'Tú' : 'PlushMate'}</div>
+        <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(m.content)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Memory ───────────────────────────────────────────────────────────────────
+async function loadMemory() {
+  const el = document.getElementById('memory-content');
+  try {
+    const r = await fetch(BASE + '/memory');
+    const d = await r.json();
+    const summary = d.summary || '';
+    document.getElementById('session-count').textContent = `${d.history_len || 0} mensajes`;
+    if (summary) {
+      el.className = 'memory-text';
+      el.textContent = summary;
+    } else {
+      el.className = 'memory-empty';
+      el.textContent = 'Sin memoria guardada aún. PlushMate aprenderá sobre ti con el tiempo.';
+    }
+  } catch(e) {
+    el.className = 'memory-empty';
+    el.textContent = 'Error al cargar la memoria.';
+  }
+}
+
+function confirmClear() {
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+async function clearMemory() {
+  closeModal();
+  try {
+    const r = await fetch(BASE + '/memory', { method: 'DELETE', headers: headers() });
+    if (r.ok) {
+      toast('Memoria borrada');
+      loadMemory();
+    } else {
+      toast('Error al borrar', true);
+    }
+  } catch(e) { toast('Error de conexión', true); }
+}
+
+// ── Config ───────────────────────────────────────────────────────────────────
+async function loadConfig() {
+  document.getElementById('cfg-secret').value = SECRET;
+  try {
+    const r = await fetch(BASE + '/config', { headers: headers() });
+    if (!r.ok) { toast('Secret incorrecto', true); return; }
+    const d = await r.json();
+    document.getElementById('cfg-persona').value = d.persona || '';
+    document.getElementById('cfg-voice').value = d.voice_id || '';
+    const modelSel = document.getElementById('cfg-model');
+    const exists = [...modelSel.options].some(o => o.value === d.model);
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = d.model; opt.textContent = d.model;
+      modelSel.appendChild(opt);
+    }
+    modelSel.value = d.model || '';
+    document.getElementById('status-model').textContent = (d.model || '').split('/').pop();
+  } catch(e) { toast('Error cargando config', true); }
+}
+
+async function saveConfig() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const r = await fetch(BASE + '/config', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({
+        persona: document.getElementById('cfg-persona').value,
+        voice_id: document.getElementById('cfg-voice').value,
+        model: document.getElementById('cfg-model').value
+      })
+    });
+    if (r.ok) {
+      toast('✓ Configuración guardada');
+      document.getElementById('status-model').textContent = document.getElementById('cfg-model').value.split('/').pop();
+    } else {
+      toast('Error al guardar', true);
+    }
+  } catch(e) { toast('Error de conexión', true); }
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+}
+
+function saveSecret() {
+  SECRET = document.getElementById('cfg-secret').value;
+  localStorage.setItem('pm_secret', SECRET);
+}
+
+// ── WiFi ─────────────────────────────────────────────────────────────────────
+async function sendWifi() {
+  const ssid = document.getElementById('wifi-ssid').value.trim();
+  const pass = document.getElementById('wifi-pass').value;
+  if (!ssid) { toast('Escribe el nombre de la red', true); return; }
+  const status = document.getElementById('wifi-status');
+  status.textContent = 'Enviando...';
+  try {
+    const r = await fetch(BASE + '/wifi', {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ ssid, password: pass })
+    });
+    if (r.ok) {
+      status.textContent = '✓ Comando enviado. El peluche cambiará de red en ~3 segundos.';
+      toast('✓ WiFi enviado al peluche');
+      document.getElementById('wifi-ssid').value = '';
+      document.getElementById('wifi-pass').value = '';
+    } else {
+      status.textContent = 'Error al enviar';
+      toast('Error', true);
+    }
+  } catch(e) { status.textContent = 'Error de conexión'; toast('Error', true); }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+checkStatus();
+setInterval(checkStatus, 30000);
+loadConfig();
+</script>
+</body>
+</html>
