@@ -122,7 +122,8 @@ Nuevo resumen:"""
         )
         data = r.json()
         if data.get('choices'):
-            new_summary = data['choices'][0]['message']['content'].strip()
+            msg = data['choices'][0]['message']
+            new_summary = (msg.get('content') or msg.get('reasoning') or '').strip()
             supabase_save_summary(new_summary)
             print(f"[Memory] Resumen actualizado: {new_summary}")
     except Exception as e:
@@ -341,7 +342,15 @@ def chat_with_memory() -> str:
         return "Lo siento, no pude pensar en una respuesta ahora."
     if not data.get('choices'):
         return "Hmm, tuve un problema al procesar eso."
-    return data['choices'][0]['message']['content'].strip()
+    msg = data['choices'][0]['message']
+    # Some models (reasoning models) put response in 'reasoning' when content is None
+    text = msg.get('content') or msg.get('reasoning') or ''
+    if not text and msg.get('reasoning_details'):
+        for rd in msg['reasoning_details']:
+            if rd.get('text'):
+                text = rd['text']
+                break
+    return text.strip()
 
 def tts(text: str) -> str:
     r = requests.post(
