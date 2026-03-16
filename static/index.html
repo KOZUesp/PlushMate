@@ -2,161 +2,238 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#1a0533">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#8FA0CA">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>PlushMate</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  :root{--purple:#7F77DD;--pink:#D4537E;--teal:#5DCAA5;--bg:#1a0533;--bg2:rgba(255,255,255,0.07);--bg3:rgba(255,255,255,0.12);--border:rgba(255,255,255,0.1);--text:rgba(255,255,255,0.9);--muted:rgba(255,255,255,0.45);--faint:rgba(255,255,255,0.1)}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;display:flex;flex-direction:column;max-width:430px;margin:0 auto}
-  
-  /* header */
-  .header{padding:28px 20px 16px;text-align:center}
-  .plush-wrap{position:relative;width:88px;height:88px;margin:0 auto 12px}
-  .plush-ring{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--pink));display:flex;align-items:center;justify-content:center;font-size:42px}
-  .pulse{position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--purple);opacity:0;animation:pulse 2.5s ease-in-out infinite}
-  .pulse2{animation-delay:1.25s}
-  @keyframes pulse{0%{transform:scale(1);opacity:0.6}100%{transform:scale(1.3);opacity:0}}
-  .title{font-size:20px;font-weight:600;letter-spacing:-0.3px}
-  .status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:blink 2s ease-in-out infinite}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-  .dot.red{background:#E24B4A;animation:none}
-  .dot.orange{background:#EF9F27;animation:none}
-  .status-txt{font-size:12px;color:var(--teal)}
-  .status-txt.red{color:#E24B4A}
-  .status-txt.orange{color:#EF9F27}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --brand:#8FA0CA;
+  --brand-dark:#6B82B8;
+  --brand-light:#C5CFEA;
+  --brand-pale:#EEF1F8;
+  --coral:#FF7F7F;
+  --coral-light:#FFE0E0;
+  --mint:#7ECBA1;
+  --mint-light:#D6F0E2;
+  --sunny:#FFD166;
+  --sunny-light:#FFF3CC;
+  --lavender:#C9A8F0;
+  --lavender-light:#F0E6FF;
+  --bg:#F0F3FC;
+  --white:#FFFFFF;
+  --text:#3D4A6B;
+  --muted:#8A95B5;
+  --border:#DDE3F3;
+  --shadow:0 4px 20px rgba(143,160,202,0.2);
+  --shadow-sm:0 2px 10px rgba(143,160,202,0.15);
+  --r-sm:12px;
+  --r-md:18px;
+  --r-lg:24px;
+  --r-xl:32px;
+  --r-full:100px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
-  /* nav */
-  .nav{display:flex;padding:0 20px;gap:4px;margin-bottom:4px}
-  .nav-btn{flex:1;padding:8px 4px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;border-radius:8px;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px}
-  .nav-btn svg{opacity:0.5;transition:opacity 0.2s}
-  .nav-btn.active{color:var(--text)}
-  .nav-btn.active svg{opacity:1}
-  .nav-indicator{width:4px;height:4px;border-radius:50%;background:var(--purple);opacity:0;transition:opacity 0.2s}
-  .nav-btn.active .nav-indicator{opacity:1}
+/* bg decoration */
+.bg-blob{position:fixed;border-radius:50%;opacity:0.12;pointer-events:none;z-index:0}
+.bg-blob-1{width:300px;height:300px;background:var(--brand);top:-80px;right:-60px}
+.bg-blob-2{width:200px;height:200px;background:var(--coral);bottom:100px;left:-60px}
+.bg-blob-3{width:160px;height:160px;background:var(--sunny);top:40%;right:-40px}
 
-  /* pages */
-  .pages{flex:1;overflow:hidden;position:relative}
-  .page{position:absolute;inset:0;overflow-y:auto;padding:0 20px 100px;opacity:0;pointer-events:none;transform:translateX(20px);transition:all 0.25s ease}
-  .page.active{opacity:1;pointer-events:all;transform:translateX(0)}
+/* header */
+.header{padding:20px 20px 0;position:relative;z-index:10;flex-shrink:0}
+.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-bear{width:44px;height:44px;border-radius:14px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 12px rgba(143,160,202,0.4)}
+.logo-text{font-size:20px;font-weight:900;color:var(--text);letter-spacing:-0.3px}
+.logo-text span{color:var(--brand)}
+.header-right{display:flex;gap:8px}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:var(--white);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm);color:var(--muted);font-size:17px}
+.status-pill{display:inline-flex;align-items:center;gap:6px;background:var(--white);border-radius:var(--r-full);padding:7px 14px;font-size:12px;font-weight:700;color:var(--text);box-shadow:var(--shadow-sm)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0}
+.status-dot.pulsing{animation:dotpulse 1.5s ease-in-out infinite}
+.status-dot.orange{background:var(--sunny)}
+.status-dot.red{background:var(--coral);animation:none}
+@keyframes dotpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:0.5}}
 
-  /* activate button */
-  .activate-section{padding:8px 0 20px}
-  .activate-btn{width:100%;padding:20px;border:none;border-radius:20px;cursor:pointer;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--purple),var(--pink));transition:transform 0.15s,opacity 0.15s}
-  .activate-btn:active{transform:scale(0.97);opacity:0.9}
-  .activate-btn.listening{animation:btn-pulse 1s ease-in-out infinite}
-  @keyframes btn-pulse{0%,100%{opacity:1}50%{opacity:0.75}}
-  .activate-inner{display:flex;align-items:center;justify-content:center;gap:12px}
-  .mic-circle{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .btn-texts{text-align:left}
-  .btn-title{color:#fff;font-size:16px;font-weight:600}
-  .btn-sub{color:rgba(255,255,255,0.7);font-size:12px;margin-top:2px}
+/* nav tabs */
+.nav{display:flex;padding:0 20px 16px;gap:6px;position:relative;z-index:10;flex-shrink:0}
+.nav-btn{flex:1;padding:10px 4px;background:transparent;border:none;color:var(--muted);font-size:11px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;border-radius:var(--r-sm);transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav-btn svg{width:20px;height:20px;transition:transform 0.2s}
+.nav-btn.active{color:var(--brand)}
+.nav-btn.active svg{transform:scale(1.1)}
+.nav-bar{position:relative}
+.nav-bar::after{content:'';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:20px;height:3px;border-radius:2px;background:var(--brand)}
 
-  /* cards */
-  .section{margin-bottom:20px}
-  .section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
-  .card{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;overflow:hidden}
-  .card-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:0.5px solid var(--faint)}
-  .card-row:last-child{border-bottom:none}
-  .card-row-left{display:flex;align-items:center;gap:10px}
-  .row-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-  .row-label{font-size:14px;color:var(--text)}
-  .row-sub{font-size:11px;color:var(--muted);margin-top:1px}
-  .row-right{display:flex;align-items:center;gap:8px}
-  .tag{font-size:11px;padding:3px 9px;border-radius:20px}
-  .tag.purple{background:rgba(127,119,221,0.25);color:#AFA9EC;border:0.5px solid rgba(127,119,221,0.4)}
-  .tag.green{background:rgba(93,202,165,0.2);color:var(--teal);border:0.5px solid rgba(93,202,165,0.3)}
-  .tag.red{background:rgba(226,75,74,0.2);color:#F09595;border:0.5px solid rgba(226,75,74,0.3)}
-  .chevron{color:var(--muted);font-size:16px}
+/* pages */
+.pages{flex:1;overflow:hidden;position:relative;min-height:0}
+.page{position:absolute;inset:0;overflow-y:auto;padding:0 20px 100px;opacity:0;pointer-events:none;transform:translateY(12px);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.page::-webkit-scrollbar{display:none}
 
-  /* history */
-  .msg{margin-bottom:14px;display:flex;flex-direction:column}
-  .msg.user{align-items:flex-end}
-  .msg-label{font-size:10px;color:var(--muted);margin-bottom:4px;padding:0 4px}
-  .bubble{max-width:82%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5}
-  .bubble.plush{background:rgba(127,119,221,0.25);color:#CCC9F5;border-bottom-left-radius:4px}
-  .bubble.user{background:var(--bg3);color:var(--text);border-bottom-right-radius:4px}
-  .empty-state{text-align:center;padding:48px 0;color:var(--muted);font-size:14px}
+/* ── HOME PAGE ── */
+.activate-card{background:var(--brand);border-radius:var(--r-xl);padding:22px;margin-bottom:20px;position:relative;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none}
+.activate-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.12)}
+.activate-card::after{content:'';position:absolute;bottom:-20px;right:30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.08)}
+.activate-card.pressing{transform:scale(0.97);transition:transform 0.1s}
+.activate-card.listening{animation:cardpulse 1s ease-in-out infinite}
+@keyframes cardpulse{0%,100%{box-shadow:0 0 0 0 rgba(143,160,202,0.5)}50%{box-shadow:0 0 0 16px rgba(143,160,202,0)}}
+.act-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.act-icon{width:52px;height:52px;border-radius:18px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:26px}
+.act-icon.recording{animation:iconbounce 0.5s ease-in-out infinite alternate}
+@keyframes iconbounce{from{transform:scale(1)}to{transform:scale(1.1)}}
+.act-texts{flex:1}
+.act-title{color:#fff;font-size:17px;font-weight:900;margin-bottom:3px}
+.act-sub{color:rgba(255,255,255,0.75);font-size:12px;font-weight:600}
+.act-arrow{color:rgba(255,255,255,0.6);font-size:22px;position:relative;z-index:1}
 
-  /* memory */
-  .memory-box{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;padding:16px;min-height:80px}
-  .memory-text{font-size:14px;color:var(--text);line-height:1.6}
-  .memory-empty{font-size:13px;color:var(--muted);font-style:italic}
-  .danger-btn{width:100%;padding:14px;background:rgba(226,75,74,0.15);border:0.5px solid rgba(226,75,74,0.3);border-radius:12px;color:#F09595;font-size:14px;cursor:pointer;transition:background 0.2s}
-  .danger-btn:active{background:rgba(226,75,74,0.25)}
+/* status cards row */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.stat-card{background:var(--white);border-radius:var(--r-md);padding:14px 12px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-icon{font-size:22px;margin-bottom:6px}
+.stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px}
+.stat-value{font-size:13px;font-weight:800;color:var(--text)}
+.stat-badge{display:inline-block;padding:2px 8px;border-radius:var(--r-full);font-size:10px;font-weight:800}
+.badge-green{background:var(--mint-light);color:#3D9970}
+.badge-blue{background:var(--brand-pale);color:var(--brand-dark)}
+.badge-yellow{background:var(--sunny-light);color:#C87F00}
 
-  /* settings */
-  .field-label{font-size:12px;color:var(--muted);margin-bottom:6px}
-  textarea,input,select{width:100%;background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;padding:12px 14px;outline:none;font-family:inherit;resize:none;-webkit-appearance:none;appearance:none}
-  textarea:focus,input:focus,select:focus{border-color:var(--purple)}
-  select option{background:#2a1248;color:var(--text)}
-  .save-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
-  .save-btn:active{opacity:0.85}
-  .save-btn:disabled{opacity:0.5;cursor:not-allowed}
-  .field{margin-bottom:16px}
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(93,202,165,0.9);color:#04342C;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:100}
-  .toast.show{opacity:1}
-  .toast.error{background:rgba(226,75,74,0.9);color:#fff}
+/* section */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:16px;font-weight:900;color:var(--text)}
+.section-tag{font-size:11px;font-weight:700;color:var(--muted)}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick-card{background:var(--white);border-radius:var(--r-md);padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform 0.15s}
+.quick-card:active{transform:scale(0.97)}
+.quick-card-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.quick-card-text .label{font-size:13px;font-weight:800;color:var(--text)}
+.quick-card-text .sub{font-size:11px;font-weight:600;color:var(--muted);margin-top:1px}
 
-  /* wifi */
-  .wifi-status{font-size:12px;color:var(--muted);text-align:center;margin-top:8px}
+/* last convo preview */
+.convo-card{background:var(--white);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:20px}
+.convo-msg{margin-bottom:10px}
+.convo-msg:last-child{margin-bottom:0}
+.convo-who{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px}
+.convo-who.plush{color:var(--brand)}
+.convo-who.user{color:var(--coral);text-align:right}
+.bubble-row{display:flex}
+.bubble-row.right{justify-content:flex-end}
+.bubble{display:inline-block;padding:9px 13px;border-radius:16px;font-size:13px;font-weight:600;line-height:1.4;max-width:82%}
+.bubble.plush{background:var(--brand-pale);color:var(--text);border-bottom-left-radius:4px}
+.bubble.user{background:var(--coral-light);color:var(--text);border-bottom-right-radius:4px}
 
-  /* confirm modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s}
-  .modal-bg.show{opacity:1;pointer-events:all}
-  .modal{background:#2a1248;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s ease}
-  .modal-bg.show .modal{transform:translateY(0)}
-  .modal-title{font-size:17px;font-weight:600;margin-bottom:8px}
-  .modal-desc{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
-  .modal-btns{display:flex;gap:10px}
-  .modal-btn{flex:1;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none}
-  .modal-btn.cancel{background:var(--bg3);color:var(--text)}
-  .modal-btn.confirm{background:rgba(226,75,74,0.8);color:#fff}
+/* ── HISTORY PAGE ── */
+.history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;margin-top:4px}
+.msg-wrap{display:flex;flex-direction:column;gap:12px}
+.msg-item{}
+.msg-item.right .bubble-row{justify-content:flex-end}
+.empty-state{text-align:center;padding:60px 0 40px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:14px;font-weight:700}
+.empty-sub{font-size:12px;margin-top:4px;font-weight:600}
 
-  /* scrollbar */
-  ::-webkit-scrollbar{width:0}
+/* ── MEMORY PAGE ── */
+.memory-banner{background:linear-gradient(135deg,var(--brand),var(--brand-dark));border-radius:var(--r-xl);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.memory-banner::after{content:'🧠';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:44px;opacity:0.25}
+.memory-banner-icon{width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.memory-banner-text .title{color:#fff;font-size:15px;font-weight:900}
+.memory-banner-text .sub{color:rgba(255,255,255,0.75);font-size:12px;font-weight:600;margin-top:2px}
+.memory-box{background:var(--white);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow-sm);min-height:80px;margin-bottom:16px}
+.memory-text{font-size:14px;font-weight:600;color:var(--text);line-height:1.6}
+.memory-empty{font-size:13px;font-weight:600;color:var(--muted);font-style:italic}
+.mem-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.mem-stat{background:var(--white);border-radius:var(--r-md);padding:14px;box-shadow:var(--shadow-sm);text-align:center}
+.mem-stat-num{font-size:24px;font-weight:900;color:var(--brand)}
+.mem-stat-label{font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
+.danger-btn{width:100%;padding:15px;background:var(--coral-light);border:2px solid rgba(255,127,127,0.3);border-radius:var(--r-md);color:var(--coral);font-size:14px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.danger-btn:active{background:#ffd0d0}
 
-  /* bottom safe area */
-  .bottompad{height:env(safe-area-inset-bottom,0)}
+/* ── SETTINGS PAGE ── */
+.settings-section{margin-bottom:24px}
+.field-label{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
+textarea,input,select{width:100%;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:14px;font-weight:600;font-family:'Nunito',sans-serif;padding:12px 14px;outline:none;resize:none;-webkit-appearance:none;appearance:none;transition:border-color 0.2s}
+textarea:focus,input:focus,select:focus{border-color:var(--brand)}
+select option{background:var(--white)}
+.save-btn{width:100%;padding:16px;background:var(--brand);border:none;border-radius:var(--r-md);color:#fff;font-size:15px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px rgba(143,160,202,0.4)}
+.save-btn:active{transform:scale(0.98)}
+.save-btn:disabled{opacity:0.5;cursor:not-allowed}
+.divider{height:2px;background:var(--border);border-radius:2px;margin:24px 0}
+.wifi-section{background:var(--brand-pale);border-radius:var(--r-lg);padding:18px}
+.wifi-title{font-size:14px;font-weight:900;color:var(--brand-dark);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.wifi-btn{width:100%;padding:14px;background:var(--brand);border:none;border-radius:var(--r-md);color:#fff;font-size:14px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:12px;transition:all 0.2s}
+.wifi-btn:active{opacity:0.85}
+.wifi-status{font-size:12px;font-weight:600;color:var(--brand-dark);text-align:center;margin-top:8px;min-height:16px}
+.secret-wrap{background:var(--white);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm)}
+
+/* toast */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 22px;border-radius:var(--r-full);font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 8px 24px rgba(61,74,107,0.3)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--mint)}
+.toast.error{background:var(--coral)}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(61,74,107,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(4px)}
+.modal-bg.show{opacity:1;pointer-events:all}
+.modal{background:var(--white);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:28px 24px 36px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1)}
+.modal-bg.show .modal{transform:translateY(0)}
+.modal-handle{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 20px}
+.modal-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.modal-title{font-size:18px;font-weight:900;text-align:center;margin-bottom:8px}
+.modal-desc{font-size:13px;font-weight:600;color:var(--muted);text-align:center;margin-bottom:24px;line-height:1.5}
+.modal-btns{display:flex;gap:10px}
+.modal-btn{flex:1;padding:15px;border-radius:var(--r-md);font-size:14px;font-weight:800;cursor:pointer;border:none;font-family:'Nunito',sans-serif}
+.modal-btn.cancel{background:var(--bg);color:var(--text)}
+.modal-btn.confirm{background:var(--coral);color:#fff}
+
+/* scrollbar */
+::-webkit-scrollbar{display:none}
 </style>
 </head>
 <body>
 
+<!-- bg blobs -->
+<div class="bg-blob bg-blob-1"></div>
+<div class="bg-blob bg-blob-2"></div>
+<div class="bg-blob bg-blob-3"></div>
+
+<!-- Header -->
 <div class="header">
-  <div class="plush-wrap">
-    <div class="pulse"></div>
-    <div class="pulse pulse2"></div>
-    <div class="plush-ring">🧸</div>
-  </div>
-  <div class="title">PlushMate</div>
-  <div class="status">
-    <div class="dot" id="status-dot"></div>
-    <span class="status-txt" id="status-txt">Conectando...</span>
+  <div class="header-top">
+    <div class="logo-wrap">
+      <div class="logo-bear">🐻</div>
+      <span class="logo-text">Plush<span>Mate</span></span>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <div class="status-dot pulsing" id="status-dot"></div>
+        <span id="status-txt">Conectando...</span>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Nav -->
 <div class="nav">
-  <button class="nav-btn active" onclick="goPage('home',this)">
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
-    <span>Inicio</span>
-    <div class="nav-indicator"></div>
+  <button class="nav-btn active" onclick="goPage('home',this)" id="nav-home">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Inicio
   </button>
-  <button class="nav-btn" onclick="goPage('history',this)">
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M8 10h8M8 14h5M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
-    <span>Chat</span>
-    <div class="nav-indicator"></div>
+  <button class="nav-btn" onclick="goPage('history',this)" id="nav-history">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 10h8M8 14h5M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
+    Chat
   </button>
-  <button class="nav-btn" onclick="goPage('memory',this)">
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
-    <span>Memoria</span>
-    <div class="nav-indicator"></div>
+  <button class="nav-btn" onclick="goPage('memory',this)" id="nav-memory">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
+    Memoria
   </button>
-  <button class="nav-btn" onclick="goPage('settings',this)">
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    <span>Ajustes</span>
-    <div class="nav-indicator"></div>
+  <button class="nav-btn" onclick="goPage('settings',this)" id="nav-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Ajustes
   </button>
 </div>
 
@@ -164,83 +241,121 @@
 
   <!-- HOME -->
   <div class="page active" id="page-home">
-    <div class="activate-section">
-      <button class="activate-btn" id="activate-btn" onmousedown="startActivate()" onmouseup="stopActivate()" onmouseleave="stopActivate()" ontouchstart="startActivate()" ontouchend="stopActivate()" ontouchcancel="stopActivate()">
-        <div class="activate-inner">
-          <div class="mic-circle">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
-          </div>
-          <div class="btn-texts">
-            <div class="btn-title" id="btn-title">Activar PlushMate</div>
-            <div class="btn-sub" id="btn-sub">Mantén presionado para hablar</div>
-          </div>
+
+    <!-- Activate button -->
+    <div class="activate-card" id="activate-card"
+      onmousedown="startActivate()" onmouseup="stopActivate()" onmouseleave="stopActivate()"
+      ontouchstart="startActivate()" ontouchend="stopActivate()" ontouchcancel="stopActivate()">
+      <div class="act-inner">
+        <div class="act-icon" id="act-icon">🎙️</div>
+        <div class="act-texts">
+          <div class="act-title" id="act-title">Activar PlushMate</div>
+          <div class="act-sub" id="act-sub">Mantén presionado para hablar</div>
         </div>
-      </button>
+        <div class="act-arrow">›</div>
+      </div>
     </div>
 
-    <div class="section">
-      <div class="section-label">Estado del sistema</div>
-      <div class="card">
-        <div class="card-row">
-          <div class="card-row-left">
-            <div class="row-icon" style="background:rgba(127,119,221,0.2)">🤖</div>
-            <div><div class="row-label">Modelo IA</div><div class="row-sub" id="status-model">—</div></div>
-          </div>
-          <span class="tag purple">activo</span>
+    <!-- Stats row -->
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-label">Modelo</div>
+        <div class="stat-value"><span class="stat-badge badge-blue" id="stat-model">IA</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎙️</div>
+        <div class="stat-label">Voz</div>
+        <div class="stat-value"><span class="stat-badge badge-green">activa</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💬</div>
+        <div class="stat-label">Mensajes</div>
+        <div class="stat-value"><span class="stat-badge badge-yellow" id="stat-msgs">0</span></div>
+      </div>
+    </div>
+
+    <!-- Last convo -->
+    <div class="section-header">
+      <span class="section-title">Última conversación</span>
+      <span class="section-tag" onclick="goPage('history', document.getElementById('nav-history'))" style="cursor:pointer;color:var(--brand);font-weight:800">Ver todo →</span>
+    </div>
+    <div class="convo-card" id="home-preview">
+      <div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px;font-weight:600">Sin conversaciones aún 💭</div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="section-header">
+      <span class="section-title">Acciones rápidas</span>
+    </div>
+    <div class="quick-grid">
+      <div class="quick-card" onclick="goPage('memory', document.getElementById('nav-memory'))">
+        <div class="quick-card-icon" style="background:var(--lavender-light)">🧠</div>
+        <div class="quick-card-text">
+          <div class="label">Memoria</div>
+          <div class="sub">Lo que recuerda</div>
         </div>
-        <div class="card-row">
-          <div class="card-row-left">
-            <div class="row-icon" style="background:rgba(93,202,165,0.2)">🎙️</div>
-            <div><div class="row-label">Reconocimiento de voz</div><div class="row-sub">Deepgram Nova-2</div></div>
-          </div>
-          <span class="tag green">listo</span>
+      </div>
+      <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
+        <div class="quick-card-icon" style="background:var(--sunny-light)">⚙️</div>
+        <div class="quick-card-text">
+          <div class="label">Ajustes</div>
+          <div class="sub">Personalizar</div>
         </div>
-        <div class="card-row" style="border-bottom:none">
-          <div class="card-row-left">
-            <div class="row-icon" style="background:rgba(212,83,126,0.2)">🔊</div>
-            <div><div class="row-label">Voz</div><div class="row-sub">ElevenLabs v3</div></div>
-          </div>
-          <span class="tag green">listo</span>
+      </div>
+      <div class="quick-card" onclick="confirmClear()">
+        <div class="quick-card-icon" style="background:var(--coral-light)">🗑️</div>
+        <div class="quick-card-text">
+          <div class="label">Borrar</div>
+          <div class="sub">Limpiar memoria</div>
+        </div>
+      </div>
+      <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
+        <div class="quick-card-icon" style="background:var(--mint-light)">📶</div>
+        <div class="quick-card-text">
+          <div class="label">WiFi</div>
+          <div class="sub">Cambiar red</div>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-label">Última conversación</div>
-      <div class="card" id="home-preview">
-        <div class="card-row" style="border-bottom:none">
-          <span style="color:var(--muted);font-size:13px">Sin conversaciones aún</span>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- HISTORY -->
   <div class="page" id="page-history">
-    <div class="section" style="margin-top:8px">
-      <div class="section-label" id="history-count">Historial · 0 mensajes</div>
-      <div id="history-list"><div class="empty-state">Sin conversaciones en esta sesión</div></div>
+    <div class="history-header">
+      <span class="section-title">Historial de chat</span>
+      <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
+    </div>
+    <div id="history-list">
+      <div class="empty-state">
+        <div class="empty-icon">💭</div>
+        <div class="empty-text">Sin conversaciones</div>
+        <div class="empty-sub">Activa a PlushMate para comenzar</div>
+      </div>
     </div>
   </div>
 
   <!-- MEMORY -->
   <div class="page" id="page-memory">
-    <div class="section" style="margin-top:8px">
-      <div class="section-label">Resumen persistente</div>
-      <div class="memory-box">
-        <div id="memory-content" class="memory-empty">Cargando...</div>
+    <div class="memory-banner">
+      <div class="memory-banner-icon">🧠</div>
+      <div class="memory-banner-text">
+        <div class="title">Memoria persistente</div>
+        <div class="sub">PlushMate recuerda sobre ti</div>
       </div>
-      <div style="color:var(--muted);font-size:11px;margin-top:8px;padding:0 4px">Se actualiza automáticamente cada 5 interacciones</div>
     </div>
-    <div class="section">
-      <div class="section-label">Acciones</div>
-      <div class="card">
-        <div class="card-row" style="border-bottom:none">
-          <div class="card-row-left">
-            <div class="row-icon" style="background:rgba(127,119,221,0.2)">💬</div>
-            <div><div class="row-label">Mensajes en sesión actual</div><div class="row-sub" id="session-count">0 mensajes</div></div>
-          </div>
-        </div>
+    <div class="memory-box">
+      <div id="memory-content" class="memory-empty">Cargando memoria...</div>
+    </div>
+    <div class="mem-stats">
+      <div class="mem-stat">
+        <div class="mem-stat-num" id="mem-msgs">0</div>
+        <div class="mem-stat-label">Mensajes sesión</div>
+      </div>
+      <div class="mem-stat">
+        <div class="mem-stat-num" id="mem-words">0</div>
+        <div class="mem-stat-label">Palabras guardadas</div>
       </div>
     </div>
     <button class="danger-btn" onclick="confirmClear()">🗑️ Borrar toda la memoria</button>
@@ -248,59 +363,49 @@
 
   <!-- SETTINGS -->
   <div class="page" id="page-settings">
-    <div style="margin-top:8px">
 
-      <div class="section">
-        <div class="section-label">Personalidad</div>
-        <div class="field">
-          <textarea id="cfg-persona" rows="4" placeholder="Describe cómo debe comportarse PlushMate..."></textarea>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">Voz de ElevenLabs</div>
-        <div class="field">
-          <input id="cfg-voice" type="text" placeholder="Voice ID (ej: aaf0KU31jmlzVPqltvJY)">
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-label">Modelo de IA (OpenRouter)</div>
-        <div class="field">
-          <select id="cfg-model">
-            <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
-            <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
-            <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
-            <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-          </select>
-        </div>
-      </div>
-
-      <button class="save-btn" id="save-btn" onclick="saveConfig()">Guardar cambios</button>
-
-      <div style="margin-top:28px">
-        <div class="section-label">Red WiFi del peluche</div>
-        <div class="field">
-          <div class="field-label">Nombre de red (SSID)</div>
-          <input id="wifi-ssid" type="text" placeholder="Mi red WiFi">
-        </div>
-        <div class="field">
-          <div class="field-label">Contraseña</div>
-          <input id="wifi-pass" type="password" placeholder="Contraseña">
-        </div>
-        <button class="save-btn" onclick="sendWifi()" style="background:rgba(127,119,221,0.5);border:0.5px solid var(--purple)">📶 Enviar al peluche</button>
-        <div class="wifi-status" id="wifi-status"></div>
-      </div>
-
-      <div style="margin-top:28px;margin-bottom:12px">
-        <div class="section-label">Seguridad</div>
-        <div class="field">
-          <div class="field-label">App Secret (APP_SECRET en Railway)</div>
-          <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
-        </div>
-      </div>
-
+    <div class="settings-section">
+      <div class="field-label">🐻 Personalidad de PlushMate</div>
+      <textarea id="cfg-persona" rows="4" placeholder="Describe cómo debe comportarse PlushMate..."></textarea>
     </div>
+
+    <div class="settings-section">
+      <div class="field-label">🎙️ Voice ID de ElevenLabs</div>
+      <input id="cfg-voice" type="text" placeholder="aaf0KU31jmlzVPqltvJY">
+    </div>
+
+    <div class="settings-section">
+      <div class="field-label">🤖 Modelo de IA (OpenRouter)</div>
+      <select id="cfg-model">
+        <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
+        <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
+        <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
+        <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
+      </select>
+    </div>
+
+    <button class="save-btn" id="save-btn" onclick="saveConfig()">✨ Guardar cambios</button>
+
+    <div class="divider"></div>
+
+    <div class="wifi-section">
+      <div class="wifi-title">📶 Cambiar red WiFi del peluche</div>
+      <div class="field-label" style="margin-top:0">Nombre de red (SSID)</div>
+      <input id="wifi-ssid" type="text" placeholder="Nombre de tu WiFi" style="margin-bottom:10px">
+      <div class="field-label">Contraseña</div>
+      <input id="wifi-pass" type="password" placeholder="Contraseña">
+      <button class="wifi-btn" onclick="sendWifi()">📡 Enviar al peluche</button>
+      <div class="wifi-status" id="wifi-status"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="secret-wrap">
+      <div class="field-label">🔑 App Secret</div>
+      <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:6px">Debe coincidir con APP_SECRET en Railway</div>
+    </div>
+
   </div>
 
 </div>
@@ -308,9 +413,11 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Confirm modal -->
+<!-- Modal -->
 <div class="modal-bg" id="modal">
   <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">🗑️</div>
     <div class="modal-title">¿Borrar toda la memoria?</div>
     <div class="modal-desc">Se eliminará el historial de esta sesión y el resumen guardado en Supabase. PlushMate olvidará todo lo que sabe de ti.</div>
     <div class="modal-btns">
@@ -320,14 +427,14 @@
   </div>
 </div>
 
-<div class="bottompad"></div>
-
 <script>
 const BASE = window.location.origin;
 let SECRET = localStorage.getItem('pm_secret') || 'plushmate2024';
 
-function headers() {
-  return { 'Content-Type': 'application/json', 'X-App-Secret': SECRET };
+function headers(ct) {
+  const h = {'X-App-Secret': SECRET};
+  if (ct) h['Content-Type'] = 'application/json';
+  return h;
 }
 
 // ── Nav ──────────────────────────────────────────────────────────────────────
@@ -335,19 +442,19 @@ function goPage(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   if (id === 'history') loadHistory();
   if (id === 'memory') loadMemory();
   if (id === 'settings') loadConfig();
 }
 
 // ── Toast ────────────────────────────────────────────────────────────────────
-function toast(msg, isError) {
+function toast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'toast show' + (isError ? ' error' : '');
+  t.className = 'toast show' + (type ? ' ' + type : '');
   clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), 2500);
+  t._t = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
 // ── Status ───────────────────────────────────────────────────────────────────
@@ -355,70 +462,66 @@ async function checkStatus() {
   try {
     const r = await fetch(BASE + '/health');
     const d = await r.json();
-    setStatus('Conectado · listo', false, false);
+    setStatus('listo', false);
+    document.getElementById('stat-msgs').textContent = d.history_len || 0;
   } catch(e) {
-    setStatus('Sin conexión', true, false);
+    setStatus('sin conexión', true);
   }
 }
-function setStatus(txt, isRed, isOrange) {
+function setStatus(txt, isErr) {
   const dot = document.getElementById('status-dot');
   const label = document.getElementById('status-txt');
-  dot.className = 'dot' + (isRed ? ' red' : isOrange ? ' orange' : '');
-  label.className = 'status-txt' + (isRed ? ' red' : isOrange ? ' orange' : '');
-  label.textContent = txt;
+  dot.className = 'status-dot' + (isErr ? ' red' : ' pulsing');
+  label.textContent = isErr ? 'sin conexión' : txt;
+  label.style.color = isErr ? 'var(--coral)' : '';
 }
 
 // ── Activate ─────────────────────────────────────────────────────────────────
 let isHolding = false;
-
 async function startActivate() {
   if (isHolding) return;
   isHolding = true;
-  const btn = document.getElementById('activate-btn');
-  const title = document.getElementById('btn-title');
-  const sub = document.getElementById('btn-sub');
-  btn.classList.add('listening');
+  const card = document.getElementById('activate-card');
+  const icon = document.getElementById('act-icon');
+  const title = document.getElementById('act-title');
+  const sub = document.getElementById('act-sub');
+  card.classList.add('listening');
+  icon.textContent = '🎙️';
+  icon.classList.add('recording');
   title.textContent = 'Escuchando...';
-  sub.textContent = 'Suelta para enviar';
-  setStatus('PlushMate escuchando...', false, true);
+  sub.textContent = 'Suelta cuando termines';
+  setStatus('grabando...', false);
+  document.getElementById('status-dot').className = 'status-dot orange';
   try {
-    await fetch(BASE + '/command', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ action: 'activate' })
-    });
-    toast('🎙️ PlushMate escuchando...');
+    await fetch(BASE + '/command', {method:'POST', headers:headers(true), body: JSON.stringify({action:'activate'})});
+    toast('🎙️ PlushMate te escucha!');
   } catch(e) {
-    toast('Error al conectar', true);
+    toast('Error al conectar', 'error');
     resetBtn();
   }
 }
-
 async function stopActivate() {
   if (!isHolding) return;
   isHolding = false;
-  try {
-    await fetch(BASE + '/command', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ action: 'stop' })
-    });
-    toast('✓ Procesando respuesta...');
-  } catch(e) {
-    toast('Error al detener', true);
-  }
   resetBtn();
+  try {
+    await fetch(BASE + '/command', {method:'POST', headers:headers(true), body: JSON.stringify({action:'stop'})});
+    toast('✨ Procesando respuesta...');
+  } catch(e) {}
 }
-
 function resetBtn() {
   isHolding = false;
-  const btn = document.getElementById('activate-btn');
-  const title = document.getElementById('btn-title');
-  const sub = document.getElementById('btn-sub');
-  btn.classList.remove('listening');
+  const card = document.getElementById('activate-card');
+  const icon = document.getElementById('act-icon');
+  const title = document.getElementById('act-title');
+  const sub = document.getElementById('act-sub');
+  card.classList.remove('listening');
+  icon.classList.remove('recording');
+  icon.textContent = '🎙️';
   title.textContent = 'Activar PlushMate';
   sub.textContent = 'Mantén presionado para hablar';
-  setStatus('Conectado · listo', false, false);
+  setStatus('listo', false);
+  document.getElementById('status-dot').className = 'status-dot pulsing';
 }
 
 // ── History ──────────────────────────────────────────────────────────────────
@@ -427,32 +530,32 @@ async function loadHistory() {
     const r = await fetch(BASE + '/memory');
     const d = await r.json();
     const history = d.history || [];
-    document.getElementById('history-count').textContent = `Historial · ${history.length} mensajes`;
-    document.getElementById('session-count').textContent = `${history.length} mensajes`;
+    document.getElementById('history-count-badge').textContent = history.length + ' msgs';
+    document.getElementById('stat-msgs').textContent = history.length;
     const el = document.getElementById('history-list');
     if (history.length === 0) {
-      el.innerHTML = '<div class="empty-state">Sin conversaciones en esta sesión</div>';
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">💭</div><div class="empty-text">Sin conversaciones</div><div class="empty-sub">Activa a PlushMate para comenzar</div></div>';
     } else {
-      el.innerHTML = history.map(m => `
-        <div class="msg ${m.role === 'user' ? 'user' : ''}">
-          <div class="msg-label">${m.role === 'user' ? 'Tú' : 'PlushMate'}</div>
-          <div class="bubble ${m.role === 'user' ? 'user' : 'plush'}">${escHtml(m.content)}</div>
-        </div>`).join('');
-      el.scrollTop = el.scrollHeight;
+      el.innerHTML = '<div class="msg-wrap">' + history.map(m => `
+        <div class="msg-item ${m.role === 'user' ? 'right' : ''}">
+          <div class="convo-who ${m.role === 'user' ? 'user' : 'plush'}">${m.role === 'user' ? 'Tú' : '🐻 PlushMate'}</div>
+          <div class="bubble-row ${m.role === 'user' ? 'right' : ''}">
+            <div class="bubble ${m.role === 'user' ? 'user' : 'plush'}">${escHtml(m.content)}</div>
+          </div>
+        </div>`).join('') + '</div>';
     }
     updateHomePreview(history);
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
-
 function updateHomePreview(history) {
   const el = document.getElementById('home-preview');
   const last = history.slice(-2);
   if (last.length === 0) return;
   el.innerHTML = last.map(m => `
-    <div class="card-row" style="${m === last[last.length-1] ? 'border-bottom:none' : ''}">
-      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
-        <div style="font-size:11px;color:var(--muted)">${m.role === 'user' ? 'Tú' : 'PlushMate'}</div>
-        <div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(m.content)}</div>
+    <div class="convo-msg">
+      <div class="convo-who ${m.role === 'user' ? 'user' : 'plush'}">${m.role === 'user' ? 'Tú' : '🐻 PlushMate'}</div>
+      <div class="bubble-row ${m.role === 'user' ? 'right' : ''}">
+        <div class="bubble ${m.role === 'user' ? 'user' : 'plush'}" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90%">${escHtml(m.content.substring(0,80) + (m.content.length > 80 ? '...' : ''))}</div>
       </div>
     </div>`).join('');
 }
@@ -464,20 +567,20 @@ async function loadMemory() {
     const r = await fetch(BASE + '/memory');
     const d = await r.json();
     const summary = d.summary || '';
-    document.getElementById('session-count').textContent = `${d.history_len || 0} mensajes`;
+    document.getElementById('mem-msgs').textContent = d.history_len || 0;
+    document.getElementById('mem-words').textContent = summary ? summary.split(' ').length : 0;
     if (summary) {
       el.className = 'memory-text';
       el.textContent = summary;
     } else {
       el.className = 'memory-empty';
-      el.textContent = 'Sin memoria guardada aún. PlushMate aprenderá sobre ti con el tiempo.';
+      el.textContent = 'Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻';
     }
   } catch(e) {
     el.className = 'memory-empty';
     el.textContent = 'Error al cargar la memoria.';
   }
 }
-
 function confirmClear() {
   document.getElementById('modal').classList.add('show');
 }
@@ -487,60 +590,44 @@ function closeModal() {
 async function clearMemory() {
   closeModal();
   try {
-    const r = await fetch(BASE + '/memory', { method: 'DELETE', headers: headers() });
-    if (r.ok) {
-      toast('Memoria borrada');
-      loadMemory();
-    } else {
-      toast('Error al borrar', true);
-    }
-  } catch(e) { toast('Error de conexión', true); }
+    const r = await fetch(BASE + '/memory', {method:'DELETE', headers:headers(true)});
+    if (r.ok) { toast('🗑️ Memoria borrada', 'success'); loadMemory(); document.getElementById('stat-msgs').textContent = 0; }
+    else toast('Error al borrar', 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
 }
 
 // ── Config ───────────────────────────────────────────────────────────────────
 async function loadConfig() {
   document.getElementById('cfg-secret').value = SECRET;
   try {
-    const r = await fetch(BASE + '/config', { headers: headers() });
-    if (!r.ok) { toast('Secret incorrecto', true); return; }
+    const r = await fetch(BASE + '/config', {headers: headers()});
+    if (!r.ok) { toast('Secret incorrecto', 'error'); return; }
     const d = await r.json();
     document.getElementById('cfg-persona').value = d.persona || '';
     document.getElementById('cfg-voice').value = d.voice_id || '';
-    const modelSel = document.getElementById('cfg-model');
-    const exists = [...modelSel.options].some(o => o.value === d.model);
-    if (!exists) {
-      const opt = document.createElement('option');
-      opt.value = d.model; opt.textContent = d.model;
-      modelSel.appendChild(opt);
+    const sel = document.getElementById('cfg-model');
+    if (d.model) {
+      const exists = [...sel.options].some(o => o.value === d.model);
+      if (!exists) { const opt = document.createElement('option'); opt.value = d.model; opt.textContent = d.model.split('/').pop(); sel.appendChild(opt); }
+      sel.value = d.model;
     }
-    modelSel.value = d.model || '';
-    document.getElementById('status-model').textContent = (d.model || '').split('/').pop();
-  } catch(e) { toast('Error cargando config', true); }
+    const modelShort = (d.model || '').split('/').pop().split(':')[0];
+    document.getElementById('stat-model').textContent = modelShort.length > 8 ? modelShort.substring(0,8) + '…' : modelShort;
+  } catch(e) {}
 }
-
 async function saveConfig() {
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
-    const r = await fetch(BASE + '/config', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({
-        persona: document.getElementById('cfg-persona').value,
-        voice_id: document.getElementById('cfg-voice').value,
-        model: document.getElementById('cfg-model').value
-      })
-    });
-    if (r.ok) {
-      toast('✓ Configuración guardada');
-      document.getElementById('status-model').textContent = document.getElementById('cfg-model').value.split('/').pop();
-    } else {
-      toast('Error al guardar', true);
-    }
-  } catch(e) { toast('Error de conexión', true); }
-  btn.disabled = false; btn.textContent = 'Guardar cambios';
+    const r = await fetch(BASE + '/config', {method:'POST', headers:headers(true), body: JSON.stringify({
+      persona: document.getElementById('cfg-persona').value,
+      voice_id: document.getElementById('cfg-voice').value,
+      model: document.getElementById('cfg-model').value
+    })});
+    toast(r.ok ? '✨ Guardado!' : 'Error al guardar', r.ok ? 'success' : 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
+  btn.disabled = false; btn.textContent = '✨ Guardar cambios';
 }
-
 function saveSecret() {
   SECRET = document.getElementById('cfg-secret').value;
   localStorage.setItem('pm_secret', SECRET);
@@ -550,36 +637,29 @@ function saveSecret() {
 async function sendWifi() {
   const ssid = document.getElementById('wifi-ssid').value.trim();
   const pass = document.getElementById('wifi-pass').value;
-  if (!ssid) { toast('Escribe el nombre de la red', true); return; }
+  if (!ssid) { toast('Escribe el nombre de la red', 'error'); return; }
   const status = document.getElementById('wifi-status');
   status.textContent = 'Enviando...';
   try {
-    const r = await fetch(BASE + '/wifi', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ ssid, password: pass })
-    });
+    const r = await fetch(BASE + '/wifi', {method:'POST', headers:headers(true), body: JSON.stringify({ssid, password:pass})});
     if (r.ok) {
-      status.textContent = '✓ Comando enviado. El peluche cambiará de red en ~3 segundos.';
-      toast('✓ WiFi enviado al peluche');
+      status.textContent = '✓ Enviado! El peluche cambiará de red en ~3s';
+      toast('📡 WiFi enviado', 'success');
       document.getElementById('wifi-ssid').value = '';
       document.getElementById('wifi-pass').value = '';
-    } else {
-      status.textContent = 'Error al enviar';
-      toast('Error', true);
-    }
-  } catch(e) { status.textContent = 'Error de conexión'; toast('Error', true); }
+    } else { status.textContent = 'Error al enviar'; }
+  } catch(e) { status.textContent = 'Error de conexión'; }
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 checkStatus();
 setInterval(checkStatus, 30000);
 loadConfig();
+// prevent default touch behavior on activate button
+document.getElementById('activate-card').addEventListener('touchstart', e => e.preventDefault(), {passive:false});
 </script>
 </body>
 </html>
