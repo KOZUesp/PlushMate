@@ -3,7 +3,7 @@
 # Memoria: historial de sesión (RAM) + resumen persistente (Supabase)
 # Control remoto: polling desde ESP32 + app web PWA
 
-import requests, os, tempfile, uuid, threading, time, struct, json, hashlib
+import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re
 from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
@@ -164,17 +164,21 @@ def process_audio():
         print(f"[PlushMate] Transcripción: {transcript}")
         if not transcript:
             return jsonify({'error': 'No speech detected'}), 400
-        conversation_history.append({'role': 'user', 'content': transcript})
+        conversation_history.append({'role': 'user', 'content': transcript, 'audio_url': None})
         ai_text = chat_with_memory()
         print(f"[PlushMate] Respuesta IA: {ai_text}")
-        conversation_history.append({'role': 'assistant', 'content': ai_text})
+        # Strip ElevenLabs tags for display (keep original for TTS)
+        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
+        conversation_history.append({'role': 'assistant', 'content': display_text, 'audio_url': None})
         if len(conversation_history) > HISTORY_LIMIT:
             conversation_history = conversation_history[-HISTORY_LIMIT:]
         interaction_count += 1
         threading.Thread(target=update_summary_if_needed, daemon=True).start()
         audio_filename = tts(ai_text)
         audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-        return jsonify({'transcript': transcript, 'response': ai_text, 'audio_url': audio_url})
+        # Attach audio_url to last assistant message
+        conversation_history[-1]['audio_url'] = audio_url
+        return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
     except Exception as e:
         print(f"[PlushMate] ERROR: {e}")
         import traceback; traceback.print_exc()
@@ -210,6 +214,14 @@ def get_memory():
 def clear_memory():
     if not check_auth():
         return jsonify({'error': 'Unauthorized'}), 401
+    # PIN verification required
+    body = request.json or {}
+    pin = body.get('pin', '')
+    if pin:
+        row = sb_get('pin')
+        stored_hash = row.get('hash', '') if row else ''
+        if stored_hash and pin_hash(pin) != stored_hash:
+            return jsonify({'error': 'PIN incorrecto'}), 401
     global conversation_history, interaction_count
     conversation_history = []
     interaction_count = 0
