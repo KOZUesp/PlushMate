@@ -138,6 +138,10 @@ def index():
 def manifest():
     return send_file('static/manifest.json', mimetype='application/manifest+json')
 
+@app.route('/.well-known/assetlinks.json')
+def assetlinks():
+    return send_file('static/assetlinks.json', mimetype='application/json')
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'ok', 'version': '4.0', 'history_len': len(conversation_history)})
