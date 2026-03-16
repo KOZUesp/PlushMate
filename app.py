@@ -21,6 +21,7 @@ OPENROUTER_API_KEY  = os.environ.get('OPENROUTER_API_KEY', '').strip()
 ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY', '').strip()
 ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY').strip()
 SUPABASE_URL        = os.environ.get('SUPABASE_URL', '').strip()
+OPENROUTER_MODEL    = os.environ.get('OPENROUTER_MODEL', 'arcee-ai/trinity-large-preview:free').strip()
 SUPABASE_KEY        = os.environ.get('SUPABASE_KEY', '').strip()
 
 _server_url = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
@@ -115,7 +116,7 @@ Nuevo resumen:"""
                 'X-Title': 'PlushMate'
             },
             json={
-                'model': 'arcee-ai/trinity-large-preview:free',
+                'model': OPENROUTER_MODEL,
                 'messages': [{'role': 'user', 'content': prompt}],
                 'max_tokens': 200
             },
@@ -284,7 +285,7 @@ def chat_with_memory() -> str:
             'X-Title': 'PlushMate'
         },
         json={
-            'model': 'arcee-ai/trinity-large-preview:free',
+            'model': OPENROUTER_MODEL,
             'messages': messages,
             'max_tokens': 120
         },
