@@ -11,11 +11,11 @@ DEEPGRAM_API_KEY   = os.environ.get('DEEPGRAM_API_KEY', '').strip()
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '').strip()
 # Voz de edge-tts para español (sin API key necesaria)
 EDGE_TTS_VOICE = os.environ.get('EDGE_TTS_VOICE', 'es-MX-DaliaNeural').strip()
-SERVER_URL         = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
+_server_url = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
+SERVER_URL = _server_url if _server_url.startswith('http') else 'https://' + _server_url
 
-PERSONA = """Eres PlushMate, un peluche mágico con inteligencia artificial.
-Eres amable, divertido y cálido. Hablas siempre en español.
-Responde de forma corta y amigable, máximo 2 oraciones."""
+_default_persona = "Eres PlushMate, un peluche mágico con inteligencia artificial. Eres amable, divertido y cálido. Hablas siempre en español. Responde de forma corta y amigable, máximo 2 oraciones."
+PERSONA = os.environ.get('PERSONA', _default_persona).strip()
 
 AUDIO_DIR = '/tmp/plushmate_audio'
 os.makedirs(AUDIO_DIR, exist_ok=True)
