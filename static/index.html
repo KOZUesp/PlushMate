@@ -76,6 +76,31 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
+/* ─── AUDIO PLAYER ───────────────────────── */
+.audio-btn{display:inline-flex;align-items:center;gap:5px;background:var(--brand-pale);border:none;border-radius:var(--r-full);padding:5px 12px 5px 8px;cursor:pointer;font-size:11px;font-weight:800;color:var(--brand);margin-top:7px;transition:all 0.15s;font-family:'Nunito',sans-serif}
+.audio-btn:active{background:var(--brand-light);transform:scale(0.97)}
+.audio-btn svg{width:14px;height:14px;flex-shrink:0}
+.audio-btn.playing{background:var(--brand);color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.audio-btn.playing svg{animation:spin 1s linear infinite}
+
+/* ─── PIN CONFIRM SHEET ───────────────────── */
+.pin-confirm-overlay{position:fixed;inset:0;background:rgba(61,74,107,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:600;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(6px)}
+.pin-confirm-overlay.show{opacity:1;pointer-events:all}
+.pin-confirm-sheet{background:var(--white);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:24px 24px 40px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1)}
+.pin-confirm-overlay.show .pin-confirm-sheet{transform:translateY(0)}
+.pin-mini-dots{display:flex;gap:10px;justify-content:center;margin:16px 0 8px}
+.pin-mini-dot{width:13px;height:13px;border-radius:50%;border:2.5px solid var(--border);transition:all 0.2s}
+.pin-mini-dot.filled{background:var(--brand);border-color:var(--brand)}
+.pin-mini-dot.error{background:var(--coral);border-color:var(--coral)}
+.pin-mini-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto}
+.pin-mini-key{height:52px;border-radius:14px;border:none;background:var(--bg);color:var(--text);font-size:20px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;transition:all 0.1s;display:flex;align-items:center;justify-content:center}
+.pin-mini-key:active{transform:scale(0.93);background:var(--brand-pale)}
+.pin-mini-key-empty{background:transparent;cursor:default}
+.pin-mini-key-empty:active{transform:none;background:transparent}
+.pin-mini-key-del{background:var(--brand-pale)}
+.pin-mini-key-del svg{width:18px;height:18px;color:var(--brand)}
+
 /* ─── MOTION PREFERENCE ──────────────────── */
 .no-motion *,.no-motion *::before,.no-motion *::after{
   animation-duration:0.01ms !important;
@@ -806,6 +831,43 @@ select option{background:var(--white)}
     </div>
   </div>
 
+
+<!-- ─── PIN CONFIRM OVERLAY ──────────────── -->
+<div class="pin-confirm-overlay" id="pin-confirm-overlay">
+  <div class="pin-confirm-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+    </div>
+    <div class="modal-title" id="pin-confirm-title">Confirmar con PIN</div>
+    <div class="modal-desc" id="pin-confirm-desc">Ingresa tu PIN para continuar</div>
+    <div class="pin-mini-dots" id="pin-mini-dots">
+      <div class="pin-mini-dot" id="pmd0"></div>
+      <div class="pin-mini-dot" id="pmd1"></div>
+      <div class="pin-mini-dot" id="pmd2"></div>
+      <div class="pin-mini-dot" id="pmd3"></div>
+    </div>
+    <div class="pin-error" id="pin-confirm-error" style="text-align:center"></div>
+    <div class="pin-mini-pad">
+      <button class="pin-mini-key" onclick="pinMiniKey('1')">1</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('2')">2</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('3')">3</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('4')">4</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('5')">5</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('6')">6</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('7')">7</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('8')">8</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('9')">9</button>
+      <button class="pin-mini-key pin-mini-key-empty"></button>
+      <button class="pin-mini-key" onclick="pinMiniKey('0')">0</button>
+      <button class="pin-mini-key pin-mini-key-del" onclick="pinMiniDel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2zM18 9l-6 6M12 9l6 6"/></svg>
+      </button>
+    </div>
+    <button class="modal-btn cancel" onclick="closePinConfirm()" style="margin-top:16px;width:100%">Cancelar</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast">
   <svg id="toast-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1167,13 +1229,20 @@ async function loadHistory() {
         <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
         <div class="empty-text">Sin conversaciones</div><div class="empty-sub">Activa a PlushMate para comenzar</div></div>`;
     } else {
-      el.innerHTML = '<div class="msg-wrap">' + history.map(m => `
-        <div class="msg-item ${m.role==='user'?'right':''}">
+      el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
+      const txt = stripTags(esc(m.content));
+      const audioBtn = (m.role === 'assistant' && m.audio_url)
+        ? `<button class="audio-btn" id="abtn-${i}" onclick="playAudio('${m.audio_url}', 'abtn-${i}')">
+            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Reproducir
+           </button>` : '';
+      return `<div class="msg-item ${m.role==='user'?'right':''}">
           <div class="convo-who ${m.role==='user'?'user':'plush'}">${m.role==='user'?'Tú':'PlushMate'}</div>
           <div class="bubble-row ${m.role==='user'?'right':''}">
-            <div class="bubble ${m.role==='user'?'user':'plush'}">${esc(m.content)}</div>
+            <div class="bubble ${m.role==='user'?'user':'plush'}">${txt}${audioBtn}</div>
           </div>
-        </div>`).join('') + '</div>';
+        </div>`;
+    }).join('') + '</div>';
       el.scrollTop = el.scrollHeight;
     }
     updateHomePreview(history);
@@ -1187,7 +1256,7 @@ function updateHomePreview(history) {
     <div class="convo-msg">
       <div class="convo-who ${m.role==='user'?'user':'plush'}">${m.role==='user'?'Tú':'PlushMate'}</div>
       <div class="bubble-row ${m.role==='user'?'right':''}">
-        <div class="bubble ${m.role==='user'?'user':'plush'}" style="font-size:12px">${esc(m.content.length>80?m.content.substring(0,80)+'...':m.content)}</div>
+        <div class="bubble ${m.role==='user'?'user':'plush'}" style="font-size:12px">${esc((c=>c.length>80?c.substring(0,80)+'...':c)(stripTags(m.content)))}</div>
       </div>
     </div>`).join('');
 }
@@ -1209,11 +1278,29 @@ function confirmClear() { playSound('tap'); document.getElementById('modal').cla
 function closeModal()   { document.getElementById('modal').classList.remove('show'); }
 async function clearMemory() {
   closeModal();
-  try {
-    const r = await fetch(BASE + '/memory', {method:'DELETE', headers:hdr(true)});
-    if (r.ok) { playSound('success'); toast('Memoria borrada', 'success'); loadMemory(); document.getElementById('stat-msgs').textContent=0; }
-    else toast('Error al borrar', 'error');
-  } catch(e) { toast('Error de conexión', 'error'); }
+  requirePin(
+    '¿Borrar memoria?',
+    'Confirma con tu PIN para continuar',
+    async (pin) => {
+      try {
+        const r = await fetch(BASE + '/memory', {
+          method:'DELETE', headers:hdr(true),
+          body: JSON.stringify({pin})
+        });
+        if (r.ok) {
+          playSound('success'); haptic('heavy');
+          toast('Memoria borrada', 'success');
+          loadMemory(); document.getElementById('stat-msgs').textContent=0;
+          closePinConfirm();
+          return true;
+        } else {
+          const d = await r.json();
+          if (d.error === 'PIN incorrecto') return false;
+          toast('Error al borrar', 'error'); closePinConfirm(); return true;
+        }
+      } catch(e) { toast('Error de conexión', 'error'); closePinConfirm(); return true; }
+    }
+  );
 }
 
 // ── Config ────────────────────────────────────────
@@ -1289,6 +1376,96 @@ async function sendWifi() {
 // ── Helpers ───────────────────────────────────────
 function hdr(ct) { const h={'X-App-Secret':SECRET}; if(ct) h['Content-Type']='application/json'; return h; }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── STRIP ELEVENLABS TAGS ────────────────────────
+function stripTags(text) {
+  return text.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+// ── AUDIO PLAYBACK ────────────────────────────────
+let currentAudio = null;
+let currentAudioBtn = null;
+function playAudio(url, btnId) {
+  haptic('light');
+  playSound('tap');
+  const btn = document.getElementById(btnId);
+  // If same button — stop
+  if (currentAudio && currentAudioBtn === btnId) {
+    currentAudio.pause();
+    currentAudio = null;
+    currentAudioBtn = null;
+    if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
+    return;
+  }
+  // Stop any playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    const prev = document.getElementById(currentAudioBtn);
+    if (prev) { prev.classList.remove('playing'); prev.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
+  }
+  currentAudio = new Audio(url);
+  currentAudioBtn = btnId;
+  if (btn) { btn.classList.add('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="10 15 10 9"/><polyline points="14 15 14 9"/></svg> Reproduciendo...'; }
+  currentAudio.play();
+  currentAudio.onended = () => {
+    currentAudio = null; currentAudioBtn = null;
+    haptic('light');
+    if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
+  };
+  currentAudio.onerror = () => {
+    currentAudio = null; currentAudioBtn = null;
+    if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
+    toast('Audio no disponible', 'error');
+  };
+}
+
+// ── PIN CONFIRM (para borrar memoria) ─────────────
+let pinConfirmCb = null;
+let pinMiniEntered = '';
+function requirePin(title, desc, callback) {
+  pinConfirmCb = callback;
+  pinMiniEntered = '';
+  document.getElementById('pin-confirm-title').textContent = title;
+  document.getElementById('pin-confirm-desc').textContent = desc;
+  document.getElementById('pin-confirm-error').textContent = '';
+  updatePinMiniDots();
+  document.getElementById('pin-confirm-overlay').classList.add('show');
+}
+function closePinConfirm() {
+  document.getElementById('pin-confirm-overlay').classList.remove('show');
+  pinConfirmCb = null; pinMiniEntered = '';
+}
+function pinMiniKey(k) {
+  if (pinMiniEntered.length >= 4) return;
+  haptic('light'); playSound('tap');
+  pinMiniEntered += k;
+  updatePinMiniDots();
+  if (pinMiniEntered.length === 4) setTimeout(submitPinMini, 120);
+}
+function pinMiniDel() {
+  if (!pinMiniEntered.length) return;
+  haptic('light');
+  pinMiniEntered = pinMiniEntered.slice(0,-1);
+  updatePinMiniDots();
+}
+function updatePinMiniDots() {
+  for (let i=0;i<4;i++) {
+    const d = document.getElementById('pmd'+i);
+    d.classList.toggle('filled', i < pinMiniEntered.length);
+    d.classList.remove('error');
+  }
+}
+async function submitPinMini() {
+  if (pinConfirmCb) {
+    const ok = await pinConfirmCb(pinMiniEntered);
+    if (!ok) {
+      haptic('error'); playSound('error');
+      for(let i=0;i<4;i++) document.getElementById('pmd'+i).classList.add('error');
+      document.getElementById('pin-confirm-error').textContent = 'PIN incorrecto';
+      setTimeout(() => { pinMiniEntered=''; updatePinMiniDots(); document.getElementById('pin-confirm-error').textContent=''; }, 900);
+    }
+  }
+}
 
 // ── ACCORDION ────────────────────────────────────
 function toggleAccordion(id) {
