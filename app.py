@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-DEEPGRAM_API_KEY    = os.environ.get('DEEPGRAM_API_KEY', '').strip()
+# STT now uses ElevenLabs Scribe (ELEVENLABS_API_KEY already configured above)
 OPENROUTER_API_KEY  = os.environ.get('OPENROUTER_API_KEY', '').strip()
 ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY', '').strip()
 ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY').strip()
@@ -289,19 +289,26 @@ def set_wifi():
 # ── Pipeline IA ───────────────────────────────────────────────────────────────
 
 def stt(wav_path: str) -> str:
+    """Speech-to-text usando ElevenLabs Scribe v1."""
     with open(wav_path, 'rb') as f:
         audio_data = f.read()
     r = requests.post(
-        'https://api.deepgram.com/v1/listen?model=nova-2&detect_language=true&smart_format=true&no_delay=true',
-        headers={'Authorization': f'Token {DEEPGRAM_API_KEY}', 'Content-Type': 'audio/wav'},
-        data=audio_data, timeout=30
+        'https://api.elevenlabs.io/v1/speech-to-text',
+        headers={'xi-api-key': ELEVENLABS_API_KEY},
+        files={'file': ('audio.wav', audio_data, 'audio/wav')},
+        data={
+            'model_id': 'scribe_v1',
+            'tag_audio_events': 'false',
+            'diarize': 'false',
+        },
+        timeout=30
     )
-    print(f"[STT] status: {r.status_code}")
+    print(f"[STT] ElevenLabs status: {r.status_code}")
     data = r.json()
-    print(f"[STT] response: {data}")
+    print(f"[STT] ElevenLabs response: {data}")
     try:
-        return data['results']['channels'][0]['alternatives'][0]['transcript'].strip()
-    except (KeyError, IndexError):
+        return data['text'].strip()
+    except (KeyError, TypeError):
         return ''
 
 def chat_with_memory() -> str:
