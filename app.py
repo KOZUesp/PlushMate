@@ -3,7 +3,7 @@
 # Memoria: historial de sesión (RAM) + resumen persistente (Supabase)
 # Control remoto: polling desde ESP32 + app web PWA
 
-import requests, os, tempfile, uuid, threading, time, struct, json
+import requests, os, tempfile, uuid, threading, time, struct, json, hashlib
 from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
@@ -339,6 +339,155 @@ def tts(text: str) -> str:
         f.write(r.content)
     print(f"[TTS] OK → {name}")
     return name
+
+
+# ── Auth / PIN ────────────────────────────────────────────────────────────────
+
+def pin_hash(pin):
+    return hashlib.sha256(pin.strip().encode()).hexdigest()
+
+def sb_get(table, select='*', filter_str='id=eq.1'):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}&select={select}",
+            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
+            timeout=5
+        )
+        data = r.json()
+        return data[0] if data else None
+    except:
+        return None
+
+def sb_patch(table, body, filter_str='id=eq.1'):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False
+    try:
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}",
+            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}',
+                     'Content-Type': 'application/json', 'Prefer': 'return=minimal'},
+            json=body, timeout=5
+        )
+        return True
+    except:
+        return False
+
+def sb_upsert(table, body):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/{table}",
+            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}',
+                     'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'},
+            json=body, timeout=5
+        )
+        return True
+    except:
+        return False
+
+@app.route('/auth/status')
+def auth_status():
+    row = sb_get('pin')
+    has_pin = bool(row and row.get('hash'))
+    return jsonify({'has_pin': has_pin})
+
+@app.route('/auth/verify', methods=['POST'])
+def auth_verify():
+    data = request.json or {}
+    pin = data.get('pin', '')
+    device_id = data.get('device_id', '')
+    device_name = data.get('device_name', 'Dispositivo')
+    if not pin or len(pin) != 4 or not pin.isdigit():
+        return jsonify({'error': 'PIN invalido'}), 400
+    row = sb_get('pin')
+    stored_hash = row.get('hash', '') if row else ''
+    if not stored_hash:
+        return jsonify({'error': 'No hay PIN configurado'}), 400
+    if pin_hash(pin) != stored_hash:
+        return jsonify({'error': 'PIN incorrecto'}), 401
+    if device_id:
+        sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': 'now()', 'revoked': False})
+    return jsonify({'ok': True})
+
+@app.route('/auth/setup', methods=['POST'])
+def auth_setup():
+    data = request.json or {}
+    new_pin = data.get('new_pin', '')
+    current_pin = data.get('current_pin', '')
+    if not new_pin or len(new_pin) != 4 or not new_pin.isdigit():
+        return jsonify({'error': 'PIN invalido'}), 400
+    row = sb_get('pin')
+    stored_hash = row.get('hash', '') if row else ''
+    if stored_hash:
+        if not current_pin or pin_hash(current_pin) != stored_hash:
+            return jsonify({'error': 'PIN actual incorrecto'}), 401
+    sb_patch('pin', {'hash': pin_hash(new_pin)})
+    return jsonify({'ok': True})
+
+@app.route('/auth/checkin', methods=['POST'])
+def auth_checkin():
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.json or {}
+    device_id = data.get('device_id', '')
+    device_name = data.get('device_name', 'Dispositivo')
+    if not device_id:
+        return jsonify({'revoked': False})
+    row = sb_get('devices', filter_str=f'id=eq.{device_id}')
+    if row and row.get('revoked'):
+        return jsonify({'revoked': True})
+    sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': 'now()', 'revoked': False})
+    return jsonify({'revoked': False})
+
+# ── Profile ───────────────────────────────────────────────────────────────────
+
+@app.route('/profile', methods=['GET'])
+def get_profile():
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    row = sb_get('profile') or {}
+    return jsonify({'name': row.get('name',''), 'avatar': row.get('avatar','🐻'), 'color': row.get('color','#8FA0CA')})
+
+@app.route('/profile', methods=['POST'])
+def set_profile():
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.json or {}
+    body = {}
+    if 'name' in data:   body['name']   = data['name']
+    if 'avatar' in data: body['avatar'] = data['avatar']
+    if 'color' in data:  body['color']  = data['color']
+    sb_patch('profile', body)
+    return jsonify({'ok': True})
+
+# ── Devices ───────────────────────────────────────────────────────────────────
+
+@app.route('/devices', methods=['GET'])
+def list_devices():
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return jsonify([])
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/devices?select=*&order=last_seen.desc",
+            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
+            timeout=5
+        )
+        return jsonify(r.json())
+    except:
+        return jsonify([])
+
+@app.route('/devices/<device_id>', methods=['DELETE'])
+def revoke_device(device_id):
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    sb_patch('devices', {'revoked': True}, filter_str=f'id=eq.{device_id}')
+    return jsonify({'ok': True})
+
 
 # ── Keep-alive ────────────────────────────────────────────────────────────────
 
