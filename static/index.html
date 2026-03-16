@@ -369,7 +369,7 @@ select option{background:var(--white)}
   <!-- Bear SVG logo -->
   <div id="splash-icon" style="width:100px;height:100px;animation:splashbounce 0.8s cubic-bezier(0.34,1.8,0.64,1) 0.3s both;display:flex;align-items:center;justify-content:center"><!-- set by JS --></div>
   <div class="splash-title">PlushMate</div>
-  <div class="splash-sub">Tu peluche inteligente 🐾</div>
+  <div class="splash-sub">Because having a mate, matters</div>
   <div class="splash-dots">
     <div class="splash-dot"></div>
     <div class="splash-dot"></div>
@@ -785,7 +785,7 @@ const CONFIG = {
   // Ejemplos: './icons/bear.png' | 'https://cdn.../icon.svg' | null (usa SVG por defecto)
   icons: {
     // Logo del oso en la barra superior y splash screen
-    logo:     'static/icons/Logo.svg',   // ej: './icons/plushmate-logo.png'  (recomendado 80x80px)
+    logo:     './static/icons/Logo.svg',  // logo en header
 
     // Botón central de activar
     mic:      null,   // ej: './icons/mic.png'             (recomendado 32x32px)
@@ -804,7 +804,7 @@ const CONFIG = {
     quickWifi:     null, // ej: './icons/quick-wifi.png'     (recomendado 24x24px)
 
     // Splash screen (si null usa el oso SVG)
-    splash: 'static/icons/Logo.svg', // ej: './icons/splash.png'  (recomendado 120x120px)
+    splash: './static/icons/Logo.svg',    // splash screen
   },
 };
 /* ════════════════════════════════════════════ */
@@ -887,6 +887,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildVoiceDropdown();
   checkStatus();
   setInterval(checkStatus, 30000);
+  setInterval(checkRevoked, 15000); // check if this device was revoked
   loadConfig();
 });
 
@@ -1182,7 +1183,7 @@ async function initAuth() {
   if (!d.has_pin) {
     showPinSetup();
   } else {
-    const saved = localStorage.getItem('pm_authed');
+    const saved = sessionStorage.getItem('pm_authed');
     if (saved === 'true') {
       // checkin to verify not revoked
       const ck = await fetch(BASE + '/auth/checkin', {
@@ -1191,7 +1192,7 @@ async function initAuth() {
       }).catch(() => null);
       if (ck && ck.ok) {
         const cd = await ck.json();
-        if (cd.revoked) { localStorage.removeItem('pm_authed'); showPinVerify(); }
+        if (cd.revoked) { sessionStorage.removeItem('pm_authed'); showPinVerify(); }
         else showApp();
       } else { showApp(); }
     } else {
@@ -1255,7 +1256,7 @@ async function submitPIN() {
       body: JSON.stringify({new_pin: PIN_ENTERED})
     });
     if (r.ok) {
-      localStorage.setItem('pm_authed', 'true');
+      sessionStorage.setItem('pm_authed', 'true');
       toast('PIN creado', 'success');
       showApp();
     } else {
@@ -1269,7 +1270,7 @@ async function submitPIN() {
     body: JSON.stringify({pin: PIN_ENTERED, device_id: DEVICE_ID, device_name: DEVICE_NAME})
   });
   if (r.ok) {
-    localStorage.setItem('pm_authed', 'true');
+    sessionStorage.setItem('pm_authed', 'true');
     playSound('success');
     showApp();
   } else {
@@ -1320,6 +1321,8 @@ function renderProfile() {
   if (ni) ni.value = name || '';
   const cs = document.getElementById('profile-color-strip');
   if (cs) cs.style.background = color;
+  const card = document.getElementById('profile-card');
+  if (card) card.style.background = color;
 }
 function buildProfileUI() {
   // emojis
@@ -1355,8 +1358,9 @@ function selectColor(c) {
   document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('profile-color-strip').style.background = c;
-  // Update brand color live
-  document.documentElement.style.setProperty('--brand', c);
+  // Only update profile card background
+  const card = document.getElementById('profile-card');
+  if (card) card.style.background = c;
 }
 async function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim();
@@ -1396,6 +1400,24 @@ async function revokeDevice(id) {
   const r = await fetch(BASE + '/devices/' + id, {method:'DELETE', headers:hdr()});
   if (r.ok) { toast('Dispositivo revocado', 'success'); loadDevices(); }
   else toast('Error', 'error');
+}
+
+async function checkRevoked() {
+  // Only check if user is authenticated in this session
+  if (!sessionStorage.getItem('pm_authed')) return;
+  try {
+    const r = await fetch(BASE + '/auth/checkin', {
+      method:'POST', headers:hdr(true),
+      body: JSON.stringify({device_id: DEVICE_ID, device_name: DEVICE_NAME})
+    });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.revoked) {
+      sessionStorage.removeItem('pm_authed');
+      toast('Acceso revocado en este dispositivo', 'error');
+      setTimeout(() => showPinVerify(), 1500);
+    }
+  } catch(e) {}
 }
 
 // ── CHANGE PIN ─────────────────────────────────────
