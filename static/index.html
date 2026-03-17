@@ -76,6 +76,44 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
+/* ─── CHAT INPUT ─────────────────────────── */
+.chat-page{display:flex;flex-direction:column;padding-bottom:0!important}
+.history-scroll{flex:1;overflow-y:auto;padding:0 0 8px}
+.history-scroll::-webkit-scrollbar{display:none}
+.chat-input-bar{display:flex;align-items:center;gap:8px;padding:10px 20px 16px;background:var(--bg);border-top:1.5px solid var(--border);flex-shrink:0;position:sticky;bottom:0}
+.chat-input{flex:1;background:var(--white);border:2px solid var(--border);border-radius:var(--r-full);padding:10px 16px;font-size:14px;font-weight:600;font-family:'Nunito',sans-serif;color:var(--text);outline:none;transition:border-color 0.2s}
+.chat-input:focus{border-color:var(--brand)}
+.chat-voice-btn{width:40px;height:40px;border-radius:50%;background:var(--white);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--muted);transition:all 0.2s}
+.chat-voice-btn.recording{background:var(--coral);border-color:var(--coral);color:white;animation:dotpulse 0.8s ease-in-out infinite}
+.chat-voice-btn svg{width:18px;height:18px}
+.chat-send-btn{width:40px;height:40px;border-radius:50%;background:var(--brand);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.15s}
+.chat-send-btn.chat-send-app{background:var(--mint)}
+.chat-send-btn:active{transform:scale(0.93)}
+.chat-send-btn svg{width:18px;height:18px}
+.chat-thinking{display:flex;gap:5px;padding:10px 14px;background:var(--brand-pale);border-radius:16px;border-bottom-left-radius:4px;width:fit-content}
+.chat-thinking span{width:7px;height:7px;border-radius:50%;background:var(--brand);animation:thinkdot 1.2s ease-in-out infinite}
+.chat-thinking span:nth-child(2){animation-delay:0.2s}
+.chat-thinking span:nth-child(3){animation-delay:0.4s}
+@keyframes thinkdot{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-4px);opacity:1}}
+
+/* ─── MEMORY SECTIONS ─────────────────────── */
+.mem-section{background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:10px}
+.mem-section-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mem-section-emoji{font-size:18px}
+.mem-section-title{font-size:13px;font-weight:900;color:var(--text)}
+.mem-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);line-height:1.4}
+.mem-item:last-child{border-bottom:none;padding-bottom:0}
+.mem-item::before{content:'•';color:var(--brand);font-weight:900;flex-shrink:0;margin-top:1px}
+
+/* ─── SWIPE ───────────────────────────────── */
+.page{touch-action:pan-y}
+
+/* ─── LEGAL ───────────────────────────────── */
+.legal-section{background:var(--white);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:10px}
+.legal-icon{font-size:24px;margin-bottom:8px}
+.legal-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:6px}
+.legal-text{font-size:13px;font-weight:600;color:var(--muted);line-height:1.6}
+
 /* ─── REFRESH BTN ────────────────────────── */
 .refresh-btn{width:30px;height:30px;border-radius:9px;background:var(--brand-pale);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--brand);transition:all 0.2s}
 .refresh-btn:active{transform:scale(0.9)}
@@ -508,6 +546,11 @@ select option{background:var(--white)}
     Ajustes
     <div class="nav-btn-pip"></div>
   </button>
+  <button class="nav-btn" onclick="openSubpage('subpage-legal')" id="nav-legal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Legal
+    <div class="nav-btn-pip"></div>
+  </button>
 </div>
 
 <div class="pages">
@@ -616,10 +659,10 @@ select option{background:var(--white)}
     </div>
   </div>
 
-  <!-- ─── HISTORY ────────────────────────────── -->
-  <div class="page" id="page-history">
+  <!-- ─── HISTORY / CHAT ──────────────────────── -->
+  <div class="page chat-page" id="page-history">
     <div class="history-header">
-      <span class="section-title">Historial de chat</span>
+      <span class="section-title">Chat</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
         <button class="refresh-btn" id="refresh-btn" onclick="refreshHistory()">
@@ -627,12 +670,26 @@ select option{background:var(--white)}
         </button>
       </div>
     </div>
-    <div id="history-list">
+    <div id="history-list" class="history-scroll">
       <div class="empty-state">
         <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
         <div class="empty-text">Sin conversaciones</div>
-        <div class="empty-sub">Activa a PlushMate para comenzar</div>
+        <div class="empty-sub">Escribe o usa el micrófono para comenzar</div>
       </div>
+    </div>
+    <!-- Chat input bar -->
+    <div class="chat-input-bar">
+      <button class="chat-voice-btn" id="chat-voice-btn" onclick="toggleChatVoice()">
+        <svg id="chat-voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
+      </button>
+      <input type="text" class="chat-input" id="chat-input" placeholder="Escríbele a PlushMate..."
+        onkeydown="if(event.key==='Enter')sendTextMessage()">
+      <button class="chat-send-btn" id="chat-plush-btn" onclick="sendTextMessage(true)" title="Enviar al peluche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+      </button>
+      <button class="chat-send-btn chat-send-app" id="chat-app-btn" onclick="sendTextMessage(false)" title="Escuchar en la app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+      </button>
     </div>
   </div>
 
@@ -648,9 +705,7 @@ select option{background:var(--white)}
         <div class="sub">PlushMate recuerda sobre ti</div>
       </div>
     </div>
-    <div class="memory-box">
-      <div id="memory-content" class="memory-empty">Cargando memoria...</div>
-    </div>
+
     <div class="mem-stats">
       <div class="mem-stat">
         <div class="mem-stat-num" id="mem-msgs">0</div>
@@ -661,10 +716,24 @@ select option{background:var(--white)}
         <div class="mem-stat-label">Palabras guardadas</div>
       </div>
     </div>
-    <button class="danger-btn" onclick="confirmClear()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-      Borrar toda la memoria
-    </button>
+
+    <!-- Formatted memory sections -->
+    <div id="memory-sections">
+      <div class="memory-box">
+        <div id="memory-content" class="memory-empty">Cargando memoria...</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:0">
+      <button class="save-btn" onclick="loadMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Actualizar
+      </button>
+      <button class="danger-btn" onclick="confirmClear()" style="flex:1;margin-bottom:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+        Borrar
+      </button>
+    </div>
   </div>
 
   <!-- ─── PROFILE ───────────────────────────── -->
@@ -933,6 +1002,39 @@ select option{background:var(--white)}
   </div>
 </div>
 
+  <!-- ─── SUBPAGE: LEGAL ──────────────────────── -->
+  <div class="subpage" id="subpage-legal">
+    <div class="subpage-header">
+      <button class="subpage-back" onclick="closeSubpage('subpage-legal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="subpage-title">Información Legal</span>
+    </div>
+    <div class="subpage-content">
+      <div class="legal-section">
+        <div class="legal-icon">📄</div>
+        <div class="legal-title">Términos de Uso</div>
+        <div class="legal-text">PlushMate es un prototipo de asistente de voz con inteligencia artificial. Al usar esta aplicación aceptas que las conversaciones son procesadas por servicios de terceros incluyendo ElevenLabs y OpenRouter para proveer funcionalidades de voz e inteligencia artificial.</div>
+      </div>
+      <div class="legal-section">
+        <div class="legal-icon">🔒</div>
+        <div class="legal-title">Privacidad y Datos</div>
+        <div class="legal-text">Las grabaciones de voz son enviadas a ElevenLabs para transcripción. Los resúmenes de conversación se guardan en Supabase de forma segura. No compartimos tus datos con terceros más allá de los servicios necesarios para el funcionamiento de la app.</div>
+      </div>
+      <div class="legal-section">
+        <div class="legal-icon">🤖</div>
+        <div class="legal-title">Inteligencia Artificial</div>
+        <div class="legal-text">Las respuestas son generadas por modelos de IA a través de OpenRouter. El contenido puede contener errores. PlushMate no debe usarse como sustituto de asesoría profesional médica, legal o financiera.</div>
+      </div>
+      <div class="legal-section">
+        <div class="legal-icon">👶</div>
+        <div class="legal-title">Uso por Menores</div>
+        <div class="legal-text">PlushMate está diseñado para su uso bajo supervisión de adultos. Los padres o tutores son responsables de supervisar las interacciones y configurar la personalidad del asistente apropiadamente.</div>
+      </div>
+      <div style="text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:20px 0">PlushMate v1.0 Prototype · 2026</div>
+    </div>
+  </div>
+
 <!-- Toast -->
 <div class="toast" id="toast">
   <svg id="toast-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1015,7 +1117,7 @@ const CONFIG = {
     micStop:  null,   // ej: './icons/mic-stop.png'        (recomendado 32x32px)
 
     // Iconos de tabs de navegación
-    navHome:     './static/icons/Home.png', // ej: './icons/nav-home.png'       (recomendado 24x24px)
+    navHome:     null, // ej: './icons/nav-home.png'       (recomendado 24x24px)
     navChat:     null, // ej: './icons/nav-chat.png'       (recomendado 24x24px)
     navMemory:   null, // ej: './icons/nav-memory.png'     (recomendado 24x24px)
     navSettings: null, // ej: './icons/nav-settings.png'  (recomendado 24x24px)
@@ -1200,9 +1302,11 @@ function icon(key, defaultSvg, cls='', size='20') {
 // ── Nav ─────────────────────────────────────────
 function goPage(id, btn) {
   playSound('tap');
+  currentPageId = id;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
+  const pageEl = document.getElementById('page-' + id);
+  if (pageEl) pageEl.classList.add('active');
   if (btn) btn.classList.add('active');
   if (id === 'history') loadHistory();
   if (id === 'memory') loadMemory();
@@ -1298,7 +1402,7 @@ async function loadHistory() {
     if (!history.length) {
       el.innerHTML = `<div class="empty-state">
         <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-        <div class="empty-text">Sin conversaciones</div><div class="empty-sub">Activa a PlushMate para comenzar</div></div>`;
+        <div class="empty-text">Sin conversaciones</div><div class="empty-sub">Escribe o usa el micrófono</div></div>`;
     } else {
       el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
       const txt = stripTags(esc(m.content));
@@ -1314,7 +1418,7 @@ async function loadHistory() {
           </div>
         </div>`;
     }).join('') + '</div>';
-      el.scrollTop = el.scrollHeight;
+      setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
     }
     updateHomePreview(history);
   } catch(e) {}
@@ -1334,16 +1438,33 @@ function updateHomePreview(history) {
 
 // ── Memory ────────────────────────────────────────
 async function loadMemory() {
+  const sectionsEl = document.getElementById('memory-sections');
   const el = document.getElementById('memory-content');
   try {
     const r = await fetch(BASE + '/memory');
     const d = await r.json();
     const summary = d.summary || '';
+    const formatted = d.summary_formatted || [];
     document.getElementById('mem-msgs').textContent = d.history_len || 0;
     document.getElementById('mem-words').textContent = summary ? summary.split(' ').length : 0;
-    el.className = summary ? 'memory-text' : 'memory-empty';
-    el.textContent = summary || 'Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻';
-  } catch(e) { el.className='memory-empty'; el.textContent='Error al cargar.'; }
+
+    if (formatted && formatted.length > 0) {
+      sectionsEl.innerHTML = formatted.map(sec => `
+        <div class="mem-section">
+          <div class="mem-section-header">
+            <span class="mem-section-emoji">${sec.icon || '🧠'}</span>
+            <span class="mem-section-title">${esc(sec.title || '')}</span>
+          </div>
+          ${(sec.items || []).map(item => `<div class="mem-item">${esc(item)}</div>`).join('')}
+        </div>`).join('');
+    } else if (summary) {
+      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-text">${esc(summary)}</div></div>`;
+    } else {
+      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-empty">Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻</div></div>`;
+    }
+  } catch(e) {
+    sectionsEl.innerHTML = '<div class="memory-box"><div class="memory-empty">Error al cargar la memoria.</div></div>';
+  }
 }
 function confirmClear() { playSound('tap'); document.getElementById('modal').classList.add('show'); }
 function closeModal()   { document.getElementById('modal').classList.remove('show'); }
@@ -1542,6 +1663,173 @@ async function submitPinMini() {
     }
   }
 }
+
+// ── CHAT TEXT & VOICE ────────────────────────────
+let chatSpeechRecognition = null;
+let chatVoiceActive = false;
+
+function toggleChatVoice() {
+  if (chatVoiceActive) { stopChatVoice(); return; }
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { toast('Reconocimiento de voz no disponible en este navegador', 'error'); return; }
+  haptic('medium');
+  chatSpeechRecognition = new SpeechRec();
+  chatSpeechRecognition.lang = document.getElementById('cfg-language')?.value || 'es-ES';
+  chatSpeechRecognition.continuous = false;
+  chatSpeechRecognition.interimResults = true;
+  const btn = document.getElementById('chat-voice-btn');
+  const icon = document.getElementById('chat-voice-icon');
+  chatSpeechRecognition.onstart = () => {
+    chatVoiceActive = true;
+    btn.classList.add('recording');
+    icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="3" fill="white"/>';
+    playSound('activate');
+    toast('Escuchando...', 'info');
+  };
+  chatSpeechRecognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('chat-input').value = transcript;
+  };
+  chatSpeechRecognition.onend = () => { stopChatVoice(); };
+  chatSpeechRecognition.onerror = () => { stopChatVoice(); toast('Error en reconocimiento de voz', 'error'); };
+  chatSpeechRecognition.start();
+}
+function stopChatVoice() {
+  chatVoiceActive = false;
+  if (chatSpeechRecognition) { try { chatSpeechRecognition.stop(); } catch(e){} chatSpeechRecognition = null; }
+  const btn = document.getElementById('chat-voice-btn');
+  const icon = document.getElementById('chat-voice-icon');
+  btn.classList.remove('recording');
+  icon.innerHTML = '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/>';
+}
+
+async function sendTextMessage(sendToPlush = false) {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  haptic('medium'); playSound('send');
+  input.value = '';
+  stopChatVoice();
+
+  // Add user bubble immediately
+  appendChatBubble('user', text, null);
+  // Show thinking indicator
+  const thinkId = 'think-' + Date.now();
+  appendThinking(thinkId);
+
+  try {
+    const r = await fetch(BASE + '/chat/text', {
+      method: 'POST', headers: hdr(true),
+      body: JSON.stringify({text, send_to_plush: sendToPlush})
+    });
+    removeThinking(thinkId);
+    if (!r.ok) { toast('Error al enviar mensaje', 'error'); return; }
+    const d = await r.json();
+    const msgId = 'msg-' + Date.now();
+    appendChatBubble('assistant', d.response, d.audio_url, msgId);
+    if (sendToPlush) toast('Enviado al peluche 🐻', 'success');
+    else if (d.audio_url) { playSound('success'); playAudio(d.audio_url, 'abtn-' + msgId); }
+    document.getElementById('history-count-badge').textContent = (parseInt(document.getElementById('history-count-badge').textContent) || 0) + 2 + ' msgs';
+  } catch(e) {
+    removeThinking(thinkId);
+    toast('Error de conexión', 'error');
+  }
+}
+
+function appendChatBubble(role, text, audioUrl, id) {
+  const list = document.getElementById('history-list');
+  // Remove empty state if present
+  const empty = list.querySelector('.empty-state');
+  if (empty) empty.remove();
+  // Ensure msg-wrap exists
+  let wrap = list.querySelector('.msg-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'msg-wrap'; list.appendChild(wrap); }
+  const btnId = id ? 'abtn-' + id : 'abtn-' + Date.now();
+  const audioBtn = (role === 'assistant' && audioUrl)
+    ? `<button class="audio-btn" id="${btnId}" onclick="playAudio('${audioUrl}', '${btnId}')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Reproducir
+       </button>` : '';
+  const div = document.createElement('div');
+  div.className = 'msg-item' + (role === 'user' ? ' right' : '');
+  div.innerHTML = `
+    <div class="convo-who ${role==='user'?'user':'plush'}">${role==='user'?'Tú':'PlushMate'}</div>
+    <div class="bubble-row ${role==='user'?'right':''}">
+      <div class="bubble ${role==='user'?'user':'plush'}">${esc(text)}${audioBtn}</div>
+    </div>`;
+  wrap.appendChild(div);
+  list.scrollTop = list.scrollHeight;
+}
+
+function appendThinking(id) {
+  const list = document.getElementById('history-list');
+  let wrap = list.querySelector('.msg-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'msg-wrap'; list.appendChild(wrap); }
+  const div = document.createElement('div');
+  div.className = 'msg-item'; div.id = id;
+  div.innerHTML = `<div class="convo-who plush">PlushMate</div>
+    <div class="bubble-row"><div class="chat-thinking"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(div);
+  list.scrollTop = list.scrollHeight;
+}
+function removeThinking(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+// ── SWIPE BETWEEN PAGES ───────────────────────────
+const PAGE_ORDER = ['home', 'history', 'memory', 'profile', 'settings'];
+let swipeStartX = 0, swipeStartY = 0, swipeDx = 0;
+let currentPageId = 'home';
+
+function getCurrentPageIndex() { return PAGE_ORDER.indexOf(currentPageId); }
+
+document.addEventListener('touchstart', e => {
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+  swipeDx = 0;
+}, {passive: true});
+
+document.addEventListener('touchmove', e => {
+  if (!e.touches.length) return;
+  swipeDx = e.touches[0].clientX - swipeStartX;
+  const dy = Math.abs(e.touches[0].clientY - swipeStartY);
+  if (Math.abs(swipeDx) > dy * 1.5 && Math.abs(swipeDx) > 10) {
+    // Horizontal swipe — don't scroll vertically
+  }
+}, {passive: true});
+
+document.addEventListener('touchend', e => {
+  const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
+  const dx = swipeDx;
+  if (Math.abs(dx) < 60 || dy > Math.abs(dx)) return; // Not a horizontal swipe
+  // Don't swipe if touching input or slider
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  const idx = getCurrentPageIndex();
+  if (dx < -60 && idx < PAGE_ORDER.length - 1) {
+    // Swipe left → next page
+    haptic('light');
+    goPage(PAGE_ORDER[idx + 1], document.getElementById('nav-' + PAGE_ORDER[idx + 1]));
+  } else if (dx > 60 && idx > 0) {
+    // Swipe right → prev page
+    haptic('light');
+    goPage(PAGE_ORDER[idx - 1], document.getElementById('nav-' + PAGE_ORDER[idx - 1]));
+  }
+}, {passive: true});
+
+// Close subpages/modals with swipe down
+document.addEventListener('touchend', e => {
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  if (dy < 80) return;
+  // Check if we're in a subpage
+  const openSubpages = document.querySelectorAll('.subpage.open');
+  if (openSubpages.length) { haptic('light'); openSubpages.forEach(s => s.classList.remove('open')); return; }
+  // Check modal
+  const modal = document.getElementById('modal');
+  if (modal?.classList.contains('show')) { closeModal(); return; }
+  const pinModal = document.getElementById('pin-confirm-overlay');
+  if (pinModal?.classList.contains('show')) { closePinConfirm(); return; }
+}, {passive: true});
 
 // ── REFRESH HISTORY ──────────────────────────────
 async function refreshHistory() {
