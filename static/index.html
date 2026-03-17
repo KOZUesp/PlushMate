@@ -76,6 +76,21 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
+/* ─── VOLUME CARD ────────────────────────── */
+.vol-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.vol-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.vol-icon{width:36px;height:36px;border-radius:11px;background:var(--brand-pale);display:flex;align-items:center;justify-content:center}
+.vol-icon svg{width:18px;height:18px;color:var(--brand)}
+.vol-label{font-size:12px;font-weight:800;color:var(--text)}
+.vol-pct{font-size:11px;font-weight:700;color:var(--muted)}
+.vol-right{display:flex;align-items:center;gap:8px;flex:1;min-width:180px}
+.vol-btn{width:32px;height:32px;border-radius:10px;background:var(--bg);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--text);transition:all 0.15s}
+.vol-btn:active{background:var(--brand-pale);transform:scale(0.93)}
+.vol-btn svg{width:16px;height:16px}
+.vol-slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
+.vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 2px 6px rgba(143,160,202,0.5)}
+.vol-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;border:none}
+
 /* ─── AUDIO PLAYER ───────────────────────── */
 .audio-btn{display:inline-flex;align-items:center;gap:5px;background:var(--brand-pale);border:none;border-radius:var(--r-full);padding:5px 12px 5px 8px;cursor:pointer;font-size:11px;font-weight:800;color:var(--brand);margin-top:7px;transition:all 0.15s;font-family:'Nunito',sans-serif}
 .audio-btn:active{background:var(--brand-light);transform:scale(0.97)}
@@ -530,6 +545,29 @@ select option{background:var(--white)}
         </div>
         <div class="stat-label">Mensajes</div>
         <div><span class="stat-badge badge-yellow" id="stat-msgs">0</span></div>
+      </div>
+    </div>
+
+    <!-- Volume control -->
+    <div class="vol-card" id="vol-card">
+      <div class="vol-left">
+        <div class="vol-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+        </div>
+        <div>
+          <div class="vol-label">Volumen</div>
+          <div class="vol-pct" id="vol-pct">70%</div>
+        </div>
+      </div>
+      <div class="vol-right">
+        <button class="vol-btn" onclick="adjustVolume(-0.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="70"
+          oninput="onVolSlider(this.value)" onchange="sendVolume()">
+        <button class="vol-btn" onclick="adjustVolume(0.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       </div>
     </div>
 
@@ -1467,6 +1505,38 @@ async function submitPinMini() {
   }
 }
 
+// ── VOLUME ────────────────────────────────────────
+let currentVolume = parseFloat(localStorage.getItem('pm_volume') || '0.7');
+
+function initVolume() {
+  const slider = document.getElementById('vol-slider');
+  if (slider) {
+    slider.value = Math.round(currentVolume * 100);
+    document.getElementById('vol-pct').textContent = Math.round(currentVolume * 100) + '%';
+  }
+}
+function onVolSlider(val) {
+  currentVolume = parseInt(val) / 100;
+  document.getElementById('vol-pct').textContent = val + '%';
+}
+function sendVolume() {
+  haptic('light');
+  localStorage.setItem('pm_volume', currentVolume);
+  fetch(BASE + '/command', {
+    method: 'POST', headers: hdr(true),
+    body: JSON.stringify({action: 'volume_set', value: currentVolume})
+  }).then(() => toast('Volumen: ' + Math.round(currentVolume*100) + '%', 'info'))
+    .catch(() => toast('Error al ajustar volumen', 'error'));
+}
+function adjustVolume(delta) {
+  haptic('light');
+  currentVolume = Math.max(0, Math.min(1, Math.round((currentVolume + delta) * 10) / 10));
+  const slider = document.getElementById('vol-slider');
+  if (slider) slider.value = Math.round(currentVolume * 100);
+  document.getElementById('vol-pct').textContent = Math.round(currentVolume * 100) + '%';
+  sendVolume();
+}
+
 // ── ACCORDION ────────────────────────────────────
 function toggleAccordion(id) {
   haptic('light');
@@ -1482,7 +1552,8 @@ function openSubpage(id) {
   document.getElementById(id).classList.add('open');
   // init toggles
   setTimeout(() => {
-    ['sound','haptic','motion'].forEach(k => {
+    initVolume();
+  ['sound','haptic','motion'].forEach(k => {
       const t = document.getElementById('tog-' + k);
       if (t) t.classList.toggle('on', PREFS[k]);
     });
