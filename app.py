@@ -463,8 +463,7 @@ def auth_setup():
 
 @app.route('/auth/checkin', methods=['POST'])
 def auth_checkin():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
+    # No auth required — device only checks its own revocation status
     data = request.json or {}
     device_id = data.get('device_id', '')
     device_name = data.get('device_name', 'Dispositivo')
