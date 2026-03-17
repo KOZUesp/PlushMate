@@ -207,8 +207,12 @@ def debug_audio():
 
 @app.route('/memory', methods=['GET'])
 def get_memory():
+    raw_summary = supabase_get_summary()
+    # Format summary into structured sections
+    formatted = format_memory(raw_summary)
     return jsonify({
-        'summary': supabase_get_summary(),
+        'summary': raw_summary,
+        'summary_formatted': formatted,
         'history': conversation_history,
         'history_len': len(conversation_history)
     })
@@ -281,7 +285,7 @@ def send_command():
     global pending_command
     data = request.json or {}
     action = data.get('action', '')
-    if action not in ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode'):
+    if action not in ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio'):
         return jsonify({'error': 'Unknown action'}), 400
     with pending_command_lock:
         pending_command = data
@@ -304,7 +308,67 @@ def set_wifi():
     print(f"[WiFi] Cambio de red encolado: {ssid}")
     return jsonify({'status': 'queued'})
 
+# ── Chat desde texto (app) ───────────────────────────────────────────────────
+
+@app.route('/chat/text', methods=['POST'])
+def chat_text():
+    if not check_auth():
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.json or {}
+    text = data.get('text', '').strip()
+    send_to_plush = data.get('send_to_plush', False)
+    if not text:
+        return jsonify({'error': 'Texto vacío'}), 400
+    try:
+        conversation_history.append({'role': 'user', 'content': text, 'audio_url': None})
+        ai_text = chat_with_memory()
+        if not ai_text:
+            conversation_history.pop()
+            return jsonify({'error': 'Sin respuesta del modelo'}), 500
+        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
+        conversation_history.append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+        if len(conversation_history) > HISTORY_LIMIT:
+            conversation_history[:] = conversation_history[-HISTORY_LIMIT:]
+        audio_filename = tts(ai_text)
+        audio_url = f"{SERVER_URL}/audio/{audio_filename}"
+        conversation_history[-1]['audio_url'] = audio_url
+        # Optionally queue play command to ESP32
+        if send_to_plush:
+            global pending_command
+            with pending_command_lock:
+                pending_command = {'action': 'play_audio', 'url': audio_url}
+        return jsonify({'response': display_text, 'audio_url': audio_url})
+    except Exception as e:
+        print(f"[chat/text] ERROR: {e}")
+        return jsonify({'error': str(e)}), 500
+
 # ── Pipeline IA ───────────────────────────────────────────────────────────────
+
+def format_memory(summary: str) -> list:
+    """Convierte el resumen en una lista de secciones estructuradas."""
+    if not summary or not summary.strip():
+        return []
+    # Ask LLM to structure the memory (fast, small request)
+    try:
+        r = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
+            json={'model': dynamic_config['model'],
+                  'max_tokens': 400,
+                  'messages': [{'role': 'user', 'content':
+                    f'Convierte este resumen en JSON con secciones. Responde SOLO el JSON, sin markdown.\n'
+                    f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
+                    f'Resumen: {summary}'}]},
+            timeout=10
+        )
+        msg = r.json()['choices'][0]['message']
+        raw = (msg.get('content') or msg.get('reasoning') or '').strip()
+        raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
+        return json.loads(raw)
+    except:
+        # Fallback: split by sentences into a single section
+        sentences = [s.strip() for s in re.split(r'[.!?]+', summary) if s.strip()]
+        return [{"icon": "🧠", "title": "Lo que recuerdo", "items": sentences}]
 
 def stt(wav_path: str) -> str:
     """Speech-to-text usando ElevenLabs Scribe v1."""
