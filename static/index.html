@@ -1107,6 +1107,12 @@ window.addEventListener('DOMContentLoaded', () => {
   checkStatus();
   setInterval(checkStatus, 30000);
   setInterval(checkRevoked, 5000);  // check revocation every 5s
+  // Re-check immediately when tab becomes visible again (iOS Safari fix)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && sessionStorage.getItem('pm_authed')) {
+      checkRevoked();
+    }
+  });
   loadConfig();
   // Splash stays until auth is ready
   setTimeout(async () => {
@@ -1713,7 +1719,7 @@ async function initAuth() {
     if (saved === 'true') {
       // checkin to verify not revoked
       const ck = await fetch(BASE + '/auth/checkin', {
-        method:'POST', headers:hdr(true),
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({device_id: DEVICE_ID, device_name: DEVICE_NAME})
       }).catch(() => null);
       if (ck && ck.ok) {
@@ -1941,7 +1947,7 @@ async function checkRevoked() {
   if (!sessionStorage.getItem('pm_authed')) return;
   try {
     const r = await fetch(BASE + '/auth/checkin', {
-      method:'POST', headers:hdr(true),
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({device_id: DEVICE_ID, device_name: DEVICE_NAME})
     });
     if (!r.ok) return;
