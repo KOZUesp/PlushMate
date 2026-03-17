@@ -76,6 +76,12 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
 
+/* ─── REFRESH BTN ────────────────────────── */
+.refresh-btn{width:30px;height:30px;border-radius:9px;background:var(--brand-pale);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--brand);transition:all 0.2s}
+.refresh-btn:active{transform:scale(0.9)}
+.refresh-btn svg{width:15px;height:15px}
+.refresh-btn.spinning svg{animation:spin 0.6s linear}
+
 /* ─── VOLUME CARD ────────────────────────── */
 .vol-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .vol-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -614,7 +620,12 @@ select option{background:var(--white)}
   <div class="page" id="page-history">
     <div class="history-header">
       <span class="section-title">Historial de chat</span>
-      <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
+        <button class="refresh-btn" id="refresh-btn" onclick="refreshHistory()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
     </div>
     <div id="history-list">
       <div class="empty-state">
@@ -791,6 +802,8 @@ select option{background:var(--white)}
           Enviar al peluche
         </button>
         <div class="wifi-status" id="wifi-status"></div>
+
+
       </div>
     </div>
 
@@ -1502,6 +1515,35 @@ async function submitPinMini() {
       document.getElementById('pin-confirm-error').textContent = 'PIN incorrecto';
       setTimeout(() => { pinMiniEntered=''; updatePinMiniDots(); document.getElementById('pin-confirm-error').textContent=''; }, 900);
     }
+  }
+}
+
+// ── REFRESH HISTORY ──────────────────────────────
+async function refreshHistory() {
+  haptic('light');
+  playSound('tap');
+  const btn = document.getElementById('refresh-btn');
+  if (btn) btn.classList.add('spinning');
+  await loadHistory();
+  setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
+}
+
+// ── AP MODE (captive portal) ──────────────────────
+async function activateAPMode() {
+  haptic('medium');
+  playSound('activate');
+  try {
+    await fetch(BASE + '/command', {
+      method: 'POST', headers: hdr(true),
+      body: JSON.stringify({action: 'ap_mode'})
+    });
+    toast('Activando hotspot... espera ~3s', 'info');
+    // Show instructions
+    setTimeout(() => {
+      toast('Conéctate a "PlushMate Setup" en WiFi', 'info');
+    }, 3500);
+  } catch(e) {
+    toast('Error al conectar con el servidor', 'error');
   }
 }
 
