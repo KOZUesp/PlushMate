@@ -4,6 +4,7 @@
 # Control remoto: polling desde ESP32 + app web PWA
 
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_file
 
 app = Flask(__name__)
@@ -442,7 +443,7 @@ def auth_verify():
     if pin_hash(pin) != stored_hash:
         return jsonify({'error': 'PIN incorrecto'}), 401
     if device_id:
-        sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': 'now()', 'revoked': False})
+        sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
     return jsonify({'ok': True})
 
 @app.route('/auth/setup', methods=['POST'])
@@ -472,7 +473,7 @@ def auth_checkin():
     row = sb_get('devices', filter_str=f'id=eq.{device_id}')
     if row and row.get('revoked'):
         return jsonify({'revoked': True})
-    sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': 'now()', 'revoked': False})
+    sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
     return jsonify({'revoked': False})
 
 # ── Profile ───────────────────────────────────────────────────────────────────
@@ -506,7 +507,7 @@ def list_devices():
         return jsonify([])
     try:
         r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/devices?select=*&order=last_seen.desc",
+            f"{SUPABASE_URL}/rest/v1/devices?select=*&order=last_seen.desc&revoked=eq.false",
             headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
             timeout=5
         )
