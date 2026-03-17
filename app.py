@@ -45,6 +45,7 @@ dynamic_config = {
     'persona': PERSONA,
     'voice_id': ELEVENLABS_VOICE_ID,
     'model': OPENROUTER_MODEL,
+    'stt_language': os.environ.get('STT_LANGUAGE', 'es'),  # ISO 639-1
     'wifi_ssid': '',
     'wifi_password': '',
     'wifi_pending': False
@@ -239,6 +240,7 @@ def get_config():
         'persona': dynamic_config['persona'],
         'voice_id': dynamic_config['voice_id'],
         'model': dynamic_config['model'],
+        'stt_language': dynamic_config['stt_language'],
     })
 
 @app.route('/config', methods=['POST'])
@@ -252,6 +254,8 @@ def set_config():
         dynamic_config['voice_id'] = data['voice_id']
     if 'model' in data:
         dynamic_config['model'] = data['model']
+    if 'stt_language' in data:
+        dynamic_config['stt_language'] = data['stt_language']
     return jsonify({'status': 'ok', 'config': dynamic_config})
 
 # ── Endpoints de control del ESP32 (polling) ──────────────────────────────────
@@ -276,7 +280,7 @@ def send_command():
     global pending_command
     data = request.json or {}
     action = data.get('action', '')
-    if action not in ('activate', 'stop', 'wifi_change', 'volume_set'):
+    if action not in ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode'):
         return jsonify({'error': 'Unknown action'}), 400
     with pending_command_lock:
         pending_command = data
@@ -313,6 +317,7 @@ def stt(wav_path: str) -> str:
             'model_id': 'scribe_v1',
             'tag_audio_events': 'false',
             'diarize': 'false',
+            'language_code': dynamic_config['stt_language'],
         },
         timeout=30
     )
