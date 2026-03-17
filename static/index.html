@@ -776,6 +776,20 @@ select option{background:var(--white)}
           <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
           <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
         </select>
+        <div class="field-label" style="margin-top:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+          Idioma de reconocimiento de voz
+        </div>
+        <select id="cfg-language" style="margin-bottom:16px">
+          <option value="es">🇲🇽 Español</option>
+          <option value="en">🇺🇸 English</option>
+          <option value="fr">🇫🇷 Français</option>
+          <option value="pt">🇧🇷 Português</option>
+          <option value="de">🇩🇪 Deutsch</option>
+          <option value="it">🇮🇹 Italiano</option>
+          <option value="ja">🇯🇵 日本語</option>
+          <option value="zh">🇨🇳 中文</option>
+        </select>
         <button class="save-btn" id="save-btn" onclick="saveConfig()">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Guardar cambios
@@ -1383,6 +1397,10 @@ async function loadConfig() {
       if (!exists) { const opt = document.createElement('option'); opt.value = d.model; opt.textContent = d.model.split('/').pop().split(':')[0]; sel.appendChild(opt); }
       sel.value = d.model;
     }
+    if (d.stt_language) {
+      const langSel = document.getElementById('cfg-language');
+      if (langSel) langSel.value = d.stt_language;
+    }
     const short = (d.model||'').split('/').pop().split(':')[0];
     document.getElementById('stat-model').textContent = short.length > 9 ? short.substring(0,9)+'…' : short;
   } catch(e) {}
@@ -1395,7 +1413,8 @@ async function saveConfig() {
     const r = await fetch(BASE + '/config', {method:'POST', headers:hdr(true), body:JSON.stringify({
       persona: document.getElementById('cfg-persona').value,
       voice_id: voice,
-      model: document.getElementById('cfg-model').value
+      model: document.getElementById('cfg-model').value,
+      stt_language: document.getElementById('cfg-language').value,
     })});
     if (r.ok) { playSound('success'); toast('Guardado correctamente', 'success'); }
     else toast('Error al guardar', 'error');
