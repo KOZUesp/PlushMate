@@ -775,7 +775,6 @@ select option{background:var(--white)}
           <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
           <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
           <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-           <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nvidia nemotron-3-nano</option>
         </select>
         <div class="field-label" style="margin-top:14px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
@@ -996,9 +995,9 @@ const CONFIG = {
 
   // Emojis disponibles para el avatar — edita esta lista libremente
   avatarEmojis: [
-    '🐻','🐼','🐨','🦊','🐱','🐶','🐯','🦁','🐵','🐸','🐺',
-    '🦝','🐹','🐧','🐭','🐮','🐷','🦋','🌈','⭐','🎀','💫',
-    '✨','🌸','🧑‍🚀','🦄','🐙','🦖','🌻','🍀','🎵','🏆',
+    '🐻','🐼','🐨','🦊','🐱','🐶','🐯','🦁','🐸','🐺',
+    '🦝','🐹','🐭','🐮','🐷','🦋','🌈','⭐','🎀','💫',
+    '✨','🌸','🎭','🦄','🐙','🦖','🌻','🍀','🎵','🏆',
   ],
 
   // Server URL (auto-detect en producción, manual en desarrollo)
@@ -1107,7 +1106,7 @@ window.addEventListener('DOMContentLoaded', () => {
   buildVoiceDropdown();
   checkStatus();
   setInterval(checkStatus, 30000);
-  setInterval(checkRevoked, 15000);
+  setInterval(checkRevoked, 5000);  // check revocation every 5s
   loadConfig();
   // Splash stays until auth is ready
   setTimeout(async () => {
@@ -1901,14 +1900,19 @@ async function saveProfile() {
 async function loadDevices() {
   const el = document.getElementById('devices-list');
   if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Cargando...</div>';
   try {
     const r = await fetch(BASE + '/devices?t=' + Date.now(), {headers: hdr()});
+    if (!r.ok) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--coral);font-size:13px;font-weight:600">Error de autenticación</div>'; return; }
     const devices = await r.json();
-    if (!devices.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Sin dispositivos registrados</div>'; return; }
+    if (!Array.isArray(devices) || !devices.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Sin dispositivos activos</div>';
+      return;
+    }
     el.innerHTML = devices.map(d => {
       const isThis = d.id === DEVICE_ID;
       const time = new Date(d.last_seen).toLocaleDateString('es', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-      return `<div class="device-item ${d.revoked?'revoked':''}">
+      return `<div class="device-item">
         <div class="device-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
         </div>
@@ -1916,12 +1920,15 @@ async function loadDevices() {
           <div class="device-name">${esc(d.name)}</div>
           <div class="device-time">Último acceso: ${time}</div>
         </div>
-        ${isThis ? '<span class="device-badge device-this">Este dispositivo</span>' :
-          d.revoked ? '<span class="device-badge device-revoked">Revocado</span>' :
-          `<button class="device-revoke-btn" onclick="revokeDevice('${d.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`}
+        ${isThis
+          ? '<span class="device-badge device-this">Este dispositivo</span>'
+          : `<button class="device-revoke-btn" onclick="revokeDevice('${d.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`}
       </div>`;
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Error al cargar</div>'; }
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--coral);font-size:13px;font-weight:600">Error al cargar dispositivos</div>';
+    console.error('loadDevices error:', e);
+  }
 }
 async function revokeDevice(id) {
   const r = await fetch(BASE + '/devices/' + id, {method:'DELETE', headers:hdr()});
