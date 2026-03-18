@@ -2383,57 +2383,75 @@ async function askSetupPin(force=false) {
   const want = await customConfirm('PIN de seguridad', '¿Quieres crear un PIN para proteger el acceso a la app?', 'Crear PIN', 'var(--brand)');
   if (want) openSubpage('subpage-pin-setup');
 }
-let qrScanInterval = null;
+let qrScanAnimFrame = null;
 
 async function startQRScan() {
   const wrap = document.getElementById('qr-preview-wrap');
   const video = document.getElementById('qr-video');
   const btn = document.getElementById('qr-scan-btn-txt');
+
+  // Check jsQR loaded
+  if (typeof jsQR === 'undefined') {
+    toast('Librería QR no cargó — intenta recargar la página', 'error');
+    return;
+  }
   if (!navigator.mediaDevices?.getUserMedia) {
-    toast('Cámara no disponible en este navegador', 'error'); return;
+    toast('Cámara no disponible en este navegador', 'error');
+    return;
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: {ideal:640}, height: {ideal:480} }
+      video: { facingMode: { ideal: 'environment' } }
     });
     video.srcObject = stream;
+    video.setAttribute('playsinline', true);
+    await new Promise(res => { video.onloadedmetadata = res; });
     await video.play();
     wrap.style.display = 'block';
     btn.textContent = 'Escaneando...';
     haptic('light');
-    // Scan loop
-    qrScanInterval = setInterval(() => {
-      const canvas = document.getElementById('qr-canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      if (!imageData.width) return;
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-      if (code?.data) {
-        haptic('success'); playSound('success');
-        stopQRScan();
-        // QR should contain the plush_token (e.g. "PLUSH-PROTO-001")
-        const token = code.data.trim().toUpperCase();
-        document.getElementById('pair-token-input').value = token;
-        toast('QR detectado: ' + token, 'success');
-      }
-    }, 250);
+    scanFrame();
   } catch(e) {
-    toast('No se pudo acceder a la cámara', 'error');
-    console.error('QR scan error:', e);
+    console.error('QR camera error:', e);
+    toast('No se pudo acceder a la cámara: ' + e.message, 'error');
   }
 }
 
-function stopQRScan() {
-  clearInterval(qrScanInterval);
-  qrScanInterval = null;
+function scanFrame() {
   const video = document.getElementById('qr-video');
-  const wrap = document.getElementById('qr-preview-wrap');
-  const btn = document.getElementById('qr-scan-btn-txt');
-  if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
-  wrap.style.display = 'none';
+  const canvas = document.getElementById('qr-canvas');
+  if (!video || !canvas || !video.srcObject) return;
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    try {
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+      if (code && code.data) {
+        haptic('success'); playSound('success');
+        const token = code.data.trim().toUpperCase();
+        stopQRScan();
+        document.getElementById('pair-token-input').value = token;
+        toast('✓ QR detectado', 'success');
+        return;
+      }
+    } catch(e) { console.warn('jsQR error:', e); }
+  }
+  qrScanAnimFrame = requestAnimationFrame(scanFrame);
+}
+
+function stopQRScan() {
+  if (qrScanAnimFrame) { cancelAnimationFrame(qrScanAnimFrame); qrScanAnimFrame = null; }
+  const video = document.getElementById('qr-video');
+  const wrap  = document.getElementById('qr-preview-wrap');
+  const btn   = document.getElementById('qr-scan-btn-txt');
+  if (video?.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+  if (wrap) wrap.style.display = 'none';
   if (btn) btn.textContent = 'Escanear QR';
 }
 function applyUserProfile(user) {
