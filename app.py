@@ -44,12 +44,10 @@ def get_session(user_id: str) -> dict:
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 def sb_headers(token=None):
-    key = token or SUPABASE_KEY
+    """Service role key bypasses RLS. User token for user-scoped operations."""
     h = {'apikey': SUPABASE_KEY, 'Content-Type': 'application/json'}
-    if token:
-        h['Authorization'] = f'Bearer {token}'
-    else:
-        h['Authorization'] = f'Bearer {SUPABASE_KEY}'
+    # Always use service_role for Authorization unless a user token is given
+    h['Authorization'] = f'Bearer {token}' if token else f'Bearer {SUPABASE_KEY}'
     return h
 
 def sb_get(table, select='*', filter_str='', token=None):
@@ -209,6 +207,65 @@ def refresh_token():
     if r.status_code != 200:
         return jsonify({'error': 'Token expirado'}), 401
     return jsonify({'token': d.get('access_token'), 'refresh_token': d.get('refresh_token')})
+
+@app.route('/auth/status', methods=['GET'])
+def auth_status():
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/pin?id=eq.1&select=hash",
+                        headers=sb_headers(), timeout=5)
+        data = r.json()
+        has_pin = bool(data and data[0].get('hash'))
+    except:
+        has_pin = False
+    return jsonify({'has_pin': has_pin})
+
+@app.route('/auth/setup', methods=['POST'])
+def auth_setup():
+    data = request.json or {}
+    new_pin = data.get('new_pin', '')
+    current_pin = data.get('current_pin', '')
+    if not new_pin or len(new_pin) != 4 or not new_pin.isdigit():
+        return jsonify({'error': 'PIN inválido'}), 400
+    # Check current PIN if exists
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/pin?id=eq.1&select=hash",
+                        headers=sb_headers(), timeout=5)
+        stored = (r.json() or [{}])[0].get('hash', '') if r.json() else ''
+    except:
+        stored = ''
+    if stored:
+        if not current_pin or hashlib.sha256(current_pin.encode()).hexdigest() != stored:
+            return jsonify({'error': 'PIN actual incorrecto'}), 401
+    new_hash = hashlib.sha256(new_pin.encode()).hexdigest()
+    # Upsert pin table
+    requests.post(f"{SUPABASE_URL}/rest/v1/pin",
+                 headers={**sb_headers(), 'Prefer': 'resolution=merge-duplicates'},
+                 json={'id': 1, 'hash': new_hash}, timeout=5)
+    return jsonify({'ok': True})
+
+@app.route('/auth/verify', methods=['POST'])
+def auth_verify():
+    data = request.json or {}
+    pin = data.get('pin', '')
+    device_id = data.get('device_id', '')
+    device_name = data.get('device_name', 'Dispositivo')
+    user_id = data.get('user_id', '')
+    if not pin or len(pin) != 4 or not pin.isdigit():
+        return jsonify({'error': 'PIN inválido'}), 400
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/pin?id=eq.1&select=hash",
+                        headers=sb_headers(), timeout=5)
+        stored = (r.json() or [{}])[0].get('hash', '') if r.json() else ''
+    except:
+        stored = ''
+    if not stored:
+        return jsonify({'error': 'No hay PIN configurado'}), 400
+    if hashlib.sha256(pin.encode()).hexdigest() != stored:
+        return jsonify({'error': 'PIN incorrecto'}), 401
+    if device_id and user_id:
+        sb_upsert('devices', {'id': device_id, 'user_id': user_id, 'name': device_name,
+                               'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
+    return jsonify({'ok': True})
 
 @app.route('/auth/me', methods=['GET'])
 @require_auth
@@ -382,7 +439,11 @@ def chat_text(user):
 @app.route('/memory', methods=['GET'])
 @require_auth
 def get_memory(user):
-    row = sb_get('memory', '*', f'user_id=eq.{user["id"]}') or {}
+    row = sb_get('memory', '*', f'user_id=eq.{user["id"]}')
+    if not row:
+        sb_upsert('memory', {'user_id': user['id'], 'summary': '',
+                              'updated_at': datetime.now(timezone.utc).isoformat()})
+        row = {}
     summary = row.get('summary', '')
     plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
     sess = get_session(user['id'])
@@ -615,7 +676,12 @@ def chat_with_memory(user_id: str, plush: dict) -> str:
 
 def update_summary(user_id: str, history: list, plush: dict):
     try:
-        old = (sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}).get('summary', '')
+        # Ensure memory row exists first
+        row = sb_get('memory', 'summary', f'user_id=eq.{user_id}')
+        if not row:
+            sb_upsert('memory', {'user_id': user_id, 'summary': '',
+                                  'updated_at': datetime.now(timezone.utc).isoformat()})
+        old = (row or {}).get('summary', '')
         conv = '\n'.join([f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
                          for m in history[-10:]])
         model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
