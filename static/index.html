@@ -13,7 +13,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/static/icons/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+
 <style>
 
 /* ═══════════════════════════════════════════════
@@ -539,7 +539,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -2383,25 +2383,28 @@ async function askSetupPin(force=false) {
   const want = await customConfirm('PIN de seguridad', '¿Quieres crear un PIN para proteger el acceso a la app?', 'Crear PIN', 'var(--brand)');
   if (want) openSubpage('subpage-pin-setup');
 }
+// QR Scanner — usa BarcodeDetector API nativo (Chrome/Android sin librería externa)
 let qrScanAnimFrame = null;
+let qrDetector = null;
 
 async function startQRScan() {
   const wrap = document.getElementById('qr-preview-wrap');
   const video = document.getElementById('qr-video');
   const btn = document.getElementById('qr-scan-btn-txt');
 
-  // Check jsQR loaded
-  if (typeof jsQR === 'undefined') {
-    toast('Librería QR no cargó — intenta recargar la página', 'error');
+  // Check BarcodeDetector API (Chrome 83+, Android Chrome, Edge)
+  if (!('BarcodeDetector' in window)) {
+    toast('Escáner no disponible en este navegador — usa el código manual', 'error');
     return;
   }
   if (!navigator.mediaDevices?.getUserMedia) {
-    toast('Cámara no disponible en este navegador', 'error');
+    toast('Cámara no disponible', 'error');
     return;
   }
   try {
+    qrDetector = new BarcodeDetector({ formats: ['qr_code'] });
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } }
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
     });
     video.srcObject = stream;
     video.setAttribute('playsinline', true);
@@ -2412,35 +2415,26 @@ async function startQRScan() {
     haptic('light');
     scanFrame();
   } catch(e) {
-    console.error('QR camera error:', e);
-    toast('No se pudo acceder a la cámara: ' + e.message, 'error');
+    console.error('QR error:', e);
+    toast('No se pudo acceder a la cámara', 'error');
   }
 }
 
-function scanFrame() {
+async function scanFrame() {
   const video = document.getElementById('qr-video');
-  const canvas = document.getElementById('qr-canvas');
-  if (!video || !canvas || !video.srcObject) return;
-
+  if (!video?.srcObject || !qrDetector) return;
   if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     try {
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert'
-      });
-      if (code && code.data) {
+      const codes = await qrDetector.detect(video);
+      if (codes.length > 0) {
+        const token = codes[0].rawValue.trim().toUpperCase();
         haptic('success'); playSound('success');
-        const token = code.data.trim().toUpperCase();
         stopQRScan();
         document.getElementById('pair-token-input').value = token;
-        toast('✓ QR detectado', 'success');
+        toast('✓ QR detectado: ' + token, 'success');
         return;
       }
-    } catch(e) { console.warn('jsQR error:', e); }
+    } catch(e) { /* continuar escaneando */ }
   }
   qrScanAnimFrame = requestAnimationFrame(scanFrame);
 }
@@ -2453,6 +2447,7 @@ function stopQRScan() {
   if (video?.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
   if (wrap) wrap.style.display = 'none';
   if (btn) btn.textContent = 'Escanear QR';
+  qrDetector = null;
 }
 function applyUserProfile(user) {
   if (!user) return;
