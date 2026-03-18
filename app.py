@@ -1,137 +1,271 @@
-# app.py — PlushMate AI Server v4.0
-# Stack: Deepgram Nova-2 (STT) → OpenRouter (LLM) → ElevenLabs (TTS)
-# Memoria: historial de sesión (RAM) + resumen persistente (Supabase)
-# Control remoto: polling desde ESP32 + app web PWA
-
+# ═══════════════════════════════════════════════════════════════════════
+# PlushMate Server v5.0 — Multi-usuario con Supabase Auth
+# ═══════════════════════════════════════════════════════════════════════
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_file
+from pathlib import Path
 
 app = Flask(__name__)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-
-# STT now uses ElevenLabs Scribe (ELEVENLABS_API_KEY already configured above)
-OPENROUTER_API_KEY  = os.environ.get('OPENROUTER_API_KEY', '').strip()
+# ── Env vars ──────────────────────────────────────────────────────────────────
 ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY', '').strip()
-ELEVENLABS_VOICE_ID = os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY').strip()
+OPENROUTER_API_KEY  = os.environ.get('OPENROUTER_API_KEY', '').strip()
 SUPABASE_URL        = os.environ.get('SUPABASE_URL', '').strip()
-SUPABASE_KEY        = os.environ.get('SUPABASE_KEY', '').strip()
-OPENROUTER_MODEL    = os.environ.get('OPENROUTER_MODEL', 'arcee-ai/trinity-large-preview:free').strip()
-APP_SECRET          = os.environ.get('APP_SECRET', 'plushmate2024').strip()
+SUPABASE_KEY        = os.environ.get('SUPABASE_KEY', '').strip()  # service_role key
+SUPABASE_ANON_KEY   = os.environ.get('SUPABASE_ANON_KEY', '').strip()
+_server_url         = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
+SERVER_URL          = f"https://{_server_url}" if not _server_url.startswith('http') else _server_url
 
-_server_url = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
-SERVER_URL = _server_url if _server_url.startswith('http') else 'https://' + _server_url
+_default_persona = (
+    "Eres PlushMate, un peluche mágico e inteligente. "
+    "Eres cálido, divertido y siempre positivo. "
+    "Respondes de forma breve y natural, como si hablaras con un amigo cercano."
+)
 
-_default_persona = "Eres PlushMate, un peluche mágico con inteligencia artificial. Eres amable, divertido y cálido. Hablas siempre en español. Responde de forma corta y amigable, máximo 2 oraciones."
-PERSONA = os.environ.get('PERSONA', _default_persona).strip()
-
-AUDIO_DIR = '/tmp/plushmate_audio'
-os.makedirs(AUDIO_DIR, exist_ok=True)
-LAST_WAV_PATH = '/tmp/plushmate_audio/last_debug.wav'
-
-# ── Estado en RAM ─────────────────────────────────────────────────────────────
-
-conversation_history = []
-interaction_count = 0
 HISTORY_LIMIT = 20
-SUMMARY_EVERY = 5
+AUDIO_DIR = Path('/tmp/plushmate_audio')
+AUDIO_DIR.mkdir(exist_ok=True)
 
-# Cola de comandos para el ESP32 (polling)
-pending_command = None
-pending_command_lock = threading.Lock()
+# ── Per-session state (por user_id) ──────────────────────────────────────────
+session_data = {}   # {user_id: {'history': [], 'interaction_count': 0, 'config': {}}}
+session_lock = threading.Lock()
+pending_commands = {}  # {plush_token: command_dict}
+pending_commands_lock = threading.Lock()
 
-# Config dinámica (se puede cambiar desde la app sin redeploy)
-dynamic_config = {
-    'persona': PERSONA,
-    'voice_id': ELEVENLABS_VOICE_ID,
-    'model': OPENROUTER_MODEL,
-    'stt_language': os.environ.get('STT_LANGUAGE', 'es'),  # ISO 639-1
-    'wifi_ssid': '',
-    'wifi_password': '',
-    'wifi_pending': False
-}
+def get_session(user_id: str) -> dict:
+    with session_lock:
+        if user_id not in session_data:
+            session_data[user_id] = {
+                'history': [],
+                'interaction_count': 0,
+            }
+        return session_data[user_id]
 
-# ── Auth helper ───────────────────────────────────────────────────────────────
+# ── Supabase helpers ──────────────────────────────────────────────────────────
+def sb_headers(token=None):
+    key = token or SUPABASE_KEY
+    h = {'apikey': SUPABASE_KEY, 'Content-Type': 'application/json'}
+    if token:
+        h['Authorization'] = f'Bearer {token}'
+    else:
+        h['Authorization'] = f'Bearer {SUPABASE_KEY}'
+    return h
 
-def check_auth():
-    secret = request.headers.get('X-App-Secret') or request.args.get('secret', '')
-    return secret == APP_SECRET
-
-# ── Supabase ──────────────────────────────────────────────────────────────────
-
-def supabase_get_summary() -> str:
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return ""
+def sb_get(table, select='*', filter_str='', token=None):
     try:
-        r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/memory?id=eq.1&select=summary",
-            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
-            timeout=5
-        )
+        url = f"{SUPABASE_URL}/rest/v1/{table}?select={select}"
+        if filter_str: url += f"&{filter_str}"
+        r = requests.get(url, headers=sb_headers(token), timeout=5)
         data = r.json()
-        if data and len(data) > 0:
-            return data[0].get('summary', '')
-    except Exception as e:
-        print(f"[Memory] Error leyendo Supabase: {e}")
-    return ""
+        return data[0] if isinstance(data, list) and data else (data if not isinstance(data, list) else None)
+    except: return None
 
-def supabase_save_summary(summary: str):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return
+def sb_get_all(table, select='*', filter_str='', token=None):
     try:
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/memory?id=eq.1",
-            headers={
-                'apikey': SUPABASE_KEY,
-                'Authorization': f'Bearer {SUPABASE_KEY}',
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-            },
-            json={'summary': summary},
-            timeout=5
-        )
-        print(f"[Memory] Resumen guardado")
-    except Exception as e:
-        print(f"[Memory] Error guardando: {e}")
+        url = f"{SUPABASE_URL}/rest/v1/{table}?select={select}"
+        if filter_str: url += f"&{filter_str}"
+        r = requests.get(url, headers=sb_headers(token), timeout=5)
+        return r.json() if isinstance(r.json(), list) else []
+    except: return []
 
-def update_summary_if_needed():
-    global interaction_count
-    if interaction_count % SUMMARY_EVERY != 0:
-        return
-    if len(conversation_history) < 2:
-        return
-    current_summary = supabase_get_summary()
-    recent = "\n".join([
-        f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
-        for m in conversation_history[-10:]
-    ])
-    prompt = f"""Basándote en el resumen anterior y la conversación reciente, genera un resumen actualizado y conciso de lo que sabes sobre el dueño de PlushMate (nombre, edad, intereses, datos importantes). Solo hechos confirmados. Máximo 5 oraciones.
-
-Resumen anterior:
-{current_summary if current_summary else '(ninguno aún)'}
-
-Conversación reciente:
-{recent}
-
-Nuevo resumen:"""
+def sb_patch(table, body, filter_str='', token=None):
     try:
-        r = requests.post(
-            'https://openrouter.ai/api/v1/chat/completions',
-            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json', 'X-Title': 'PlushMate'},
-            json={'model': dynamic_config['model'], 'messages': [{'role': 'user', 'content': prompt}], 'max_tokens': 200},
-            timeout=20
-        )
-        data = r.json()
-        if data.get('choices'):
-            msg = data['choices'][0]['message']
-            new_summary = (msg.get('content') or msg.get('reasoning') or '').strip()
-            supabase_save_summary(new_summary)
-            print(f"[Memory] Resumen actualizado: {new_summary}")
-    except Exception as e:
-        print(f"[Memory] Error actualizando: {e}")
+        url = f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}"
+        requests.patch(url, headers={**sb_headers(token), 'Prefer': 'return=minimal'},
+                      json=body, timeout=5)
+        return True
+    except: return False
 
-# ── Endpoints principales ─────────────────────────────────────────────────────
+def sb_upsert(table, body, token=None):
+    try:
+        requests.post(f"{SUPABASE_URL}/rest/v1/{table}",
+                     headers={**sb_headers(token), 'Prefer': 'resolution=merge-duplicates'},
+                     json=body, timeout=5)
+        return True
+    except: return False
+
+def sb_delete(table, filter_str, token=None):
+    try:
+        requests.delete(f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}",
+                       headers=sb_headers(token), timeout=5)
+        return True
+    except: return False
+
+# ── Auth helpers ──────────────────────────────────────────────────────────────
+def verify_token(token: str) -> dict | None:
+    """Verifica JWT con Supabase y retorna {id, email, role}."""
+    if not token: return None
+    try:
+        r = requests.get(f"{SUPABASE_URL}/auth/v1/user",
+                        headers={'apikey': SUPABASE_ANON_KEY, 'Authorization': f'Bearer {token}'},
+                        timeout=5)
+        if r.status_code != 200: return None
+        user = r.json()
+        # Get role from profiles table
+        profile = sb_get('profiles', 'id,role', f'id=eq.{user["id"]}')
+        role = profile.get('role', 'user') if profile else 'user'
+        return {'id': user['id'], 'email': user.get('email', ''), 'role': role}
+    except: return None
+
+def get_current_user():
+    """Extrae y verifica el usuario del header Authorization."""
+    auth = request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '): return None
+    return verify_token(auth[7:])
+
+def require_auth(f):
+    """Decorator para endpoints que requieren autenticación."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(user, *args, **kwargs)
+    return decorated
+
+def require_admin(f):
+    """Decorator para endpoints solo admin/dev."""
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user = get_current_user()
+        if not user or user['role'] not in ('admin', 'dev'):
+            return jsonify({'error': 'Forbidden'}), 403
+        return f(user, *args, **kwargs)
+    return decorated
+
+def get_plush(plush_token: str) -> dict | None:
+    """Obtiene un plush por su token."""
+    return sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
+
+def verify_plush_request():
+    """Verifica X-Plush-Token y devuelve el plush o None."""
+    token = request.headers.get('X-Plush-Token', '')
+    if not token: return None
+    return get_plush(token)
+
+# ── Auth endpoints ────────────────────────────────────────────────────────────
+
+@app.route('/auth/signup', methods=['POST'])
+def signup():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
+    name = data.get('name', '').strip()
+    if not email or not password:
+        return jsonify({'error': 'Email y contraseña requeridos'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Contraseña mínimo 6 caracteres'}), 400
+    r = requests.post(f"{SUPABASE_URL}/auth/v1/signup",
+                     headers={'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json'},
+                     json={'email': email, 'password': password}, timeout=10)
+    d = r.json()
+    if r.status_code not in (200, 201) or 'error' in d:
+        msg = d.get('error_description') or d.get('msg') or d.get('error') or 'Error al registrar'
+        return jsonify({'error': msg}), 400
+    # Update name in profile if provided
+    user_id = d.get('user', {}).get('id') or d.get('id')
+    if user_id and name:
+        sb_patch('profiles', {'name': name}, f'id=eq.{user_id}')
+    return jsonify({'token': d.get('access_token'), 'user': {'id': user_id, 'email': email}})
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    password = data.get('password', '')
+    if not email or not password:
+        return jsonify({'error': 'Email y contraseña requeridos'}), 400
+    r = requests.post(
+        f"{SUPABASE_URL}/auth/v1/token?grant_type=password",
+        headers={'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json'},
+        json={'email': email, 'password': password}, timeout=10)
+    d = r.json()
+    if r.status_code != 200 or 'error' in d:
+        msg = d.get('error_description') or d.get('msg') or 'Credenciales incorrectas'
+        return jsonify({'error': msg}), 401
+    user_id = d.get('user', {}).get('id')
+    profile = sb_get('profiles', '*', f'id=eq.{user_id}') or {}
+    return jsonify({
+        'token': d.get('access_token'),
+        'refresh_token': d.get('refresh_token'),
+        'user': {'id': user_id, 'email': email,
+                 'name': profile.get('name',''), 'avatar': profile.get('avatar','🐻'),
+                 'color': profile.get('color','#8FA0CA'), 'role': profile.get('role','user')}
+    })
+
+@app.route('/auth/refresh', methods=['POST'])
+def refresh_token():
+    data = request.json or {}
+    refresh = data.get('refresh_token', '')
+    if not refresh: return jsonify({'error': 'No refresh token'}), 400
+    r = requests.post(
+        f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token",
+        headers={'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json'},
+        json={'refresh_token': refresh}, timeout=10)
+    d = r.json()
+    if r.status_code != 200:
+        return jsonify({'error': 'Token expirado'}), 401
+    return jsonify({'token': d.get('access_token'), 'refresh_token': d.get('refresh_token')})
+
+@app.route('/auth/me', methods=['GET'])
+@require_auth
+def get_me(user):
+    profile = sb_get('profiles', '*', f'id=eq.{user["id"]}') or {}
+    plush = sb_get('plushes', 'id,name,plush_token,paired_at', f'owner_id=eq.{user["id"]}')
+    return jsonify({
+        'id': user['id'], 'email': user['email'],
+        'name': profile.get('name',''), 'avatar': profile.get('avatar','🐻'),
+        'color': profile.get('color','#8FA0CA'), 'role': user['role'],
+        'plush': plush
+    })
+
+# ── Plush pairing ─────────────────────────────────────────────────────────────
+
+@app.route('/plush/pair', methods=['POST'])
+@require_auth
+def pair_plush(user):
+    data = request.json or {}
+    plush_token = data.get('plush_token', '').strip().upper()
+    if not plush_token:
+        return jsonify({'error': 'Token requerido'}), 400
+    plush = sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
+    if not plush:
+        return jsonify({'error': 'QR no válido o peluche no encontrado'}), 404
+    if plush.get('owner_id') and plush['owner_id'] != user['id']:
+        return jsonify({'error': 'Este peluche ya está vinculado a otra cuenta'}), 409
+    sb_patch('plushes', {
+        'owner_id': user['id'],
+        'paired_at': datetime.now(timezone.utc).isoformat()
+    }, f'plush_token=eq.{plush_token}')
+    return jsonify({'ok': True, 'plush': {'id': plush['id'], 'name': plush.get('name','PlushMate')}})
+
+@app.route('/plush/unpair', methods=['POST'])
+@require_auth
+def unpair_plush(user):
+    sb_patch('plushes', {'owner_id': None, 'paired_at': None},
+             f'owner_id=eq.{user["id"]}')
+    return jsonify({'ok': True})
+
+@app.route('/plush/config', methods=['GET', 'POST'])
+@require_auth
+def plush_config(user):
+    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+    if not plush:
+        return jsonify({'error': 'Sin peluche vinculado'}), 404
+    if request.method == 'GET':
+        return jsonify(plush)
+    data = request.json or {}
+    update = {}
+    for field in ('name', 'persona', 'voice_id', 'model', 'stt_language'):
+        if field in data: update[field] = data[field]
+    if update:
+        sb_patch('plushes', update, f'owner_id=eq.{user["id"]}')
+    return jsonify({'ok': True})
+
+# ── Main endpoints ────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -145,461 +279,391 @@ def manifest():
 def assetlinks():
     return send_file('static/assetlinks.json', mimetype='application/json')
 
+@app.route('/static/icons/<path:filename>')
+def static_icons(filename):
+    return send_file(f'static/icons/{filename}')
+
 @app.route('/health')
 def health():
-    return jsonify({'status': 'ok', 'version': '4.0', 'history_len': len(conversation_history)})
+    return jsonify({'status': 'ok', 'version': '5.0'})
+
+# ── Audio processing ──────────────────────────────────────────────────────────
 
 @app.route('/process', methods=['POST'])
 def process_audio():
-    global conversation_history, interaction_count
-    wav_bytes = request.data
-    if not wav_bytes:
-        return jsonify({'error': 'No audio received'}), 400
-    tmp_path = None
+    plush = verify_plush_request()
+    if not plush:
+        return jsonify({'error': 'Plush token inválido'}), 401
+    owner_id = plush.get('owner_id')
+    if not owner_id:
+        return jsonify({'error': 'Peluche no vinculado a ninguna cuenta'}), 403
+
+    wav_data = request.data
+    if len(wav_data) < 44:
+        return jsonify({'error': 'Audio inválido'}), 400
+    print(f"[PlushMate] WAV recibido: {len(wav_data)} bytes (user={owner_id[:8]})")
+
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+        f.write(wav_data)
+        tmp_path = f.name
     try:
-        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
-            f.write(wav_bytes)
-            tmp_path = f.name
-        print(f"[PlushMate] WAV recibido: {len(wav_bytes)} bytes")
-        with open(LAST_WAV_PATH, 'wb') as dbg:
-            dbg.write(wav_bytes)
-        transcript = stt(tmp_path)
+        transcript = stt(tmp_path, plush.get('stt_language', 'es'))
         print(f"[PlushMate] Transcripción: {transcript}")
         if not transcript:
-            return jsonify({'error': 'No speech detected'}), 400
-        conversation_history.append({'role': 'user', 'content': transcript, 'audio_url': None})
-        ai_text = chat_with_memory()
-        print(f"[PlushMate] Respuesta IA: {ai_text}")
-        # Strip ElevenLabs tags for display (keep original for TTS)
+            return jsonify({'error': 'No se entendió el audio'}), 400
+
+        sess = get_session(owner_id)
+        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
+        ai_text = chat_with_memory(owner_id, plush)
+        if not ai_text:
+            sess['history'].pop()
+            return jsonify({'error': 'Sin respuesta'}), 500
+
         display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        conversation_history.append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(conversation_history) > HISTORY_LIMIT:
-            conversation_history = conversation_history[-HISTORY_LIMIT:]
-        interaction_count += 1
-        threading.Thread(target=update_summary_if_needed, daemon=True).start()
-        audio_filename = tts(ai_text)
+        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+        if len(sess['history']) > HISTORY_LIMIT:
+            sess['history'] = sess['history'][-HISTORY_LIMIT:]
+
+        sess['interaction_count'] = sess.get('interaction_count', 0) + 1
+        if sess['interaction_count'] % 5 == 0:
+            threading.Thread(target=update_summary, args=(owner_id, sess['history'], plush), daemon=True).start()
+
+        audio_filename = tts(ai_text, plush.get('voice_id', ''))
         audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-        # Attach audio_url to last assistant message
-        conversation_history[-1]['audio_url'] = audio_url
+        sess['history'][-1]['audio_url'] = audio_url
+
         return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
     except Exception as e:
         print(f"[PlushMate] ERROR: {e}")
         import traceback; traceback.print_exc()
         return jsonify({'error': str(e)}), 500
     finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-
-@app.route('/audio/<filename>')
-def serve_audio(filename):
-    path = os.path.join(AUDIO_DIR, filename)
-    if not os.path.exists(path):
-        return jsonify({'error': 'Not found'}), 404
-    return send_file(path, mimetype='audio/mpeg')
-
-@app.route('/debug_audio')
-def debug_audio():
-    if not os.path.exists(LAST_WAV_PATH):
-        return jsonify({'error': 'No hay audio guardado'}), 404
-    return send_file(LAST_WAV_PATH, mimetype='audio/wav', as_attachment=True, download_name='debug.wav')
-
-# ── Endpoints de memoria ──────────────────────────────────────────────────────
-
-@app.route('/memory', methods=['GET'])
-def get_memory():
-    raw_summary = supabase_get_summary()
-    # Format summary into structured sections
-    formatted = format_memory(raw_summary)
-    return jsonify({
-        'summary': raw_summary,
-        'summary_formatted': formatted,
-        'history': conversation_history,
-        'history_len': len(conversation_history)
-    })
-
-@app.route('/memory', methods=['DELETE'])
-def clear_memory():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    # PIN verification required
-    body = request.json or {}
-    pin = body.get('pin', '')
-    if pin:
-        row = sb_get('pin')
-        stored_hash = row.get('hash', '') if row else ''
-        if stored_hash and pin_hash(pin) != stored_hash:
-            return jsonify({'error': 'PIN incorrecto'}), 401
-    global conversation_history, interaction_count
-    conversation_history = []
-    interaction_count = 0
-    supabase_save_summary('')
-    return jsonify({'status': 'memory cleared'})
-
-# ── Endpoints de configuración (desde la app) ─────────────────────────────────
-
-@app.route('/config', methods=['GET'])
-def get_config():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    return jsonify({
-        'persona': dynamic_config['persona'],
-        'voice_id': dynamic_config['voice_id'],
-        'model': dynamic_config['model'],
-        'stt_language': dynamic_config['stt_language'],
-    })
-
-@app.route('/config', methods=['POST'])
-def set_config():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    data = request.json or {}
-    if 'persona' in data:
-        dynamic_config['persona'] = data['persona']
-    if 'voice_id' in data:
-        dynamic_config['voice_id'] = data['voice_id']
-    if 'model' in data:
-        dynamic_config['model'] = data['model']
-    if 'stt_language' in data:
-        dynamic_config['stt_language'] = data['stt_language']
-    return jsonify({'status': 'ok', 'config': dynamic_config})
-
-# ── Endpoints de control del ESP32 (polling) ──────────────────────────────────
-
-@app.route('/command', methods=['GET'])
-def get_command():
-    """ESP32 llama esto cada 3s. Si hay comando pendiente, lo devuelve y lo borra."""
-    global pending_command
-    with pending_command_lock:
-        cmd = pending_command
-        pending_command = None
-    if cmd:
-        print(f"[Command] ESP32 recogió comando: {cmd}")
-        return jsonify(cmd)
-    return jsonify({'action': 'none'})
-
-@app.route('/command', methods=['POST'])
-def send_command():
-    """La app envía un comando para el ESP32."""
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    global pending_command
-    data = request.json or {}
-    action = data.get('action', '')
-    if action not in ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio'):
-        return jsonify({'error': 'Unknown action'}), 400
-    with pending_command_lock:
-        pending_command = data
-    print(f"[Command] Comando encolado: {data}")
-    return jsonify({'status': 'queued', 'command': data})
-
-@app.route('/wifi', methods=['POST'])
-def set_wifi():
-    """La app envía nuevas credenciales WiFi para el ESP32."""
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    data = request.json or {}
-    ssid = data.get('ssid', '').strip()
-    password = data.get('password', '').strip()
-    if not ssid:
-        return jsonify({'error': 'SSID requerido'}), 400
-    global pending_command
-    with pending_command_lock:
-        pending_command = {'action': 'wifi_change', 'ssid': ssid, 'password': password}
-    print(f"[WiFi] Cambio de red encolado: {ssid}")
-    return jsonify({'status': 'queued'})
-
-# ── Chat desde texto (app) ───────────────────────────────────────────────────
+        try: os.unlink(tmp_path)
+        except: pass
 
 @app.route('/chat/text', methods=['POST'])
-def chat_text():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
+@require_auth
+def chat_text(user):
     data = request.json or {}
     text = data.get('text', '').strip()
     send_to_plush = data.get('send_to_plush', False)
-    if not text:
-        return jsonify({'error': 'Texto vacío'}), 400
+    if not text: return jsonify({'error': 'Texto vacío'}), 400
+
+    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+
+    sess = get_session(user['id'])
+    sess['history'].append({'role': 'user', 'content': text, 'audio_url': None})
     try:
-        conversation_history.append({'role': 'user', 'content': text, 'audio_url': None})
-        ai_text = chat_with_memory()
+        ai_text = chat_with_memory(user['id'], plush)
         if not ai_text:
-            conversation_history.pop()
-            return jsonify({'error': 'Sin respuesta del modelo'}), 500
+            sess['history'].pop()
+            return jsonify({'error': 'Sin respuesta'}), 500
         display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        conversation_history.append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(conversation_history) > HISTORY_LIMIT:
-            conversation_history[:] = conversation_history[-HISTORY_LIMIT:]
-        audio_filename = tts(ai_text)
+        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+        if len(sess['history']) > HISTORY_LIMIT:
+            sess['history'] = sess['history'][-HISTORY_LIMIT:]
+
+        voice_id = plush.get('voice_id', '') if plush else ''
+        audio_filename = tts(ai_text, voice_id)
         audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-        conversation_history[-1]['audio_url'] = audio_url
-        # Optionally queue play command to ESP32
-        if send_to_plush:
-            global pending_command
-            with pending_command_lock:
-                pending_command = {'action': 'play_audio', 'url': audio_url}
+        sess['history'][-1]['audio_url'] = audio_url
+
+        if send_to_plush and plush:
+            with pending_commands_lock:
+                pending_commands[plush['plush_token']] = {'action': 'play_audio', 'url': audio_url}
+
         return jsonify({'response': display_text, 'audio_url': audio_url})
     except Exception as e:
         print(f"[chat/text] ERROR: {e}")
         return jsonify({'error': str(e)}), 500
 
-# ── Pipeline IA ───────────────────────────────────────────────────────────────
+# ── Memory ────────────────────────────────────────────────────────────────────
 
-def format_memory(summary: str) -> list:
-    """Convierte el resumen en una lista de secciones estructuradas."""
-    if not summary or not summary.strip():
-        return []
-    # Ask LLM to structure the memory (fast, small request)
-    try:
-        r = requests.post(
-            'https://openrouter.ai/api/v1/chat/completions',
-            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
-            json={'model': dynamic_config['model'],
-                  'max_tokens': 400,
-                  'messages': [{'role': 'user', 'content':
-                    f'Convierte este resumen en JSON con secciones. Responde SOLO el JSON, sin markdown.\n'
-                    f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
-                    f'Resumen: {summary}'}]},
-            timeout=10
-        )
-        msg = r.json()['choices'][0]['message']
-        raw = (msg.get('content') or msg.get('reasoning') or '').strip()
-        raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
-        return json.loads(raw)
-    except:
-        # Fallback: split by sentences into a single section
-        sentences = [s.strip() for s in re.split(r'[.!?]+', summary) if s.strip()]
-        return [{"icon": "🧠", "title": "Lo que recuerdo", "items": sentences}]
+@app.route('/memory', methods=['GET'])
+@require_auth
+def get_memory(user):
+    row = sb_get('memory', '*', f'user_id=eq.{user["id"]}') or {}
+    summary = row.get('summary', '')
+    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+    sess = get_session(user['id'])
+    formatted = format_memory(summary, user['id'], plush)
+    return jsonify({
+        'summary': summary,
+        'summary_formatted': formatted,
+        'history': sess['history'],
+        'history_len': len(sess['history'])
+    })
 
-def stt(wav_path: str) -> str:
-    """Speech-to-text usando ElevenLabs Scribe v1."""
-    with open(wav_path, 'rb') as f:
-        audio_data = f.read()
-    r = requests.post(
-        'https://api.elevenlabs.io/v1/speech-to-text',
-        headers={'xi-api-key': ELEVENLABS_API_KEY},
-        files={'file': ('audio.wav', audio_data, 'audio/wav')},
-        data={
-            'model_id': 'scribe_v1',
-            'tag_audio_events': 'false',
-            'diarize': 'false',
-            'language_code': dynamic_config['stt_language'],
-        },
-        timeout=30
-    )
-    print(f"[STT] ElevenLabs status: {r.status_code}")
-    data = r.json()
-    print(f"[STT] ElevenLabs response: {data}")
-    try:
-        return data['text'].strip()
-    except (KeyError, TypeError):
-        return ''
-
-def chat_with_memory() -> str:
-    summary = supabase_get_summary()
-    system_content = dynamic_config['persona']
-    if summary:
-        system_content += f"\n\nLo que recuerdas de tu dueño:\n{summary}"
-    messages = [{'role': 'system', 'content': system_content}] + conversation_history
-    r = requests.post(
-        'https://openrouter.ai/api/v1/chat/completions',
-        headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json', 'X-Title': 'PlushMate'},
-        json={'model': dynamic_config['model'], 'messages': messages, 'max_tokens': 120},
-        timeout=30
-    )
-    data = r.json()
-    print(f"[Chat] response: {data}")
-    if 'error' in data:
-        return "Lo siento, no pude pensar en una respuesta ahora."
-    if not data.get('choices'):
-        return "Hmm, tuve un problema al procesar eso."
-    msg = data['choices'][0]['message']
-    # Some models (reasoning models) put response in 'reasoning' when content is None
-    text = msg.get('content') or msg.get('reasoning') or ''
-    if not text and msg.get('reasoning_details'):
-        for rd in msg['reasoning_details']:
-            if rd.get('text'):
-                text = rd['text']
-                break
-    return text.strip()
-
-def tts(text: str) -> str:
-    r = requests.post(
-        f'https://api.elevenlabs.io/v1/text-to-speech/{dynamic_config["voice_id"]}',
-        headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
-        json={'text': text, 'model_id': 'eleven_v3', 'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75}},
-        timeout=30
-    )
-    if r.status_code != 200:
-        print(f"[TTS] error {r.status_code}: {r.text}")
-        raise Exception(f"ElevenLabs error: {r.status_code}")
-    name = f"{uuid.uuid4()}.mp3"
-    with open(os.path.join(AUDIO_DIR, name), 'wb') as f:
-        f.write(r.content)
-    print(f"[TTS] OK → {name}")
-    return name
-
-
-# ── Auth / PIN ────────────────────────────────────────────────────────────────
-
-def pin_hash(pin):
-    return hashlib.sha256(pin.strip().encode()).hexdigest()
-
-def sb_get(table, select='*', filter_str='id=eq.1'):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return None
-    try:
-        r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}&select={select}",
-            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
-            timeout=5
-        )
-        data = r.json()
-        return data[0] if data else None
-    except:
-        return None
-
-def sb_patch(table, body, filter_str='id=eq.1'):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return False
-    try:
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/{table}?{filter_str}",
-            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}',
-                     'Content-Type': 'application/json', 'Prefer': 'return=minimal'},
-            json=body, timeout=5
-        )
-        return True
-    except:
-        return False
-
-def sb_upsert(table, body):
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return False
-    try:
-        requests.post(
-            f"{SUPABASE_URL}/rest/v1/{table}",
-            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}',
-                     'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'},
-            json=body, timeout=5
-        )
-        return True
-    except:
-        return False
-
-@app.route('/auth/status')
-def auth_status():
-    row = sb_get('pin')
-    has_pin = bool(row and row.get('hash'))
-    return jsonify({'has_pin': has_pin})
-
-@app.route('/auth/verify', methods=['POST'])
-def auth_verify():
+@app.route('/memory', methods=['DELETE'])
+@require_auth
+def clear_memory(user):
     data = request.json or {}
-    pin = data.get('pin', '')
-    device_id = data.get('device_id', '')
-    device_name = data.get('device_name', 'Dispositivo')
-    if not pin or len(pin) != 4 or not pin.isdigit():
-        return jsonify({'error': 'PIN invalido'}), 400
-    row = sb_get('pin')
-    stored_hash = row.get('hash', '') if row else ''
-    if not stored_hash:
-        return jsonify({'error': 'No hay PIN configurado'}), 400
-    if pin_hash(pin) != stored_hash:
-        return jsonify({'error': 'PIN incorrecto'}), 401
-    if device_id:
-        sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
-    return jsonify({'ok': True})
-
-@app.route('/auth/setup', methods=['POST'])
-def auth_setup():
-    data = request.json or {}
-    new_pin = data.get('new_pin', '')
-    current_pin = data.get('current_pin', '')
-    if not new_pin or len(new_pin) != 4 or not new_pin.isdigit():
-        return jsonify({'error': 'PIN invalido'}), 400
-    row = sb_get('pin')
-    stored_hash = row.get('hash', '') if row else ''
-    if stored_hash:
-        if not current_pin or pin_hash(current_pin) != stored_hash:
-            return jsonify({'error': 'PIN actual incorrecto'}), 401
-    sb_patch('pin', {'hash': pin_hash(new_pin)})
-    return jsonify({'ok': True})
-
-@app.route('/auth/checkin', methods=['POST'])
-def auth_checkin():
-    # No auth required — device only checks its own revocation status
-    data = request.json or {}
-    device_id = data.get('device_id', '')
-    device_name = data.get('device_name', 'Dispositivo')
-    if not device_id:
-        return jsonify({'revoked': False})
-    row = sb_get('devices', filter_str=f'id=eq.{device_id}')
-    if row and row.get('revoked'):
-        return jsonify({'revoked': True})
-    sb_upsert('devices', {'id': device_id, 'name': device_name, 'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
-    return jsonify({'revoked': False})
+    # Optionally verify PIN if set (legacy support)
+    sess = get_session(user['id'])
+    sess['history'] = []
+    sess['interaction_count'] = 0
+    sb_upsert('memory', {'user_id': user['id'], 'summary': '',
+                          'updated_at': datetime.now(timezone.utc).isoformat()})
+    return jsonify({'status': 'cleared'})
 
 # ── Profile ───────────────────────────────────────────────────────────────────
 
 @app.route('/profile', methods=['GET'])
-def get_profile():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    row = sb_get('profile') or {}
-    return jsonify({'name': row.get('name',''), 'avatar': row.get('avatar','🐻'), 'color': row.get('color','#8FA0CA')})
+@require_auth
+def get_profile(user):
+    row = sb_get('profiles', '*', f'id=eq.{user["id"]}') or {}
+    return jsonify({'name': row.get('name',''), 'avatar': row.get('avatar','🐻'),
+                    'color': row.get('color','#8FA0CA')})
 
 @app.route('/profile', methods=['POST'])
-def set_profile():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
+@require_auth
+def set_profile(user):
     data = request.json or {}
-    body = {}
-    if 'name' in data:   body['name']   = data['name']
-    if 'avatar' in data: body['avatar'] = data['avatar']
-    if 'color' in data:  body['color']  = data['color']
-    sb_patch('profile', body)
+    body = {k: data[k] for k in ('name', 'avatar', 'color') if k in data}
+    if body: sb_patch('profiles', body, f'id=eq.{user["id"]}')
     return jsonify({'ok': True})
 
 # ── Devices ───────────────────────────────────────────────────────────────────
 
 @app.route('/devices', methods=['GET'])
-def list_devices():
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    if not SUPABASE_URL or not SUPABASE_KEY:
-        return jsonify([])
-    try:
-        r = requests.get(
-            f"{SUPABASE_URL}/rest/v1/devices?select=*&order=last_seen.desc&revoked=eq.false",
-            headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
-            timeout=5
-        )
-        return jsonify(r.json())
-    except:
-        return jsonify([])
+@require_auth
+def list_devices(user):
+    devices = sb_get_all('devices', '*',
+        f'user_id=eq.{user["id"]}&revoked=eq.false&order=last_seen.desc')
+    return jsonify(devices)
 
 @app.route('/devices/<device_id>', methods=['DELETE'])
-def revoke_device(device_id):
-    if not check_auth():
-        return jsonify({'error': 'Unauthorized'}), 401
-    sb_patch('devices', {'revoked': True}, filter_str=f'id=eq.{device_id}')
+@require_auth
+def revoke_device(user, device_id):
+    sb_patch('devices', {'revoked': True},
+             f'id=eq.{device_id}&user_id=eq.{user["id"]}')
     return jsonify({'ok': True})
 
+@app.route('/auth/checkin', methods=['POST'])
+def auth_checkin():
+    data = request.json or {}
+    device_id = data.get('device_id', '')
+    device_name = data.get('device_name', 'Dispositivo')
+    user_id = data.get('user_id', '')
+    if not device_id or not user_id:
+        return jsonify({'revoked': False})
+    row = sb_get('devices', 'revoked', f'id=eq.{device_id}&user_id=eq.{user_id}')
+    if row and row.get('revoked'):
+        return jsonify({'revoked': True})
+    sb_upsert('devices', {'id': device_id, 'user_id': user_id, 'name': device_name,
+                           'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
+    return jsonify({'revoked': False})
+
+# ── Command queue (per plush) ─────────────────────────────────────────────────
+
+@app.route('/command', methods=['GET'])
+def get_command():
+    plush_token = request.headers.get('X-Plush-Token', '')
+    if not plush_token:
+        return jsonify({'action': 'none'})
+    with pending_commands_lock:
+        cmd = pending_commands.pop(plush_token, None)
+    return jsonify(cmd if cmd else {'action': 'none'})
+
+@app.route('/command', methods=['POST'])
+@require_auth
+def set_command(user):
+    data = request.json or {}
+    action = data.get('action')
+    valid = ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio')
+    if action not in valid:
+        return jsonify({'error': 'Acción inválida'}), 400
+    plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
+    if not plush:
+        return jsonify({'error': 'Sin peluche vinculado'}), 404
+    with pending_commands_lock:
+        pending_commands[plush['plush_token']] = data
+    return jsonify({'ok': True})
+
+@app.route('/wifi', methods=['POST'])
+@require_auth
+def set_wifi(user):
+    data = request.json or {}
+    ssid = data.get('ssid', '').strip()
+    password = data.get('password', '').strip()
+    if not ssid: return jsonify({'error': 'SSID requerido'}), 400
+    plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
+    if not plush: return jsonify({'error': 'Sin peluche vinculado'}), 404
+    with pending_commands_lock:
+        pending_commands[plush['plush_token']] = {'action': 'wifi_change', 'ssid': ssid, 'password': password}
+    return jsonify({'status': 'queued'})
+
+# ── Admin endpoints ───────────────────────────────────────────────────────────
+
+@app.route('/admin/users', methods=['GET'])
+@require_admin
+def admin_list_users(user):
+    try:
+        r = requests.get(f"{SUPABASE_URL}/auth/v1/admin/users",
+                        headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
+                        timeout=10)
+        users = r.json().get('users', [])
+        profiles = sb_get_all('profiles', '*')
+        profile_map = {p['id']: p for p in profiles}
+        result = []
+        for u in users:
+            p = profile_map.get(u['id'], {})
+            result.append({'id': u['id'], 'email': u.get('email'), 'role': p.get('role','user'),
+                           'name': p.get('name',''), 'created_at': u.get('created_at')})
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/users/<user_id>/role', methods=['POST'])
+@require_admin
+def admin_set_role(user, user_id):
+    data = request.json or {}
+    role = data.get('role', 'user')
+    if role not in ('user', 'admin', 'dev'):
+        return jsonify({'error': 'Rol inválido'}), 400
+    sb_upsert('profiles', {'id': user_id, 'role': role})
+    return jsonify({'ok': True})
+
+@app.route('/admin/logs', methods=['GET'])
+@require_admin
+def admin_logs(user):
+    # Basic session stats
+    with session_lock:
+        stats = [{'user_id': uid[:8], 'messages': len(s['history']),
+                  'interactions': s.get('interaction_count', 0)}
+                 for uid, s in session_data.items()]
+    return jsonify({'active_sessions': len(session_data), 'sessions': stats,
+                    'pending_commands': len(pending_commands)})
+
+@app.route('/admin/plushes', methods=['GET'])
+@require_admin
+def admin_plushes(user):
+    plushes = sb_get_all('plushes', '*')
+    return jsonify(plushes)
+
+# ── Audio serving ─────────────────────────────────────────────────────────────
+
+@app.route('/audio/<filename>')
+def serve_audio(filename):
+    path = AUDIO_DIR / filename
+    if not path.exists():
+        return jsonify({'error': 'Not found'}), 404
+    return send_file(str(path), mimetype='audio/mpeg')
+
+# ── Pipeline IA ───────────────────────────────────────────────────────────────
+
+def format_memory(summary: str, user_id: str, plush: dict) -> list:
+    if not summary or not summary.strip(): return []
+    try:
+        model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
+        r = requests.post('https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 400,
+                  'messages': [{'role': 'user', 'content':
+                    f'Convierte este resumen en JSON con secciones. Solo JSON, sin markdown.\n'
+                    f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
+                    f'Resumen: {summary}'}]}, timeout=10)
+        msg = r.json()['choices'][0]['message']
+        raw = (msg.get('content') or msg.get('reasoning') or '').strip()
+        raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
+        return json.loads(raw)
+    except:
+        sentences = [s.strip() for s in re.split(r'[.!?]+', summary) if s.strip()]
+        return [{"icon": "🧠", "title": "Lo que recuerdo", "items": sentences}]
+
+def stt(wav_path: str, language: str = 'es') -> str:
+    with open(wav_path, 'rb') as f:
+        audio_data = f.read()
+    r = requests.post('https://api.elevenlabs.io/v1/speech-to-text',
+        headers={'xi-api-key': ELEVENLABS_API_KEY},
+        files={'file': ('audio.wav', audio_data, 'audio/wav')},
+        data={'model_id': 'scribe_v1', 'tag_audio_events': 'false',
+              'diarize': 'false', 'language_code': language},
+        timeout=30)
+    print(f"[STT] status: {r.status_code}")
+    try: return r.json().get('text', '').strip()
+    except: return ''
+
+def chat_with_memory(user_id: str, plush: dict) -> str:
+    sess = get_session(user_id)
+    row = sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}
+    summary = row.get('summary', '')
+
+    persona = plush.get('persona', '') if plush else ''
+    if not persona: persona = _default_persona
+    system_content = persona
+    if summary:
+        system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
+
+    model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
+    messages = [{'role': 'system', 'content': system_content}] + [
+        {'role': m['role'], 'content': m['content']} for m in sess['history'][-10:]
+    ]
+    r = requests.post('https://openrouter.ai/api/v1/chat/completions',
+        headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
+        json={'model': model, 'max_tokens': 150, 'messages': messages}, timeout=30)
+    print(f"[Chat] status: {r.status_code}")
+    data = r.json()
+    print(f"[Chat] response: {data}")
+    if not data.get('choices'): return ''
+    msg = data['choices'][0]['message']
+    text = msg.get('content') or msg.get('reasoning') or ''
+    if not text and msg.get('reasoning_details'):
+        for rd in msg['reasoning_details']:
+            if rd.get('text'): text = rd['text']; break
+    return text.strip()
+
+def update_summary(user_id: str, history: list, plush: dict):
+    try:
+        old = (sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}).get('summary', '')
+        conv = '\n'.join([f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
+                         for m in history[-10:]])
+        model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
+        r = requests.post('https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 200,
+                  'messages': [{'role': 'user', 'content':
+                    f'Resumen existente: {old}\nConversación nueva:\n{conv}\n'
+                    f'Actualiza el resumen en 3-5 oraciones. Solo el resumen, sin explicaciones.'}]},
+            timeout=15)
+        msg = r.json()['choices'][0]['message']
+        new_summary = (msg.get('content') or msg.get('reasoning') or '').strip()
+        if new_summary:
+            sb_upsert('memory', {'user_id': user_id, 'summary': new_summary,
+                                  'updated_at': datetime.now(timezone.utc).isoformat()})
+    except Exception as e:
+        print(f"[summary] ERROR: {e}")
+
+def tts(text: str, voice_id: str = '') -> str:
+    vid = voice_id or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
+    r = requests.post(f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
+        headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
+        json={'text': text, 'model_id': 'eleven_v3',
+              'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75}},
+        stream=True, timeout=30)
+    if r.status_code != 200:
+        raise Exception(f"TTS error {r.status_code}: {r.text}")
+    filename = f"{uuid.uuid4()}.mp3"
+    path = AUDIO_DIR / filename
+    with open(str(path), 'wb') as f:
+        for chunk in r.iter_content(chunk_size=4096):
+            if chunk: f.write(chunk)
+    # Cleanup old audio files (keep last 50)
+    files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
+    for old_file in files[:-50]:
+        try: old_file.unlink()
+        except: pass
+    return filename
 
 # ── Keep-alive ────────────────────────────────────────────────────────────────
 
 def keep_alive():
     while True:
-        time.sleep(600)
-        try:
-            requests.get(f'{SERVER_URL}/health', timeout=5)
-            print("[Keep-alive] ping OK")
-        except Exception as e:
-            print(f"[Keep-alive] fallo: {e}")
+        time.sleep(300)
+        try: requests.get(f"{SERVER_URL}/health", timeout=5)
+        except: pass
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+threading.Thread(target=keep_alive, daemon=True).start()
 
 if __name__ == '__main__':
-    threading.Thread(target=keep_alive, daemon=True).start()
-    print(f"[Boot] Resumen actual: {supabase_get_summary() or '(vacío)'}")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
