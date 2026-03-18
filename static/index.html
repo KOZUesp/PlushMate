@@ -13,6 +13,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/static/icons/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 
 /* ═══════════════════════════════════════════════
@@ -538,7 +539,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Name" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -565,8 +566,17 @@ select option{background:var(--white)}
     <div class="auth-card">
       <button class="save-btn" onclick="startQRScan()" id="qr-scan-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3M21 21h-1M14 3v3h3M14 16v1h1M14 21h2v-2h2v2h1"/></svg>
-        Escanear QR
+        <span id="qr-scan-btn-txt">Escanear QR</span>
       </button>
+      <!-- Camera preview for QR -->
+      <div id="qr-preview-wrap" style="display:none;position:relative;margin-top:12px;border-radius:var(--r-md);overflow:hidden;background:#000">
+        <video id="qr-video" style="width:100%;max-height:220px;object-fit:cover" playsinline muted></video>
+        <canvas id="qr-canvas" style="display:none"></canvas>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+          <div style="width:160px;height:160px;border:3px solid var(--brand);border-radius:12px;box-shadow:0 0 0 4000px rgba(0,0,0,0.4)"></div>
+        </div>
+        <button onclick="stopQRScan()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">✕ Cancelar</button>
+      </div>
       <div style="text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0">— o ingresa el código manualmente —</div>
       <input type="text" id="pair-token-input" placeholder="PLUSH-XXXX-XXXX" autocomplete="off"
         style="text-align:center;text-transform:uppercase;letter-spacing:2px;font-weight:800">
@@ -1368,7 +1378,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(checkRevoked, 5000);  // check revocation every 5s
   // Re-check immediately when tab becomes visible again (iOS Safari fix)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && sessionStorage.getItem('pm_authed')) {
+    if (document.visibilityState === 'visible' && sessionStorage.getItem('pm_pin_verified')) {
       checkRevoked();
     }
   });
@@ -2230,13 +2240,48 @@ async function initAuth() {
       CURRENT_USER = user;
       localStorage.setItem('pm_user', JSON.stringify(user));
       if (!user.plush) { showPairingScreen(); return; }
-      showApp();
+      // Check PIN after JWT is valid
+      await checkPinRequired();
     } else { showAuthOverlay(); }
   } catch(e) {
     if (CURRENT_USER) showApp();
     else showAuthOverlay();
   }
 }
+async function checkPinRequired() {
+  // If already verified this session, skip
+  if (sessionStorage.getItem('pm_pin_verified')) { showApp(); return; }
+  try {
+    const r = await fetch(BASE + '/auth/status');
+    const d = await r.json();
+    if (d.has_pin) {
+      showPinVerify();
+    } else {
+      showApp();
+    }
+  } catch(e) {
+    // If can't reach server, skip PIN
+    showApp();
+  }
+}
+
+function showPinVerify() {
+  PIN_STATE = 'verify'; PIN_ENTERED = '';
+  const avatar = PROFILE?.avatar || CURRENT_USER?.avatar || '🐻';
+  const name = PROFILE?.name || CURRENT_USER?.name || '';
+  const pa = document.getElementById('pin-avatar');
+  if (pa) {
+    if (avatar.startsWith('http')) pa.innerHTML = `<img src="${avatar}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">`;
+    else pa.textContent = avatar;
+  }
+  const pt = document.getElementById('pin-title');
+  if (pt) pt.textContent = name ? `Hola, ${name}` : 'Hola de nuevo';
+  const ps = document.getElementById('pin-sub');
+  if (ps) ps.textContent = 'Ingresa tu PIN para continuar';
+  document.getElementById('pin-screen').style.display = 'flex';
+  updatePinDots();
+}
+
 function showAuthOverlay() {
   document.getElementById('auth-overlay').style.display = 'flex';
   document.getElementById('pin-screen').style.display = 'none';
@@ -2338,17 +2383,72 @@ async function askSetupPin(force=false) {
   const want = await customConfirm('PIN de seguridad', '¿Quieres crear un PIN para proteger el acceso a la app?', 'Crear PIN', 'var(--brand)');
   if (want) openSubpage('subpage-pin-setup');
 }
-function startQRScan() { toast('Ingresa el código manualmente por ahora', 'info'); }
+let qrScanInterval = null;
+
+async function startQRScan() {
+  const wrap = document.getElementById('qr-preview-wrap');
+  const video = document.getElementById('qr-video');
+  const btn = document.getElementById('qr-scan-btn-txt');
+  if (!navigator.mediaDevices?.getUserMedia) {
+    toast('Cámara no disponible en este navegador', 'error'); return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: {ideal:640}, height: {ideal:480} }
+    });
+    video.srcObject = stream;
+    await video.play();
+    wrap.style.display = 'block';
+    btn.textContent = 'Escaneando...';
+    haptic('light');
+    // Scan loop
+    qrScanInterval = setInterval(() => {
+      const canvas = document.getElementById('qr-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (!imageData.width) return;
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      if (code?.data) {
+        haptic('success'); playSound('success');
+        stopQRScan();
+        // QR should contain the plush_token (e.g. "PLUSH-PROTO-001")
+        const token = code.data.trim().toUpperCase();
+        document.getElementById('pair-token-input').value = token;
+        toast('QR detectado: ' + token, 'success');
+      }
+    }, 250);
+  } catch(e) {
+    toast('No se pudo acceder a la cámara', 'error');
+    console.error('QR scan error:', e);
+  }
+}
+
+function stopQRScan() {
+  clearInterval(qrScanInterval);
+  qrScanInterval = null;
+  const video = document.getElementById('qr-video');
+  const wrap = document.getElementById('qr-preview-wrap');
+  const btn = document.getElementById('qr-scan-btn-txt');
+  if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+  wrap.style.display = 'none';
+  if (btn) btn.textContent = 'Escanear QR';
+}
 function applyUserProfile(user) {
   if (!user) return;
   PROFILE = { name: user.name || '', avatar: user.avatar || '🐻', color: user.color || '#8FA0CA' };
   renderProfile();
 }
 function doLogout() {
-  clearAuth(); sessionStorage.clear(); showAuthOverlay();
+  clearAuth(); sessionStorage.clear();
+  localStorage.removeItem('pm_pin_asked');
+  showAuthOverlay();
   toast('Sesión cerrada', 'info');
 }
 async function showApp() {
+  sessionStorage.setItem('pm_pin_verified', '1');
   document.getElementById('pin-screen').style.display = 'none';
   document.getElementById('auth-overlay').style.display = 'none';
   // Always re-fetch user to get latest role
@@ -2402,7 +2502,7 @@ async function submitPIN() {
       body: JSON.stringify({new_pin: PIN_ENTERED})
     });
     if (r.ok) {
-      sessionStorage.setItem('pm_authed', 'true');
+      sessionStorage.setItem('pm_pin_verified', '1');
       toast('PIN creado', 'success');
       showApp();
     } else {
@@ -2416,7 +2516,7 @@ async function submitPIN() {
     body: JSON.stringify({pin: PIN_ENTERED, device_id: DEVICE_ID, device_name: DEVICE_NAME})
   });
   if (r.ok) {
-    sessionStorage.setItem('pm_authed', 'true');
+    sessionStorage.setItem('pm_pin_verified', '1');
     playSound('success');
     showApp();
   } else {
@@ -2591,7 +2691,7 @@ async function revokeDevice(id) {
 
 async function checkRevoked() {
   // Only check if user is authenticated in this session
-  if (!sessionStorage.getItem('pm_authed')) return;
+  if (!sessionStorage.getItem('pm_pin_verified')) return;
   try {
     const r = await fetch(BASE + '/auth/checkin', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2600,7 +2700,7 @@ async function checkRevoked() {
     if (!r.ok) return;
     const d = await r.json();
     if (d.revoked) {
-      sessionStorage.removeItem('pm_authed');
+      sessionStorage.removeItem('pm_pin_verified');
       toast('Acceso revocado en este dispositivo', 'error');
       setTimeout(() => showPinVerify(), 1500);
     }
