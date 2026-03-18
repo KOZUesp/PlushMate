@@ -79,7 +79,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 /* ─── AUTH SCREENS ───────────────────────── */
 .auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:800;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 .auth-screen{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center}
-.auth-logo{text-align:center;margin-bottom:24px}
+.auth-logo{text-align:center;margin-bottom:24px;display:flex;flex-direction:column;align-items:center}
+.auth-logo-img{width:80px;height:80px;display:flex;align-items:center;justify-content:center}
 .auth-brand{font-size:28px;font-weight:900;color:var(--text);margin-top:12px}
 .auth-tagline{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
 .auth-card{background:var(--white);border-radius:var(--r-xl);padding:24px;box-shadow:var(--shadow);width:100%}
@@ -503,8 +504,8 @@ select option{background:var(--white)}
   <!-- Login -->
   <div class="auth-screen" id="auth-login">
     <div class="auth-logo">
-      <div class="logo-bear-wrap" style="width:64px;height:64px;border-radius:20px">
-        <span id="auth-logo-inner"></span>
+      <div class="auth-logo-img" id="auth-logo-wrap">
+        <!-- set by JS -->
       </div>
       <div class="auth-brand">PlushMate</div>
       <div class="auth-tagline">Because having a mate, matters</div>
@@ -528,8 +529,8 @@ select option{background:var(--white)}
   <!-- Signup -->
   <div class="auth-screen" id="auth-signup" style="display:none">
     <div class="auth-logo">
-      <div class="logo-bear-wrap" style="width:64px;height:64px;border-radius:20px">
-        <div style="font-size:32px">🐻</div>
+      <div class="auth-logo-img">
+        <img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'">
       </div>
       <div class="auth-brand">PlushMate</div>
       <div class="auth-tagline">Crea tu cuenta</div>
@@ -555,7 +556,9 @@ select option{background:var(--white)}
   <!-- Pairing -->
   <div class="auth-screen" id="auth-pairing" style="display:none">
     <div class="auth-logo">
-      <div style="font-size:64px;line-height:1">🐻</div>
+      <div class="auth-logo-img">
+        <img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'">
+      </div>
       <div class="auth-brand">Vincula tu peluche</div>
       <div class="auth-tagline">Escanea el QR de la tarjeta que vino con él</div>
     </div>
@@ -662,29 +665,7 @@ select option{background:var(--white)}
       </div>
     </div>
 
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:var(--brand-pale)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        </div>
-        <div class="stat-label">Modelo</div>
-        <div><span class="stat-badge badge-blue" id="stat-model">IA</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:var(--mint-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M9 9s0-3 3-3 3 3 3 3c0 2-3 3-3 3"/><circle cx="12" cy="17" r="1" fill="var(--mint)"/></svg>
-        </div>
-        <div class="stat-label">Voz</div>
-        <div><span class="stat-badge badge-green">activa</span></div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon-wrap" style="background:var(--sunny-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--sunny)" stroke-width="2.2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        </div>
-        <div class="stat-label">Mensajes</div>
-        <div><span class="stat-badge badge-yellow" id="stat-msgs">0</span></div>
-      </div>
-    </div>
+
 
     <!-- Volume control -->
     <div class="vol-card" id="vol-card">
@@ -889,9 +870,20 @@ select option{background:var(--white)}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
         Cuenta
       </div>
-      <div style="background:var(--brand-pale);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:800;color:var(--text)" id="profile-email-display">—</div>
-        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px" id="profile-role-display">Usuario</div>
+      <div style="background:var(--brand-pale);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)" id="profile-email-display">—</div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:2px" id="profile-role-display">Usuario</div>
+        </div>
+        <div id="admin-badge" style="display:none;background:var(--brand);color:white;font-size:10px;font-weight:900;padding:3px 10px;border-radius:var(--r-full)">ADMIN</div>
+      </div>
+      <!-- Plush pairing status -->
+      <div style="background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" id="plush-status-card">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)" id="plush-name-display">Sin peluche vinculado</div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px" id="plush-paired-display">—</div>
+        </div>
+        <button class="wifi-btn" onclick="showPairingScreen()" style="width:auto;padding:8px 14px;font-size:12px" id="pair-action-btn">Vincular</button>
       </div>
       <button class="danger-btn" onclick="doLogout()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -899,11 +891,11 @@ select option{background:var(--white)}
       </button>
     </div>
 
-    <!-- Change PIN -->
+    <!-- Security -->
     <div class="settings-section">
       <div class="field-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Cambiar PIN
+        Seguridad — PIN de la app
       </div>
       <input type="password" id="pin-current" placeholder="PIN actual" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
       <input type="password" id="pin-new" placeholder="PIN nuevo (4 dígitos)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
@@ -1017,6 +1009,17 @@ select option{background:var(--white)}
       </div>
     </div>
 
+    <!-- Security → sub-page -->
+    <div class="accordion">
+      <div class="accordion-header" onclick="openSubpage('subpage-pin-setup')">
+        <div class="accordion-icon" style="background:var(--coral-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <div><div class="accordion-title">Seguridad</div><div class="accordion-sub">PIN de acceso a la app</div></div>
+        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </div>
+
     <!-- Advanced → sub-page -->
     <div class="accordion">
       <div class="accordion-header" onclick="openSubpage('subpage-advanced')">
@@ -1070,13 +1073,10 @@ select option{background:var(--white)}
       <span class="subpage-title">Avanzado</span>
     </div>
     <div class="subpage-content">
-      <div class="secret-wrap">
-        <div class="field-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-          App Secret
-        </div>
-        <input id="cfg-secret" type="password" placeholder="plushmate2024" oninput="saveSecret()">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:6px">Debe coincidir con APP_SECRET en Railway</div>
+      <div class="memory-box">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Estado del servidor</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">Autenticación: JWT (Supabase)</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:4px" id="adv-user-id">User ID: cargando...</div>
       </div>
     </div>
   </div>
@@ -1117,6 +1117,32 @@ select option{background:var(--white)}
     <button class="modal-btn cancel" onclick="closePinConfirm()" style="margin-top:16px;width:100%">Cancelar</button>
   </div>
 </div>
+
+  <!-- ─── SUBPAGE: PIN SETUP ─────────────────── -->
+  <div class="subpage" id="subpage-pin-setup">
+    <div class="subpage-header">
+      <button class="subpage-back" onclick="closeSubpage('subpage-pin-setup')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="subpage-title">Seguridad — PIN</span>
+    </div>
+    <div class="subpage-content">
+      <div class="memory-box" style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px">🔐 PIN de seguridad</div>
+        <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.5">El PIN se pide cada vez que abres la app. Usa el mismo PIN en todos tus dispositivos.</div>
+      </div>
+      <div class="field-label">PIN actual (si ya tienes uno)</div>
+      <input type="password" id="pin-current" placeholder="PIN actual (vacío si es nuevo)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+      <div class="field-label">PIN nuevo (4 dígitos)</div>
+      <input type="password" id="pin-new" placeholder="••••" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+      <div class="field-label">Confirmar PIN nuevo</div>
+      <input type="password" id="pin-confirm" placeholder="••••" maxlength="4" inputmode="numeric">
+      <button class="save-btn" onclick="changePIN()" style="margin-top:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Guardar PIN
+      </button>
+    </div>
+  </div>
 
   <!-- ─── SUBPAGE: LEGAL ──────────────────────── -->
   <div class="subpage" id="subpage-legal">
@@ -1251,7 +1277,7 @@ const CONFIG = {
 /* ════════════════════════════════════════════ */
 
 const BASE = CONFIG.serverUrl;
-let SECRET = localStorage.getItem('pm_secret') || 'plushmate2024';
+// SECRET removed — using JWT auth
 let selectedVoiceId = '';
 
 // ── Web Audio ──────────────────────────────────
@@ -1317,6 +1343,17 @@ function applyIcons() {
   setIcon('splash-icon',       'splash',  'splash',  100);
   setIcon('act-icon-mic',      'mic',     'mic',     28);
   setIcon('act-icon-stop',     'micStop', 'micStop', 28);
+  // Auth logo
+  const authWrap = document.getElementById('auth-logo-wrap');
+  if (authWrap) {
+    const src = CONFIG.icons.logo;
+    if (src) {
+      authWrap.innerHTML = `<img src="${src}" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(143,160,202,0.4))" onerror="this.style.display='none'">`;
+    } else {
+      // Default SVG bear with brand color background circle
+      authWrap.innerHTML = DEFAULT_ICONS.splash.replace('width:100px;height:100px', 'width:80px;height:80px');
+    }
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -1445,7 +1482,7 @@ function goPage(id, btn) {
   if (id === 'history') loadHistory();
   if (id === 'memory') loadMemory();
   if (id === 'settings') loadConfig();
-  if (id === 'profile') { buildProfileUI(); loadDevices(); }
+  if (id === 'profile') { buildProfileUI(); loadDevices(); loadProfile(); }
 }
 
 // ── Toast ────────────────────────────────────────
@@ -1470,7 +1507,6 @@ async function checkStatus() {
     const r = await fetch(BASE + '/health', {headers: hdr()});
     const d = await r.json();
     setStatus('listo', false);
-    document.getElementById('stat-msgs').textContent = d.history_len || 0;
   } catch(e) { setStatus('sin conexión', true); }
 }
 function setStatus(txt, isErr) {
@@ -1531,7 +1567,6 @@ async function loadHistory() {
     const d = await r.json();
     const history = d.history || [];
     document.getElementById('history-count-badge').textContent = history.length + ' msgs';
-    document.getElementById('stat-msgs').textContent = history.length;
     const el = document.getElementById('history-list');
     if (!history.length) {
       el.innerHTML = `<div class="empty-state">
@@ -1616,7 +1651,7 @@ async function clearMemory() {
         if (r.ok) {
           playSound('success'); haptic('heavy');
           toast('Memoria borrada', 'success');
-          loadMemory(); document.getElementById('stat-msgs').textContent=0;
+          loadMemory();
           closePinConfirm();
           return true;
         } else {
@@ -1631,10 +1666,10 @@ async function clearMemory() {
 
 // ── Config ────────────────────────────────────────
 async function loadConfig() {
-  document.getElementById('cfg-secret').value = SECRET;
+  // Auth via JWT — no secret needed
   try {
     const r = await fetch(BASE + '/plush/config', {headers:hdr()});
-    if (!r.ok) { toast('Secret incorrecto', 'error'); return; }
+    if (!r.ok) { if (r.status === 404) return; toast('Error al cargar configuración', 'error'); return; }
     const d = await r.json();
     document.getElementById('cfg-persona').value = d.persona || '';
     // set voice
@@ -1683,7 +1718,7 @@ async function saveConfig() {
   btn.disabled = false;
   btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar cambios';
 }
-function saveSecret() { SECRET = document.getElementById('cfg-secret').value; localStorage.setItem('pm_secret', SECRET); }
+function saveSecret() { /* deprecated */ }
 
 // ── WiFi ──────────────────────────────────────────
 async function sendWifi() {
@@ -1868,7 +1903,7 @@ async function sendTextMessage(sendToPlush = false) {
     appendChatBubble('assistant', d.response, d.audio_url, msgId);
     if (sendToPlush) toast('Enviado al peluche 🐻', 'success');
     else if (d.audio_url) { playSound('success'); playAudio(d.audio_url, 'abtn-' + msgId); }
-    document.getElementById('history-count-badge').textContent = (parseInt(document.getElementById('history-count-badge').textContent) || 0) + 2 + ' msgs';
+    // badge updated on next loadHistory
   } catch(e) {
     removeThinking(thinkId);
     toast('Error de conexión', 'error');
@@ -2248,12 +2283,18 @@ async function doPairing() {
     toast('🐻 ¡' + (d.plush?.name || 'PlushMate') + ' vinculado!', 'success');
     document.getElementById('auth-overlay').style.display = 'none';
     showApp();
+    setTimeout(() => askSetupPin(), 600);
   } catch(e) { err.textContent = 'Error de conexión'; }
   finally { btn.disabled = false; btn.textContent = 'Vincular peluche'; }
 }
 function skipPairing() {
   document.getElementById('auth-overlay').style.display = 'none';
-  showApp();
+  // Ask if they want to set a PIN
+  setTimeout(() => askSetupPin(), 300);
+}
+function askSetupPin() {
+  const want = confirm('¿Quieres crear un PIN de seguridad para la app?');
+  if (want) openSubpage('subpage-pin-setup');
 }
 function startQRScan() { toast('Ingresa el código manualmente por ahora', 'info'); }
 function applyUserProfile(user) {
@@ -2357,7 +2398,34 @@ async function loadProfile() {
     if (emailEl && CURRENT_USER) emailEl.textContent = CURRENT_USER.email || '—';
     const roleMap = {user: 'Usuario', admin: '⚡ Administrador', dev: '🛠️ Developer'};
     if (roleEl && CURRENT_USER) roleEl.textContent = roleMap[CURRENT_USER.role] || 'Usuario';
+    // Admin badge
+    const badge = document.getElementById('admin-badge');
+    if (badge) badge.style.display = (CURRENT_USER?.role === 'admin' || CURRENT_USER?.role === 'dev') ? 'block' : 'none';
+    // Advanced user-id
+    const advId = document.getElementById('adv-user-id');
+    if (advId && CURRENT_USER) advId.textContent = 'User ID: ' + (CURRENT_USER.id || '').substring(0,16) + '...';
+    // Plush pairing status
+    const plushName = document.getElementById('plush-name-display');
+    const plushPaired = document.getElementById('plush-paired-display');
+    const pairBtn = document.getElementById('pair-action-btn');
+    if (CURRENT_USER?.plush) {
+      if (plushName) plushName.textContent = '🐻 ' + (CURRENT_USER.plush.name || 'PlushMate');
+      if (plushPaired) plushPaired.textContent = 'Vinculado';
+      if (pairBtn) { pairBtn.textContent = 'Desvincular'; pairBtn.onclick = unpairPlush; pairBtn.style.background='var(--coral)'; }
+    } else {
+      if (plushName) plushName.textContent = 'Sin peluche vinculado';
+      if (plushPaired) plushPaired.textContent = 'Toca para vincular';
+      if (pairBtn) { pairBtn.textContent = 'Vincular'; pairBtn.onclick = showPairingScreen; pairBtn.style.background='var(--brand)'; }
+    }
   } catch(e) {}
+}
+
+async function unpairPlush() {
+  if (!confirm('¿Desvincular el peluche de tu cuenta?')) return;
+  await fetch(BASE + '/plush/unpair', {method:'POST', headers:hdr()});
+  toast('Peluche desvinculado', 'info');
+  if (CURRENT_USER) { CURRENT_USER.plush = null; localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER)); }
+  loadProfile();
 }
 function renderProfile() {
   const { name, avatar, color } = PROFILE;
