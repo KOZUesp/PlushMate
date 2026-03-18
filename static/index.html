@@ -538,7 +538,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Name" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -891,20 +891,7 @@ select option{background:var(--white)}
       </button>
     </div>
 
-    <!-- Security -->
-    <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Seguridad — PIN de la app
-      </div>
-      <input type="password" id="pin-current" placeholder="PIN actual" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
-      <input type="password" id="pin-new" placeholder="PIN nuevo (4 dígitos)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
-      <input type="password" id="pin-confirm" placeholder="Confirmar PIN nuevo" maxlength="4" inputmode="numeric">
-      <button class="save-btn" onclick="changePIN()" style="margin-top:12px;background:var(--brand-dark)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Cambiar PIN
-      </button>
-    </div>
+
 
   </div>
 
@@ -1132,11 +1119,11 @@ select option{background:var(--white)}
         <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.5">El PIN se pide cada vez que abres la app. Usa el mismo PIN en todos tus dispositivos.</div>
       </div>
       <div class="field-label">PIN actual (si ya tienes uno)</div>
-      <input type="password" id="pin-current" placeholder="PIN actual (vacío si es nuevo)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+      <input type="password" id="sec-pin-current" placeholder="PIN actual (vacío si es nuevo)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
       <div class="field-label">PIN nuevo (4 dígitos)</div>
-      <input type="password" id="pin-new" placeholder="••••" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+      <input type="password" id="sec-pin-new" placeholder="••••" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
       <div class="field-label">Confirmar PIN nuevo</div>
-      <input type="password" id="pin-confirm" placeholder="••••" maxlength="4" inputmode="numeric">
+      <input type="password" id="sec-pin-confirm" placeholder="••••" maxlength="4" inputmode="numeric">
       <button class="save-btn" onclick="changePIN()" style="margin-top:14px">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Guardar PIN
@@ -1176,6 +1163,23 @@ select option{background:var(--white)}
       <div style="text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:20px 0">PlushMate v1.0 Prototype · 2026</div>
     </div>
   </div>
+
+
+<!-- ─── CUSTOM CONFIRM MODAL ─────────────────── -->
+<div class="modal-bg" id="custom-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-icon-wrap" id="confirm-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="modal-title" id="confirm-title">¿Estás seguro?</div>
+    <div class="modal-desc" id="confirm-desc"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="confirm-cancel-btn" onclick="resolveConfirm(false)">Cancelar</button>
+      <button class="modal-btn confirm" id="confirm-ok-btn" onclick="resolveConfirm(true)">Confirmar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Toast -->
 <div class="toast" id="toast">
@@ -1562,35 +1566,50 @@ function resetBtn() {
 
 // ── History ───────────────────────────────────────
 async function loadHistory() {
+  // Show cached history instantly while fetching
+  const cached = localStorage.getItem('pm_chat_cache');
+  if (cached) {
+    try {
+      const hist = JSON.parse(cached);
+      if (hist.length) renderHistory(hist);
+    } catch(e) {}
+  }
   try {
     const r = await fetch(BASE + '/memory');
     const d = await r.json();
     const history = d.history || [];
     document.getElementById('history-count-badge').textContent = history.length + ' msgs';
-    const el = document.getElementById('history-list');
-    if (!history.length) {
-      el.innerHTML = `<div class="empty-state">
-        <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-        <div class="empty-text">Sin conversaciones</div><div class="empty-sub">Escribe o usa el micrófono</div></div>`;
-    } else {
-      el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
-      const txt = stripTags(esc(m.content));
-      const audioBtn = (m.role === 'assistant' && m.audio_url)
-        ? `<button class="audio-btn" id="abtn-${i}" onclick="playAudio('${m.audio_url}', 'abtn-${i}')">
-            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Reproducir
-           </button>` : '';
-      return `<div class="msg-item ${m.role==='user'?'right':''}">
-          <div class="convo-who ${m.role==='user'?'user':'plush'}">${m.role==='user'?'Tú':'PlushMate'}</div>
-          <div class="bubble-row ${m.role==='user'?'right':''}">
-            <div class="bubble ${m.role==='user'?'user':'plush'}">${txt}${audioBtn}</div>
-          </div>
-        </div>`;
-    }).join('') + '</div>';
-      setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
-    }
+    renderHistory(history);
     updateHomePreview(history);
-  } catch(e) {}
+  } catch(e) { console.error('loadHistory:', e); }
+}
+
+function renderHistory(history) {
+  const el = document.getElementById('history-list');
+  if (!el) return;
+  // Cache to localStorage for instant reload
+  try { localStorage.setItem('pm_chat_cache', JSON.stringify(history.slice(-30))); } catch(e){}
+  document.getElementById('history-count-badge').textContent = history.length + ' msgs';
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+      <div class="empty-text">Sin conversaciones</div><div class="empty-sub">Escribe o usa el micrófono</div></div>`;
+    return;
+  }
+  el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
+    const txt = stripTags(esc(m.content));
+    const audioBtn = (m.role === 'assistant' && m.audio_url)
+      ? `<button class="audio-btn" id="abtn-${i}" onclick="playAudio('${m.audio_url}', 'abtn-${i}')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir
+         </button>` : '';
+    return `<div class="msg-item ${m.role==='user'?'right':''}">
+        <div class="convo-who ${m.role==='user'?'user':'plush'}">${m.role==='user'?'Tú':'PlushMate'}</div>
+        <div class="bubble-row ${m.role==='user'?'right':''}">
+          <div class="bubble ${m.role==='user'?'user':'plush'}">${txt}${audioBtn}</div>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
 }
 function updateHomePreview(history) {
   const el = document.getElementById('home-preview');
@@ -1747,6 +1766,24 @@ function hdr(ct) {
   return h;
 }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── CUSTOM CONFIRM ───────────────────────────────
+let _confirmResolve = null;
+function customConfirm(title, desc, okText='Confirmar', okColor='var(--coral)') {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-desc').textContent = desc;
+    document.getElementById('confirm-ok-btn').textContent = okText;
+    document.getElementById('confirm-ok-btn').style.background = okColor;
+    document.getElementById('custom-confirm').classList.add('show');
+    haptic('light');
+  });
+}
+function resolveConfirm(val) {
+  document.getElementById('custom-confirm').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+}
 
 // ── STRIP ELEVENLABS TAGS ────────────────────────
 function stripTags(text) {
@@ -2289,11 +2326,16 @@ async function doPairing() {
 }
 function skipPairing() {
   document.getElementById('auth-overlay').style.display = 'none';
-  // Ask if they want to set a PIN
-  setTimeout(() => askSetupPin(), 300);
+  showApp();
+  // Only ask PIN on first time (new account)
+  if (!localStorage.getItem('pm_pin_asked')) {
+    setTimeout(() => askSetupPin(), 500);
+  }
 }
-function askSetupPin() {
-  const want = confirm('¿Quieres crear un PIN de seguridad para la app?');
+async function askSetupPin(force=false) {
+  if (!force && localStorage.getItem('pm_pin_asked')) return;
+  localStorage.setItem('pm_pin_asked', '1');
+  const want = await customConfirm('PIN de seguridad', '¿Quieres crear un PIN para proteger el acceso a la app?', 'Crear PIN', 'var(--brand)');
   if (want) openSubpage('subpage-pin-setup');
 }
 function startQRScan() { toast('Ingresa el código manualmente por ahora', 'info'); }
@@ -2306,9 +2348,19 @@ function doLogout() {
   clearAuth(); sessionStorage.clear(); showAuthOverlay();
   toast('Sesión cerrada', 'info');
 }
-function showApp() {
+async function showApp() {
   document.getElementById('pin-screen').style.display = 'none';
   document.getElementById('auth-overlay').style.display = 'none';
+  // Always re-fetch user to get latest role
+  if (AUTH_TOKEN) {
+    try {
+      const r = await fetch(BASE + '/auth/me', {headers: hdr()});
+      if (r.ok) {
+        CURRENT_USER = await r.json();
+        localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER));
+      }
+    } catch(e) {}
+  }
   loadProfile();
   if (CURRENT_USER) applyUserProfile(CURRENT_USER);
 }
@@ -2421,7 +2473,7 @@ async function loadProfile() {
 }
 
 async function unpairPlush() {
-  if (!confirm('¿Desvincular el peluche de tu cuenta?')) return;
+  if (!await customConfirm('Desvincular peluche', '¿Desvincular el peluche de tu cuenta? Podrás volver a vincularlo después.', 'Desvincular', 'var(--coral)')) return;
   await fetch(BASE + '/plush/unpair', {method:'POST', headers:hdr()});
   toast('Peluche desvinculado', 'info');
   if (CURRENT_USER) { CURRENT_USER.plush = null; localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER)); }
@@ -2557,9 +2609,9 @@ async function checkRevoked() {
 
 // ── CHANGE PIN ─────────────────────────────────────
 async function changePIN() {
-  const cur  = document.getElementById('pin-current').value.trim();
-  const nw   = document.getElementById('pin-new').value.trim();
-  const conf = document.getElementById('pin-confirm').value.trim();
+  const cur  = (document.getElementById('sec-pin-current') || document.getElementById('pin-current'))?.value.trim() || '';
+  const nw   = (document.getElementById('sec-pin-new') || document.getElementById('pin-new'))?.value.trim() || '';
+  const conf = (document.getElementById('sec-pin-confirm') || document.getElementById('pin-confirm'))?.value.trim() || '';
   if (nw !== conf) { toast('Los PINs nuevos no coinciden', 'error'); return; }
   if (nw.length !== 4 || !/^\d{4}$/.test(nw)) { toast('El PIN debe ser 4 dígitos', 'error'); return; }
   const r = await fetch(BASE + '/auth/setup', {
@@ -2568,9 +2620,9 @@ async function changePIN() {
   });
   if (r.ok) {
     playSound('success'); toast('PIN cambiado', 'success');
-    document.getElementById('pin-current').value = '';
-    document.getElementById('pin-new').value = '';
-    document.getElementById('pin-confirm').value = '';
+    ['sec-pin-current','sec-pin-new','sec-pin-confirm','pin-current','pin-new','pin-confirm']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    closeSubpage('subpage-pin-setup');
   } else {
     const d = await r.json();
     toast(d.error || 'Error', 'error');
