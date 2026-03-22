@@ -563,7 +563,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -1033,7 +1033,7 @@ select option{background:var(--white)}
               <div class="wifi-setup-num">2</div>
               <div class="wifi-setup-txt">
                 <div class="wifi-setup-title">Ve a Ajustes WiFi de tu celular</div>
-                <div class="wifi-setup-sub">Conéctate a <strong>PlushMate Setup</strong></div>
+                <div class="wifi-setup-sub">Conéctate a <strong>PlushMate Setup</strong> · Contraseña: <strong>plushmate</strong></div>
               </div>
             </div>
             <div class="wifi-setup-step">
@@ -1994,11 +1994,14 @@ function openSetupPage() {
   toast('Abre en el navegador mientras estés en PlushMate Setup', 'info');
 }
 
+let _hotspotCooldown = false;
 async function activateHotspot() {
+  if (_hotspotCooldown) { toast('Espera unos segundos antes de intentar de nuevo', 'info'); return; }
   const btn = document.getElementById('hotspot-btn-txt');
   const orig = btn.textContent;
   btn.textContent = 'Activando...';
   haptic('medium');
+  _hotspotCooldown = true;
   try {
     const r = await fetch(BASE + '/command', {
       method: 'POST', headers: hdr(true),
@@ -2006,21 +2009,18 @@ async function activateHotspot() {
     });
     if (r.ok) {
       playSound('success'); haptic('success');
-      btn.textContent = '✓ Hotspot activado';
-      toast('Hotspot activado — busca "PlushMate Setup" en tu WiFi', 'success');
-      // Guide to next step
-      setTimeout(() => {
-        btn.textContent = orig;
-        // Auto-show instructions
-        document.querySelector('.wifi-setup-card').style.background = 'var(--mint-light)';
-      }, 3000);
+      btn.textContent = '✓ El peluche reiniciará en modo hotspot...';
+      toast('Espera ~5s y busca "PlushMate Setup" en tu WiFi', 'success');
+      setTimeout(() => { btn.textContent = orig; _hotspotCooldown = false; }, 15000);
     } else {
-      toast('Error al enviar comando', 'error');
+      toast('Error — ¿el peluche está conectado a internet?', 'error');
       btn.textContent = orig;
+      _hotspotCooldown = false;
     }
   } catch(e) {
     toast('Error de conexión', 'error');
     btn.textContent = orig;
+    _hotspotCooldown = false;
   }
 }
 
