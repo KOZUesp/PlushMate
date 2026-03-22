@@ -563,7 +563,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -1051,7 +1051,17 @@ select option{background:var(--white)}
               </div>
             </div>
           </div>
-          <button class="wifi-btn" onclick="openSetupPage()">
+          <!-- Step 0: Activate hotspot from app if plush has internet -->
+          <div style="background:var(--white);border-radius:var(--r-md);padding:14px;box-shadow:var(--shadow-sm);margin-bottom:14px">
+            <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">¿El peluche tiene internet ahora?</div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Activa el hotspot directamente desde la app sin reiniciar</div>
+            <button class="wifi-btn" onclick="activateHotspot()" id="activate-hotspot-btn" style="background:var(--brand)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+              <span id="hotspot-btn-txt">Activar hotspot del peluche</span>
+            </button>
+          </div>
+
+          <button class="wifi-btn" onclick="openSetupPage()" style="background:var(--mint)">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             Abrir configuración del peluche
           </button>
@@ -1987,9 +1997,38 @@ function switchWifiMode(mode) {
 
 function openSetupPage() {
   haptic('medium');
-  // Try to open captive portal
   window.open('http://192.168.4.1', '_blank');
   toast('Abre en el navegador mientras estés en PlushMate Setup', 'info');
+}
+
+async function activateHotspot() {
+  const btn = document.getElementById('hotspot-btn-txt');
+  const orig = btn.textContent;
+  btn.textContent = 'Activando...';
+  haptic('medium');
+  try {
+    const r = await fetch(BASE + '/command', {
+      method: 'POST', headers: hdr(true),
+      body: JSON.stringify({action: 'ap_mode'})
+    });
+    if (r.ok) {
+      playSound('success'); haptic('success');
+      btn.textContent = '✓ Hotspot activado';
+      toast('Hotspot activado — busca "PlushMate Setup" en tu WiFi', 'success');
+      // Guide to next step
+      setTimeout(() => {
+        btn.textContent = orig;
+        // Auto-show instructions
+        document.querySelector('.wifi-setup-card').style.background = 'var(--mint-light)';
+      }, 3000);
+    } else {
+      toast('Error al enviar comando', 'error');
+      btn.textContent = orig;
+    }
+  } catch(e) {
+    toast('Error de conexión', 'error');
+    btn.textContent = orig;
+  }
 }
 
 // Init saved networks when settings loads
