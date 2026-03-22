@@ -563,7 +563,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -1949,12 +1949,18 @@ async function sendWifi() {
     const r = await fetch(BASE + '/wifi', {method:'POST', headers:hdr(true), body:JSON.stringify({ssid, password:pass})});
     if (r.ok) {
       playSound('success');
-      saveNetwork(ssid, pass);  // guardar en historial
+      saveNetwork(ssid, pass);
       renderSavedNetworks();
-      status.textContent = '✓ Enviado — el peluche cambiará de red en ~3s';
-      toast('WiFi enviado', 'success');
+      status.textContent = '✓ Comando enviado — el peluche intentará conectarse';
+      // Warning: we can't confirm connection, just that command was sent
+      toast('Comando enviado · Verifica el LED del peluche', 'info');
       document.getElementById('wifi-ssid').value = '';
       document.getElementById('wifi-pass').value = '';
+      // If plush fails to connect, it will activate AP "PlushMate Setup"
+      setTimeout(() => {
+        status.textContent = '¿No conectó? Usa la pestaña "Sin internet" para configurar via hotspot';
+        status.style.color = 'var(--muted)';
+      }, 5000);
     } else { status.textContent = 'Error al enviar'; }
   } catch(e) { status.textContent = 'Error de conexión'; }
 }
