@@ -128,6 +128,19 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .legal-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:6px}
 .legal-text{font-size:13px;font-weight:600;color:var(--muted);line-height:1.6}
 
+/* ─── WIFI NETWORK ITEMS ─────────────────── */
+.net-item{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s}
+.net-item:active,.net-item.selected{background:var(--brand-pale);border-color:var(--brand)}
+.net-signal{flex-shrink:0;display:flex;align-items:flex-end;gap:1.5px;height:16px}
+.net-signal span{background:var(--muted);border-radius:1px;width:3px}
+.net-signal span:nth-child(1){height:4px}.net-signal span:nth-child(2){height:8px}.net-signal span:nth-child(3){height:12px}.net-signal span:nth-child(4){height:16px}
+.net-signal.strong span{background:var(--mint)}
+.net-signal.medium span:nth-child(1),.net-signal.medium span:nth-child(2),.net-signal.medium span:nth-child(3){background:var(--sunny)}
+.net-signal.weak span:nth-child(1){background:var(--coral)}
+.net-name{flex:1;font-size:13px;font-weight:700;color:var(--text)}
+.net-lock{width:14px;height:14px;color:var(--muted);flex-shrink:0}
+.net-saved-badge{font-size:9px;font-weight:800;background:var(--brand-pale);color:var(--brand);padding:2px 6px;border-radius:var(--r-full)}
+
 /* ─── REFRESH BTN ────────────────────────── */
 .refresh-btn{width:30px;height:30px;border-radius:9px;background:var(--brand-pale);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--brand);transition:all 0.2s}
 .refresh-btn:active{transform:scale(0.9)}
@@ -539,7 +552,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -938,8 +951,6 @@ select option{background:var(--white)}
           <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
           <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
           <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-           <option value="openrouter/hunter-alpha">Hunter Alpha</option>
-           <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron 3</option>   
         </select>
         <div class="field-label" style="margin-top:14px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
@@ -972,10 +983,25 @@ select option{background:var(--white)}
         <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
       <div class="accordion-body">
-        <div class="field-label" style="margin-top:14px">Nombre de red (SSID)</div>
-        <input id="wifi-ssid" type="text" placeholder="Nombre de tu WiFi" style="margin-bottom:10px">
+        <!-- Saved networks -->
+        <div id="saved-nets-wrap" style="display:none;margin-top:14px">
+          <div class="field-label">Redes guardadas</div>
+          <div id="saved-nets-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+        </div>
+        <!-- Scan button -->
+        <button class="wifi-btn" onclick="scanNetworks()" id="scan-btn" style="background:var(--brand-pale);color:var(--brand);margin-top:14px;margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+          <span id="scan-btn-txt">Buscar redes del peluche</span>
+        </button>
+        <div id="scan-results" style="display:none;margin-bottom:12px">
+          <div class="field-label">Redes encontradas por el peluche</div>
+          <div id="scan-list" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <!-- Manual -->
+        <div class="field-label">Red WiFi</div>
+        <input id="wifi-ssid" type="text" placeholder="Nombre de la red" style="margin-bottom:10px" autocomplete="off">
         <div class="field-label">Contraseña</div>
-        <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px">
+        <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px" autocomplete="new-password">
         <button class="wifi-btn" onclick="sendWifi()">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           Enviar al peluche
@@ -1497,7 +1523,7 @@ function goPage(id, btn) {
   if (btn) btn.classList.add('active');
   if (id === 'history') loadHistory();
   if (id === 'memory') loadMemory();
-  if (id === 'settings') loadConfig();
+  if (id === 'settings') { loadConfig(); initWifiSection(); }
   if (id === 'profile') { buildProfileUI(); loadDevices(); loadProfile(); }
 }
 
@@ -1752,22 +1778,139 @@ async function saveConfig() {
 function saveSecret() { /* deprecated */ }
 
 // ── WiFi ──────────────────────────────────────────
+// ── WIFI ─────────────────────────────────────────
+const SAVED_NETWORKS_KEY = 'pm_saved_networks';
+
+function getSavedNetworks() {
+  try { return JSON.parse(localStorage.getItem(SAVED_NETWORKS_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveNetwork(ssid, pass) {
+  const nets = getSavedNetworks().filter(n => n.ssid !== ssid);
+  nets.unshift({ssid, pass, ts: Date.now()});
+  localStorage.setItem(SAVED_NETWORKS_KEY, JSON.stringify(nets.slice(0, 10)));
+}
+function signalClass(rssi) {
+  if (rssi >= -60) return 'strong';
+  if (rssi >= -75) return 'medium';
+  return 'weak';
+}
+function signalBars(rssi, cls) {
+  const bars = rssi >= -60 ? 4 : rssi >= -70 ? 3 : rssi >= -80 ? 2 : 1;
+  const barHtml = [1,2,3,4].map(i =>
+    `<span style="${i <= bars ? '' : 'opacity:0.25'}"></span>`
+  ).join('');
+  return `<div class="net-signal ${cls}">${barHtml}</div>`;
+}
+
+function renderSavedNetworks() {
+  const nets = getSavedNetworks();
+  const wrap = document.getElementById('saved-nets-wrap');
+  const list = document.getElementById('saved-nets-list');
+  if (!wrap || !list) return;
+  if (!nets.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = nets.map(n => `
+    <div class="net-item" onclick="selectNetwork('${n.ssid.replace(/'/g,"\'")}','${n.pass.replace(/'/g,"\'")}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+      <span class="net-name">${escHtml(n.ssid)}</span>
+      <span class="net-saved-badge">guardada</span>
+      <button onclick="event.stopPropagation();forgetNetwork('${n.ssid.replace(/'/g,"\'")}'))" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+    </div>`).join('');
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function selectNetwork(ssid, pass) {
+  document.getElementById('wifi-ssid').value = ssid;
+  document.getElementById('wifi-pass').value = pass;
+  haptic('light');
+  document.getElementById('wifi-pass').focus();
+}
+function forgetNetwork(ssid) {
+  const nets = getSavedNetworks().filter(n => n.ssid !== ssid);
+  localStorage.setItem(SAVED_NETWORKS_KEY, JSON.stringify(nets));
+  renderSavedNetworks();
+  toast('Red eliminada', 'info');
+}
+
+let scanPollInterval = null;
+async function scanNetworks() {
+  const btn = document.getElementById('scan-btn-txt');
+  const resultsWrap = document.getElementById('scan-results');
+  btn.textContent = 'Escaneando...';
+  haptic('medium');
+  try {
+    const r = await fetch(BASE + '/networks/scan', {method:'POST', headers:hdr(true)});
+    if (!r.ok) { toast('Error al iniciar scan', 'error'); btn.textContent = 'Buscar redes del peluche'; return; }
+    toast('Buscando redes... (~5s)', 'info');
+    // Poll for results
+    let attempts = 0;
+    clearInterval(scanPollInterval);
+    scanPollInterval = setInterval(async () => {
+      attempts++;
+      if (attempts > 12) {
+        clearInterval(scanPollInterval);
+        btn.textContent = 'Buscar redes del peluche';
+        toast('Sin respuesta del peluche — ¿está conectado?', 'error');
+        return;
+      }
+      try {
+        const rr = await fetch(BASE + '/networks/results', {headers: hdr()});
+        const d = await rr.json();
+        if (d.status === 'ready' && d.networks?.length) {
+          clearInterval(scanPollInterval);
+          btn.textContent = 'Buscar redes del peluche';
+          renderScanResults(d.networks);
+        }
+      } catch(e) {}
+    }, 1500);
+  } catch(e) {
+    toast('Error de conexión', 'error');
+    btn.textContent = 'Buscar redes del peluche';
+  }
+}
+
+function renderScanResults(networks) {
+  const wrap = document.getElementById('scan-results');
+  const list = document.getElementById('scan-list');
+  if (!wrap || !list) return;
+  wrap.style.display = 'block';
+  haptic('success'); playSound('success');
+  // Sort by signal strength
+  networks.sort((a,b) => b.rssi - a.rssi);
+  list.innerHTML = networks.map(n => {
+    const cls = signalClass(n.rssi);
+    return `<div class="net-item" onclick="selectNetwork('${n.ssid.replace(/'/g,"\'")}','')">
+      ${signalBars(n.rssi, cls)}
+      <span class="net-name">${escHtml(n.ssid)}</span>
+      ${n.secure ? '<svg class="net-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : ''}
+    </div>`;
+  }).join('');
+  toast(networks.length + ' redes encontradas', 'success');
+}
+
 async function sendWifi() {
   const ssid = document.getElementById('wifi-ssid').value.trim();
   const pass = document.getElementById('wifi-pass').value;
   if (!ssid) { toast('Escribe el nombre de la red', 'error'); return; }
   const status = document.getElementById('wifi-status');
   status.textContent = 'Enviando...';
+  haptic('medium');
   try {
     const r = await fetch(BASE + '/wifi', {method:'POST', headers:hdr(true), body:JSON.stringify({ssid, password:pass})});
     if (r.ok) {
       playSound('success');
-      status.textContent = '✓ Enviado — cambiará de red en ~3s';
+      saveNetwork(ssid, pass);  // guardar en historial
+      renderSavedNetworks();
+      status.textContent = '✓ Enviado — el peluche cambiará de red en ~3s';
       toast('WiFi enviado', 'success');
       document.getElementById('wifi-ssid').value = '';
       document.getElementById('wifi-pass').value = '';
     } else { status.textContent = 'Error al enviar'; }
   } catch(e) { status.textContent = 'Error de conexión'; }
+}
+
+// Init saved networks when settings loads
+function initWifiSection() {
+  renderSavedNetworks();
 }
 
 // ── Helpers ───────────────────────────────────────
