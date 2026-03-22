@@ -340,7 +340,12 @@ def assetlinks():
 
 @app.route('/static/icons/<path:filename>')
 def static_icons(filename):
-    return send_file(f'static/icons/{filename}')
+    import os
+    from flask import send_from_directory
+    icons_dir = os.path.join(os.path.dirname(__file__), 'static', 'icons')
+    if os.path.exists(os.path.join(icons_dir, filename)):
+        return send_from_directory(icons_dir, filename)
+    return '', 404
 
 @app.route('/health')
 def health():
