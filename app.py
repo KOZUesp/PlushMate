@@ -32,6 +32,8 @@ session_data = {}   # {user_id: {'history': [], 'interaction_count': 0, 'config'
 session_lock = threading.Lock()
 pending_commands = {}  # {plush_token: command_dict}
 pending_commands_lock = threading.Lock()
+available_networks = {}  # {plush_token: scan results}
+networks_lock = threading.Lock()
 
 def get_session(user_id: str) -> dict:
     with session_lock:
@@ -531,7 +533,7 @@ def get_command():
 def set_command(user):
     data = request.json or {}
     action = data.get('action')
-    valid = ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio')
+    valid = ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio', 'scan_networks')
     if action not in valid:
         return jsonify({'error': 'Acción inválida'}), 400
     plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
@@ -625,7 +627,7 @@ def format_memory(summary: str, user_id: str, plush: dict) -> list:
                     f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
                     f'Resumen: {summary}'}]}, timeout=10)
         msg = r.json()['choices'][0]['message']
-        raw = (msg.get('content') or msg.get('reasoning') or '').strip()
+        raw = extract_text(msg)
         raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
         return json.loads(raw)
     except:
@@ -645,6 +647,28 @@ def stt(wav_path: str, language: str = 'es') -> str:
     try: return r.json().get('text', '').strip()
     except: return ''
 
+def extract_text(msg: dict) -> str:
+    """Extrae el texto de respuesta de cualquier tipo de modelo (normal, razonamiento, etc)."""
+    # 1. content normal
+    content = msg.get('content')
+    if content and content.strip():
+        text = content.strip()
+        # Si el modelo mezcló razonamiento con respuesta, quedarse solo con la parte final
+        # Algunos modelos ponen <think>...</think> antes de la respuesta real
+        if '<think>' in text and '</think>' in text:
+            text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
+        if text:
+            return text
+    # 2. reasoning field directo
+    reasoning = msg.get('reasoning')
+    if reasoning and reasoning.strip():
+        return reasoning.strip()
+    # 3. reasoning_details array
+    for rd in (msg.get('reasoning_details') or []):
+        if rd.get('text') and rd['text'].strip():
+            return rd['text'].strip()
+    return ''
+
 def chat_with_memory(user_id: str, plush: dict) -> str:
     sess = get_session(user_id)
     row = sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}
@@ -652,27 +676,41 @@ def chat_with_memory(user_id: str, plush: dict) -> str:
 
     persona = plush.get('persona', '') if plush else ''
     if not persona: persona = _default_persona
-    system_content = persona
+
+    # System prompt reforzado para modelos de razonamiento
+    system_content = (
+        f"{persona}\n\n"
+        "INSTRUCCIONES CRÍTICAS:\n"
+        "- Responde SIEMPRE en el idioma del usuario\n"
+        "- Responde directamente, sin explicar tu razonamiento\n"
+        "- Máximo 2-3 oraciones cortas\n"
+        "- Mantén tu personalidad en TODO momento"
+    )
     if summary:
         system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
 
     model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
-    messages = [{'role': 'system', 'content': system_content}] + [
-        {'role': m['role'], 'content': m['content']} for m in sess['history'][-10:]
-    ]
+
+    # Para modelos de razonamiento, agregar reminder al final del historial
+    history_msgs = [{'role': m['role'], 'content': m['content']} for m in sess['history'][-10:]]
+
+    messages = [{'role': 'system', 'content': system_content}] + history_msgs
+
     r = requests.post('https://openrouter.ai/api/v1/chat/completions',
         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
-        json={'model': model, 'max_tokens': 150, 'messages': messages}, timeout=30)
+        json={
+            'model': model,
+            'max_tokens': 200,
+            'messages': messages,
+            'transforms': ['middle-out'],  # OpenRouter optimization
+        }, timeout=30)
     print(f"[Chat] status: {r.status_code}")
     data = r.json()
-    print(f"[Chat] response: {data}")
     if not data.get('choices'): return ''
     msg = data['choices'][0]['message']
-    text = msg.get('content') or msg.get('reasoning') or ''
-    if not text and msg.get('reasoning_details'):
-        for rd in msg['reasoning_details']:
-            if rd.get('text'): text = rd['text']; break
-    return text.strip()
+    text = extract_text(msg)
+    print(f"[Chat] extracted text: {text[:100]}")
+    return text
 
 def update_summary(user_id: str, history: list, plush: dict):
     try:
@@ -693,7 +731,7 @@ def update_summary(user_id: str, history: list, plush: dict):
                     f'Actualiza el resumen en 3-5 oraciones. Solo el resumen, sin explicaciones.'}]},
             timeout=15)
         msg = r.json()['choices'][0]['message']
-        new_summary = (msg.get('content') or msg.get('reasoning') or '').strip()
+        new_summary = extract_text(msg)
         if new_summary:
             sb_upsert('memory', {'user_id': user_id, 'summary': new_summary,
                                   'updated_at': datetime.now(timezone.utc).isoformat()})
@@ -720,6 +758,42 @@ def tts(text: str, voice_id: str = '') -> str:
         try: old_file.unlink()
         except: pass
     return filename
+
+
+@app.route('/networks/scan', methods=['POST'])
+@require_auth
+def request_scan(user):
+    plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
+    if not plush: return jsonify({'error': 'Sin peluche vinculado'}), 404
+    with pending_commands_lock:
+        pending_commands[plush['plush_token']] = {'action': 'scan_networks'}
+    return jsonify({'status': 'scanning'})
+
+@app.route('/networks/results', methods=['POST'])
+def receive_scan():
+    plush_token = request.headers.get('X-Plush-Token', '')
+    if not plush_token: return jsonify({'error': 'No token'}), 401
+    data = request.json or {}
+    networks = data.get('networks', [])
+    with networks_lock:
+        available_networks[plush_token] = {
+            'networks': networks,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+    print(f"[WiFi] Scan: {len(networks)} redes para {plush_token[:8]}")
+    return jsonify({'ok': True})
+
+@app.route('/networks/results', methods=['GET'])
+@require_auth
+def get_scan_results(user):
+    plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
+    if not plush: return jsonify({'error': 'Sin peluche vinculado'}), 404
+    with networks_lock:
+        result = available_networks.get(plush['plush_token'])
+    if not result:
+        return jsonify({'networks': [], 'status': 'no_scan'})
+    return jsonify({**result, 'status': 'ready'})
+
 
 # ── Keep-alive ────────────────────────────────────────────────────────────────
 
