@@ -128,6 +128,17 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .legal-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:6px}
 .legal-text{font-size:13px;font-weight:600;color:var(--muted);line-height:1.6}
 
+/* ─── WIFI MODE TABS ─────────────────────── */
+.wifi-mode-tabs{display:flex;gap:6px;background:var(--bg);border-radius:var(--r-sm);padding:4px}
+.wifi-mode-tab{flex:1;padding:8px;background:transparent;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s}
+.wifi-mode-tab.active{background:var(--white);color:var(--brand);box-shadow:var(--shadow-sm)}
+.wifi-setup-card{background:var(--brand-pale);border-radius:var(--r-md);padding:16px;margin-bottom:14px}
+.wifi-setup-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.wifi-setup-step:last-child{margin-bottom:0}
+.wifi-setup-num{width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.wifi-setup-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px}
+.wifi-setup-sub{font-size:12px;font-weight:600;color:var(--muted);line-height:1.4}
+
 /* ─── WIFI NETWORK ITEMS ─────────────────── */
 .net-item{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s}
 .net-item:active,.net-item.selected{background:var(--brand-pale);border-color:var(--brand)}
@@ -552,7 +563,7 @@ select option{background:var(--white)}
     <div class="auth-card">
       <div class="auth-title">Crear cuenta</div>
       <div class="field-label" style="margin-top:14px">Tu nombre</div>
-      <input type="text" id="signup-name" placeholder="Nombre" autocomplete="name">
+      <input type="text" id="signup-name" placeholder="Alan" autocomplete="name">
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
@@ -983,31 +994,71 @@ select option{background:var(--white)}
         <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
       <div class="accordion-body">
-        <!-- Saved networks -->
-        <div id="saved-nets-wrap" style="display:none;margin-top:14px">
-          <div class="field-label">Redes guardadas</div>
-          <div id="saved-nets-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
-        </div>
-        <!-- Scan button -->
-        <button class="wifi-btn" onclick="scanNetworks()" id="scan-btn" style="background:var(--brand-pale);color:var(--brand);margin-top:14px;margin-bottom:10px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-          <span id="scan-btn-txt">Buscar redes del peluche</span>
-        </button>
-        <div id="scan-results" style="display:none;margin-bottom:12px">
-          <div class="field-label">Redes encontradas por el peluche</div>
-          <div id="scan-list" style="display:flex;flex-direction:column;gap:6px"></div>
-        </div>
-        <!-- Manual -->
-        <div class="field-label">Red WiFi</div>
-        <input id="wifi-ssid" type="text" placeholder="Nombre de la red" style="margin-bottom:10px" autocomplete="off">
-        <div class="field-label">Contraseña</div>
-        <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px" autocomplete="new-password">
-        <button class="wifi-btn" onclick="sendWifi()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Enviar al peluche
-        </button>
-        <div class="wifi-status" id="wifi-status"></div>
 
+        <!-- MODE TABS -->
+        <div class="wifi-mode-tabs" style="margin-top:14px;margin-bottom:16px">
+          <button class="wifi-mode-tab active" id="tab-connected" onclick="switchWifiMode('connected')">Peluche conectado</button>
+          <button class="wifi-mode-tab" id="tab-setup" onclick="switchWifiMode('setup')">Sin internet</button>
+        </div>
+
+        <!-- MODE: CONNECTED -->
+        <div id="wifi-mode-connected">
+          <div id="saved-nets-wrap" style="display:none">
+            <div class="field-label">Redes guardadas</div>
+            <div id="saved-nets-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+          </div>
+          <button class="wifi-btn" onclick="scanNetworks()" id="scan-btn" style="background:var(--brand-pale);color:var(--brand);margin-bottom:10px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+            <span id="scan-btn-txt">Buscar redes disponibles</span>
+          </button>
+          <div id="scan-results" style="display:none;margin-bottom:12px">
+            <div class="field-label">Redes encontradas</div>
+            <div id="scan-list" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+          <div class="field-label">Red WiFi</div>
+          <input id="wifi-ssid" type="text" placeholder="Nombre de la red" style="margin-bottom:10px" autocomplete="off">
+          <div class="field-label">Contraseña</div>
+          <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px" autocomplete="new-password">
+          <button class="wifi-btn" onclick="sendWifi()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Enviar al peluche
+          </button>
+          <div class="wifi-status" id="wifi-status"></div>
+        </div>
+
+        <!-- MODE: NO INTERNET / SETUP -->
+        <div id="wifi-mode-setup" style="display:none">
+          <div class="wifi-setup-card">
+            <div class="wifi-setup-step">
+              <div class="wifi-setup-num">1</div>
+              <div class="wifi-setup-txt">
+                <div class="wifi-setup-title">Desconecta y reconecta el peluche</div>
+                <div class="wifi-setup-sub">Si no encuentra WiFi, activa su propio hotspot en ~10 segundos</div>
+              </div>
+            </div>
+            <div class="wifi-setup-step">
+              <div class="wifi-setup-num">2</div>
+              <div class="wifi-setup-txt">
+                <div class="wifi-setup-title">Ve a Ajustes WiFi de tu celular</div>
+                <div class="wifi-setup-sub">Conéctate a <strong>PlushMate Setup</strong> · Contraseña: <strong>plushmate</strong></div>
+              </div>
+            </div>
+            <div class="wifi-setup-step">
+              <div class="wifi-setup-num">3</div>
+              <div class="wifi-setup-txt">
+                <div class="wifi-setup-title">Abre la página de configuración</div>
+                <div class="wifi-setup-sub">Se abre automáticamente, o usa el botón de abajo. Verás las redes disponibles y podrás conectarte.</div>
+              </div>
+            </div>
+          </div>
+          <button class="wifi-btn" onclick="openSetupPage()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Abrir configuración del peluche
+          </button>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:10px;background:var(--bg);border-radius:var(--r-sm);padding:8px">
+            URL: <code style="color:var(--brand)">http://192.168.4.1</code>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -1906,6 +1957,33 @@ async function sendWifi() {
       document.getElementById('wifi-pass').value = '';
     } else { status.textContent = 'Error al enviar'; }
   } catch(e) { status.textContent = 'Error de conexión'; }
+}
+
+// ── WIFI MODE TOGGLE ─────────────────────────────
+function switchWifiMode(mode) {
+  haptic('light'); playSound('tap');
+  const connected = document.getElementById('wifi-mode-connected');
+  const setup = document.getElementById('wifi-mode-setup');
+  const tabC = document.getElementById('tab-connected');
+  const tabS = document.getElementById('tab-setup');
+  if (mode === 'connected') {
+    connected.style.display = 'block';
+    setup.style.display = 'none';
+    tabC.classList.add('active');
+    tabS.classList.remove('active');
+  } else {
+    connected.style.display = 'none';
+    setup.style.display = 'block';
+    tabC.classList.remove('active');
+    tabS.classList.add('active');
+  }
+}
+
+function openSetupPage() {
+  haptic('medium');
+  // Try to open captive portal
+  window.open('http://192.168.4.1', '_blank');
+  toast('Abre en el navegador mientras estés en PlushMate Setup', 'info');
 }
 
 // Init saved networks when settings loads
