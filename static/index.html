@@ -763,6 +763,43 @@ select option{background:var(--white)}
   </div>
 
 
+  <!-- ─── HISTORY / CHAT ──────────────────────── -->
+  <div class="page chat-page" id="page-history">
+    <div class="history-header">
+      <span class="section-title">Chat</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
+        <button class="refresh-btn" id="refresh-btn" onclick="refreshHistory()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="history-list" class="history-scroll">
+      <div class="empty-state">
+        <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <div class="empty-text">Sin conversaciones</div>
+        <div class="empty-sub">Escribe o usa el micrófono para comenzar</div>
+      </div>
+    </div>
+    <div class="thinking-wrap" id="thinking-wrap" style="display:none">
+      <div class="thinking-dots"><span></span><span></span><span></span></div>
+      <div class="thinking-label">pensando...</div>
+    </div>
+    <div class="chat-input-bar">
+      <button class="chat-voice-btn" id="chat-voice-btn" onclick="toggleChatVoice()">
+        <svg id="chat-voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
+      </button>
+      <input type="text" class="chat-input" id="chat-input" placeholder="Escríbele a PlushMate..."
+        onkeydown="if(event.key==='Enter') sendTextMessage()">
+      <button class="chat-send-btn" id="chat-plush-btn" onclick="sendTextMessage(true)" title="Enviar al peluche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+      </button>
+      <button class="chat-send-btn chat-send-app" id="chat-app-btn" onclick="sendTextMessage(false)" title="Escuchar en la app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+      </button>
+    </div>
+  </div>
+
   <!-- ─── MEMORY ──────────────────────────────── -->
   <div class="page" id="page-memory">
     <div class="memory-banner">
@@ -1225,141 +1262,140 @@ select option{background:var(--white)}
       </div>
     </div>
 
-    <!-- Tab content -->
+    <!-- Tab content — same design as existing pages -->
     <div class="pw-content">
 
-      <!-- CHAT TAB -->
-      <div class="pw-panel" id="pw-panel-chat">
-        <!-- Activate button -->
-        <div class="pw-activate-wrap" id="pw-activate-wrap">
-          <button class="pw-activate-btn" id="pw-activate-btn"
-            onmousedown="pwStartActivate()" onmouseup="pwStopActivate()"
-            ontouchstart="pwStartActivate()" ontouchend="pwStopActivate()">
-            <div class="pw-mic-ring" id="pw-mic-ring">
-              <svg id="pw-mic-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
-            </div>
-            <div class="pw-activate-label" id="pw-activate-label">Mantén para hablar</div>
-          </button>
-          <!-- Text input -->
-          <div class="pw-text-row">
-            <input type="text" id="pw-text-input" class="pw-text-field" placeholder="Escribe algo..." onkeydown="if(event.key==='Enter') pwSendText()">
-            <button class="pw-send-btn" onclick="pwSendText()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </button>
-            <button class="pw-send-btn" id="pw-plush-send-btn" onclick="pwSendText(true)" style="background:var(--mint)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-            </button>
-          </div>
-        </div>
-        <!-- Chat history -->
-        <div class="pw-history" id="pw-history">
+      <!-- CHAT TAB — same as page-history -->
+      <div class="pw-panel chat-page" id="pw-panel-chat">
+        <div id="pw-history" class="history-scroll">
           <div class="empty-state">
             <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
             <div class="empty-text">Sin conversaciones</div>
-            <div class="empty-sub">¡Di algo!</div>
+            <div class="empty-sub">Escribe o usa el micrófono para comenzar</div>
           </div>
         </div>
-        <!-- Thinking indicator -->
         <div class="thinking-wrap" id="pw-thinking" style="display:none">
           <div class="thinking-dots"><span></span><span></span><span></span></div>
           <div class="thinking-label">pensando...</div>
         </div>
-      </div>
-
-      <!-- MEMORY TAB -->
-      <div class="pw-panel" id="pw-panel-memory" style="display:none">
-        <div style="padding:16px">
-          <div class="memory-actions" style="margin-bottom:16px">
-            <button class="memory-action-btn" onclick="pwUpdateMemory()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-              Actualizar
-            </button>
-            <button class="memory-action-btn danger" onclick="pwClearMemory()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-              Borrar
-            </button>
-          </div>
-          <div id="pw-memory-content">
-            <div class="empty-state"><div class="empty-text">Sin memoria</div></div>
-          </div>
+        <div class="chat-input-bar">
+          <button class="chat-voice-btn" id="pw-voice-btn" onclick="pwToggleVoice()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
+          </button>
+          <input type="text" class="chat-input" id="pw-text-input" placeholder="Escríbele..."
+            onkeydown="if(event.key==='Enter') pwSendText()">
+          <button class="chat-send-btn" onclick="pwSendText(true)" title="Enviar al peluche" style="background:var(--mint)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+          </button>
+          <button class="chat-send-btn chat-send-app" onclick="pwSendText(false)" title="Escuchar en app">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+          </button>
         </div>
       </div>
 
-      <!-- CONFIG TAB -->
-      <div class="pw-panel" id="pw-panel-config" style="display:none">
-        <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+      <!-- MEMORY TAB — same as page-memory -->
+      <div class="pw-panel" id="pw-panel-memory" style="display:none">
+        <div class="memory-banner">
+          <div class="memory-banner-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
+          </div>
+          <div class="memory-banner-text">
+            <div class="title" id="pw-memory-title">Memoria de PlushMate</div>
+            <div class="sub">Recuerda sobre ti</div>
+          </div>
+        </div>
+        <div id="pw-memory-sections">
+          <div class="memory-box">
+            <div class="memory-empty">Cargando memoria...</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:0;padding:0 20px 16px">
+          <button class="save-btn" onclick="pwUpdateMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Actualizar
+          </button>
+          <button class="danger-btn" onclick="pwClearMemory()" style="flex:1;margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+            Borrar
+          </button>
+        </div>
+      </div>
 
-          <!-- Assets section -->
-          <div class="settings-section">
-            <div class="field-label" style="margin-bottom:10px">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              Apariencia
+      <!-- CONFIG TAB — same style as settings accordions -->
+      <div class="pw-panel" id="pw-panel-config" style="display:none;overflow-y:auto">
+
+        <!-- Apariencia -->
+        <div class="accordion open" id="pw-acc-appearance">
+          <div class="accordion-header" onclick="toggleAccordion('pw-acc-appearance')">
+            <div class="accordion-icon" style="background:var(--lavender-light)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </div>
-            <div class="field-label">URL de Avatar (512×512px recomendado)</div>
-            <input type="url" id="pw-avatar-url" placeholder="https://ejemplo.com/avatar.png" style="margin-bottom:10px">
-            <div class="field-label">URL de Banner (1200×400px recomendado)</div>
-            <input type="url" id="pw-banner-url" placeholder="https://ejemplo.com/banner.png" style="margin-bottom:10px">
+            <div><div class="accordion-title">Apariencia</div><div class="accordion-sub">Banner, avatar, color</div></div>
+            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="accordion-body">
+            <div class="field-label" style="margin-top:14px">Nombre del peluche</div>
+            <input type="text" id="pw-plush-name" placeholder="PlushMate" style="margin-bottom:14px">
+            <div class="field-label">Descripción corta</div>
+            <input type="text" id="pw-description" placeholder="Tu compañero mágico" style="margin-bottom:14px">
+            <div class="field-label">URL de Avatar <span style="font-weight:600;color:var(--muted)">(512×512px)</span></div>
+            <input type="url" id="pw-avatar-url" placeholder="https://i.imgur.com/..." style="margin-bottom:14px">
+            <div class="field-label">URL de Banner <span style="font-weight:600;color:var(--muted)">(1200×400px)</span></div>
+            <input type="url" id="pw-banner-url" placeholder="https://i.imgur.com/..." style="margin-bottom:14px">
             <div class="field-label">Color de acento</div>
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-              <input type="color" id="pw-accent-color" style="width:44px;height:44px;border-radius:8px;border:none;padding:2px;cursor:pointer">
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" id="pw-accent-color" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);padding:2px;cursor:pointer;background:var(--bg)">
               <input type="text" id="pw-accent-hex" placeholder="#8FA0CA" style="flex:1;margin-bottom:0">
             </div>
-            <div class="field-label">Descripción corta</div>
-            <input type="text" id="pw-description" placeholder="Tu compañero mágico" style="margin-bottom:0">
-          </div>
-
-          <!-- Identity -->
-          <div class="settings-section">
-            <div class="field-label" style="margin-bottom:10px">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-              Identidad
-            </div>
-            <div class="field-label">Nombre del peluche</div>
-            <input type="text" id="pw-plush-name" placeholder="PlushMate" style="margin-bottom:10px">
-            <div class="field-label">Personalidad (prompt de sistema)</div>
-            <textarea id="pw-persona" placeholder="Eres un peluche mágico llamado..." style="width:100%;min-height:90px;padding:12px 14px;border-radius:10px;border:2px solid var(--border);font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--text);resize:vertical;margin-bottom:0"></textarea>
-          </div>
-
-          <!-- Voice & Model -->
-          <div class="settings-section">
-            <div class="field-label" style="margin-bottom:10px">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
-              Voz e IA
-            </div>
-            <div class="field-label">Voice ID (ElevenLabs)</div>
-            <input type="text" id="pw-voice-id" placeholder="aaf0KU31jmlzVPqltvJY" style="margin-bottom:10px">
-            <div class="field-label">Modelo LLM</div>
-            <select id="pw-model" style="width:100%;padding:12px 14px;border-radius:10px;border:2px solid var(--border);font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--text);margin-bottom:10px">
-              <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron Nano (rápido, gratis)</option>
-              <option value="arcee-ai/trinity-large-preview:free">Trinity Large (gratis)</option>
-              <option value="openrouter/hunter-alpha">Hunter Alpha</option>
-              <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-            </select>
-            <div class="field-label">Idioma STT</div>
-            <select id="pw-stt-lang" style="width:100%;padding:12px 14px;border-radius:10px;border:2px solid var(--border);font-size:13px;font-family:var(--font);outline:none;background:var(--bg);color:var(--text)">
-              <option value="es">Español</option>
-              <option value="en">English</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="pt">Português</option>
-              <option value="it">Italiano</option>
-            </select>
-          </div>
-
-          <button class="save-btn" onclick="pwSaveConfig()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>
-            Guardar cambios
-          </button>
-
-          <!-- Danger zone -->
-          <div style="background:var(--coral-light);border-radius:var(--r-md);padding:14px">
-            <div style="font-size:12px;font-weight:800;color:var(--coral);margin-bottom:10px">Zona de peligro</div>
-            <button class="danger-btn" onclick="pwUnpairPlush()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 00-.12-7.07 5.006 5.006 0 00-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 00.12 7.07 5.006 5.006 0 006.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>
-              Desvincular peluche
-            </button>
           </div>
         </div>
+
+        <!-- Personalidad e IA — same as the existing IA accordion -->
+        <div class="accordion" id="pw-acc-ai">
+          <div class="accordion-header" onclick="toggleAccordion('pw-acc-ai')">
+            <div class="accordion-icon" style="background:var(--brand-pale)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </div>
+            <div><div class="accordion-title">Inteligencia Artificial</div><div class="accordion-sub">Personalidad, voz, modelo</div></div>
+            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+          <div class="accordion-body">
+            <div class="field-label" style="margin-top:14px">Personalidad</div>
+            <textarea id="pw-persona" rows="3" placeholder="Describe cómo debe comportarse..." style="margin-bottom:14px"></textarea>
+            <div class="field-label">Voice ID de ElevenLabs</div>
+            <input type="text" id="pw-voice-id" placeholder="aaf0KU31jmlzVPqltvJY" style="margin-bottom:14px">
+            <div class="field-label">Modelo de IA</div>
+            <select id="pw-model" style="margin-bottom:16px">
+              <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron Nano (gratis)</option>
+              <option value="arcee-ai/trinity-large-preview:free">Trinity Large (gratis)</option>
+              <option value="openrouter/hunter-alpha">Hunter Alpha</option>
+              <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
+              <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
+            </select>
+            <div class="field-label">Idioma de reconocimiento de voz</div>
+            <select id="pw-stt-lang" style="margin-bottom:16px">
+              <option value="es">🇲🇽 Español</option>
+              <option value="en">🇺🇸 English</option>
+              <option value="fr">🇫🇷 Français</option>
+              <option value="pt">🇧🇷 Português</option>
+              <option value="de">🇩🇪 Deutsch</option>
+              <option value="it">🇮🇹 Italiano</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Save + Danger -->
+        <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <button class="save-btn" onclick="pwSaveConfig()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Guardar cambios
+          </button>
+          <button class="danger-btn" onclick="pwUnpairPlush()" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 007.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>
+            Desvincular peluche
+          </button>
+        </div>
+
       </div>
 
     </div>
@@ -2340,14 +2376,17 @@ function pwRenderHistory(history) {
     el.innerHTML = '<div class="empty-state"><div class="empty-text">Sin conversaciones</div><div class="empty-sub">¡Di algo!</div></div>';
     return;
   }
-  el.innerHTML = history.map((m, i) => `
-    <div class="pw-msg ${m.role === 'user' ? 'right' : ''}">
-      <div class="pw-who">${m.role === 'user' ? 'Tú' : (CURRENT_PLUSH?.name || 'PlushMate')}</div>
-      <div class="pw-bubble ${m.role === 'user' ? 'user' : 'plush'}" ${m.role === 'user' ? '' : 'style="background:var(--white)"'}>
-        ${escHtml(stripTags(m.content))}
-        ${m.audio_url ? `<br><button class="audio-btn" id="pw-abtn-${i}" onclick="playAudio('${m.audio_url}','pw-abtn-${i}')" style="margin-top:6px">▶ Reproducir</button>` : ''}
+  el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
+    const who = m.role === 'user' ? 'Tú' : (CURRENT_PLUSH?.name || 'PlushMate');
+    const audioBtn = (m.role === 'assistant' && m.audio_url)
+      ? `<button class="audio-btn" id="pw-abtn-${i}" onclick="playAudio('${m.audio_url}','pw-abtn-${i}')"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir</button>` : '';
+    return `<div class="msg-item ${m.role==='user'?'right':''}">
+      <div class="convo-who ${m.role==='user'?'user':'plush'}">${who}</div>
+      <div class="bubble-row ${m.role==='user'?'right':''}">
+        <div class="bubble ${m.role==='user'?'user':'plush'}">${escHtml(stripTags(m.content))}${audioBtn}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('') + '</div>';
   setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
 }
 
@@ -2361,7 +2400,7 @@ async function pwSendText(sendToPlush = false) {
   haptic('light');
   // Add user bubble instantly
   const hist = document.getElementById('pw-history');
-  hist.innerHTML += `<div class="pw-msg right"><div class="pw-who">Tú</div><div class="pw-bubble user">${escHtml(text)}</div></div>`;
+  hist.innerHTML += `<div class="msg-item right"><div class="convo-who user">Tú</div><div class="bubble-row right"><div class="bubble user">${escHtml(text)}</div></div></div>`;
   hist.scrollTop = hist.scrollHeight;
   // Show thinking
   _pwThinking = true;
@@ -2375,7 +2414,9 @@ async function pwSendText(sendToPlush = false) {
     document.getElementById('pw-thinking').style.display = 'none';
     _pwThinking = false;
     if (d.response) {
-      hist.innerHTML += `<div class="pw-msg"><div class="pw-who">${escHtml(CURRENT_PLUSH.name || 'PlushMate')}</div><div class="pw-bubble plush">${escHtml(stripTags(d.response))}${d.audio_url ? `<br><button class="audio-btn" onclick="playAudio('${d.audio_url}','pw-auto')" style="margin-top:6px">▶ Reproducir</button>` : ''}</div></div>`;
+      const _who = escHtml(CURRENT_PLUSH.name || 'PlushMate');
+      const _audioBtn = d.audio_url ? `<button class="audio-btn" onclick="playAudio('${d.audio_url}','pw-auto')"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir</button>` : '';
+      hist.innerHTML += `<div class="msg-item"><div class="convo-who plush">${_who}</div><div class="bubble-row"><div class="bubble plush">${escHtml(stripTags(d.response))}${_audioBtn}</div></div></div>`;
       hist.scrollTop = hist.scrollHeight;
       if (!sendToPlush && d.audio_url) playAudio(d.audio_url, 'pw-auto');
       pwLoadHistory(); // refresh cache
@@ -2423,18 +2464,21 @@ async function pwLoadMemory() {
     const r = await fetch(BASE + `/memory?plush_id=${CURRENT_PLUSH.id}`, {headers: hdr()});
     if (!r.ok) return;
     const d = await r.json();
-    const el = document.getElementById('pw-memory-content');
+    const el = document.getElementById('pw-memory-sections');
     if (!el) return;
     const sections = d.summary_formatted || [];
+    // Update title
+    const titleEl = document.getElementById('pw-memory-title');
+    if (titleEl && CURRENT_PLUSH) titleEl.textContent = 'Memoria de ' + (CURRENT_PLUSH.name || 'PlushMate');
     if (!sections.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-text">Sin memoria aún</div></div>';
+      el.innerHTML = '<div class="memory-box"><div class="memory-empty">Sin memoria aún</div></div>';
       return;
     }
-    el.innerHTML = sections.map(s => `
+    el.innerHTML = '<div class="memory-box">' + sections.map(s => `
       <div class="memory-section">
         <div class="memory-section-header">${s.icon || '💭'} ${escHtml(s.title || '')}</div>
         ${(s.items || []).map(i => `<div class="memory-item">• ${escHtml(i)}</div>`).join('')}
-      </div>`).join('');
+      </div>`).join('') + '</div>';
   } catch(e) {}
 }
 
@@ -3181,6 +3225,32 @@ async function scanFrame() {
     } catch(e) { /* continuar escaneando */ }
   }
   qrScanAnimFrame = requestAnimationFrame(scanFrame);
+}
+
+// Voice input in plush world
+let _pwVoiceRec = null;
+function pwToggleVoice() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    toast('Micrófono no disponible en este navegador', 'error'); return;
+  }
+  if (_pwVoiceRec) { _pwVoiceRec.stop(); _pwVoiceRec = null;
+    document.getElementById('pw-voice-btn').style.color = '';
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _pwVoiceRec = new SR();
+  _pwVoiceRec.lang = CURRENT_PLUSH?.stt_language || 'es-MX';
+  _pwVoiceRec.continuous = false;
+  _pwVoiceRec.interimResults = false;
+  _pwVoiceRec.onresult = (e) => {
+    const txt = e.results[0][0].transcript;
+    document.getElementById('pw-text-input').value = txt;
+    pwSendText();
+  };
+  _pwVoiceRec.onend = () => { _pwVoiceRec = null; document.getElementById('pw-voice-btn').style.color = ''; };
+  _pwVoiceRec.start();
+  document.getElementById('pw-voice-btn').style.color = 'var(--coral)';
+  haptic('medium');
 }
 
 function stopQRScan() {
