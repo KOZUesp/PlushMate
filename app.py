@@ -35,14 +35,15 @@ pending_commands_lock = threading.Lock()
 available_networks = {}  # {plush_token: scan results}
 networks_lock = threading.Lock()
 
-def get_session(user_id: str) -> dict:
+def get_session(user_id: str, plush_id: str = '') -> dict:
+    key = f"{user_id}:{plush_id}" if plush_id else user_id
     with session_lock:
-        if user_id not in session_data:
-            session_data[user_id] = {
+        if key not in session_data:
+            session_data[key] = {
                 'history': [],
                 'interaction_count': 0,
             }
-        return session_data[user_id]
+        return session_data[key]
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 def sb_headers(token=None):
@@ -273,15 +274,24 @@ def auth_verify():
 @require_auth
 def get_me(user):
     profile = sb_get('profiles', '*', f'id=eq.{user["id"]}') or {}
-    plush = sb_get('plushes', 'id,name,plush_token,paired_at', f'owner_id=eq.{user["id"]}')
+    plushes = sb_get_all('plushes', 'id,name,plush_token,paired_at,avatar_url,banner_url,accent_color,description',
+                         f'owner_id=eq.{user["id"]}&order=paired_at.asc')
+    plush = plushes[0] if plushes else None
     return jsonify({
         'id': user['id'], 'email': user['email'],
         'name': profile.get('name',''), 'avatar': profile.get('avatar','🐻'),
         'color': profile.get('color','#8FA0CA'), 'role': user['role'],
-        'plush': plush
+        'plush': plush,
+        'plushes': plushes
     })
 
 # ── Plush pairing ─────────────────────────────────────────────────────────────
+
+@app.route('/plushes', methods=['GET'])
+@require_auth
+def list_plushes(user):
+    plushes = sb_get_all('plushes', '*', f'owner_id=eq.{user["id"]}&order=paired_at.asc')
+    return jsonify(plushes or [])
 
 @app.route('/plush/pair', methods=['POST'])
 @require_auth
@@ -304,24 +314,36 @@ def pair_plush(user):
 @app.route('/plush/unpair', methods=['POST'])
 @require_auth
 def unpair_plush(user):
-    sb_patch('plushes', {'owner_id': None, 'paired_at': None},
-             f'owner_id=eq.{user["id"]}')
+    data = request.json or {}
+    plush_id = data.get('plush_id', '')
+    if plush_id:
+        sb_patch('plushes', {'owner_id': None, 'paired_at': None},
+                 f'id=eq.{plush_id}&owner_id=eq.{user["id"]}')
+    else:
+        # Unpair all (legacy)
+        sb_patch('plushes', {'owner_id': None, 'paired_at': None},
+                 f'owner_id=eq.{user["id"]}')
     return jsonify({'ok': True})
 
 @app.route('/plush/config', methods=['GET', 'POST'])
+@app.route('/plush/<plush_id>/config', methods=['GET', 'POST'])
 @require_auth
-def plush_config(user):
-    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+def plush_config(user, plush_id=None):
+    if plush_id:
+        plush = sb_get('plushes', '*', f'id=eq.{plush_id}&owner_id=eq.{user["id"]}')
+    else:
+        plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}&order=paired_at.asc&limit=1')
     if not plush:
-        return jsonify({'error': 'Sin peluche vinculado'}), 404
+        return jsonify({'error': 'Peluche no encontrado'}), 404
     if request.method == 'GET':
         return jsonify(plush)
     data = request.json or {}
     update = {}
-    for field in ('name', 'persona', 'voice_id', 'model', 'stt_language'):
+    for field in ('name', 'persona', 'voice_id', 'model', 'stt_language',
+                  'avatar_url', 'banner_url', 'accent_color', 'description'):
         if field in data: update[field] = data[field]
     if update:
-        sb_patch('plushes', update, f'owner_id=eq.{user["id"]}')
+        sb_patch('plushes', update, f'id=eq.{plush["id"]}&owner_id=eq.{user["id"]}')
     return jsonify({'ok': True})
 
 # ── Main endpoints ────────────────────────────────────────────────────────────
@@ -361,11 +383,12 @@ def process_audio():
     owner_id = plush.get('owner_id')
     if not owner_id:
         return jsonify({'error': 'Peluche no vinculado a ninguna cuenta'}), 403
+    plush_id = plush.get('id', '')
 
     wav_data = request.data
     if len(wav_data) < 44:
         return jsonify({'error': 'Audio inválido'}), 400
-    print(f"[PlushMate] WAV recibido: {len(wav_data)} bytes (user={owner_id[:8]})")
+    print(f"[PlushMate] WAV recibido: {len(wav_data)} bytes (plush={plush_id[:8]})")
 
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
         f.write(wav_data)
@@ -376,9 +399,9 @@ def process_audio():
         if not transcript:
             return jsonify({'error': 'No se entendió el audio'}), 400
 
-        sess = get_session(owner_id)
+        sess = get_session(owner_id, plush_id)
         sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
-        ai_text = chat_with_memory(owner_id, plush)
+        ai_text = chat_with_memory(owner_id, plush_id, plush)
         if not ai_text:
             sess['history'].pop()
             return jsonify({'error': 'Sin respuesta'}), 500
@@ -390,7 +413,7 @@ def process_audio():
 
         sess['interaction_count'] = sess.get('interaction_count', 0) + 1
         if sess['interaction_count'] % 5 == 0:
-            threading.Thread(target=update_summary, args=(owner_id, sess['history'], plush), daemon=True).start()
+            threading.Thread(target=update_summary, args=(owner_id, plush_id, sess['history'], plush), daemon=True).start()
 
         audio_filename = tts(ai_text, plush.get('voice_id', ''))
         audio_url = f"{SERVER_URL}/audio/{audio_filename}"
@@ -411,14 +434,19 @@ def chat_text(user):
     data = request.json or {}
     text = data.get('text', '').strip()
     send_to_plush = data.get('send_to_plush', False)
+    plush_id = data.get('plush_id', '')
     if not text: return jsonify({'error': 'Texto vacío'}), 400
 
-    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+    if plush_id:
+        plush = sb_get('plushes', '*', f'id=eq.{plush_id}&owner_id=eq.{user["id"]}')
+    else:
+        plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}&order=paired_at.asc&limit=1')
 
-    sess = get_session(user['id'])
+    pid = plush.get('id', '') if plush else ''
+    sess = get_session(user['id'], pid)
     sess['history'].append({'role': 'user', 'content': text, 'audio_url': None})
     try:
-        ai_text = chat_with_memory(user['id'], plush)
+        ai_text = chat_with_memory(user['id'], pid, plush)
         if not ai_text:
             sess['history'].pop()
             return jsonify({'error': 'Sin respuesta'}), 500
@@ -436,7 +464,7 @@ def chat_text(user):
             with pending_commands_lock:
                 pending_commands[plush['plush_token']] = {'action': 'play_audio', 'url': audio_url}
 
-        return jsonify({'response': display_text, 'audio_url': audio_url})
+        return jsonify({'response': display_text, 'audio_url': audio_url, 'plush_id': pid})
     except Exception as e:
         print(f"[chat/text] ERROR: {e}")
         return jsonify({'error': str(e)}), 500
@@ -446,32 +474,42 @@ def chat_text(user):
 @app.route('/memory', methods=['GET'])
 @require_auth
 def get_memory(user):
-    row = sb_get('memory', '*', f'user_id=eq.{user["id"]}')
+    plush_id = request.args.get('plush_id', '')
+    if plush_id:
+        plush = sb_get('plushes', '*', f'id=eq.{plush_id}&owner_id=eq.{user["id"]}')
+        row = sb_get('memory', '*', f'user_id=eq.{user["id"]}&plush_id=eq.{plush_id}')
+    else:
+        plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}&order=paired_at.asc&limit=1')
+        plush_id = plush.get('id', '') if plush else ''
+        row = sb_get('memory', '*', f'user_id=eq.{user["id"]}&plush_id=eq.{plush_id}') if plush_id else None
     if not row:
-        sb_upsert('memory', {'user_id': user['id'], 'summary': '',
-                              'updated_at': datetime.now(timezone.utc).isoformat()})
+        sb_upsert('memory', {'user_id': user['id'], 'plush_id': plush_id or None,
+                              'summary': '', 'updated_at': datetime.now(timezone.utc).isoformat()})
         row = {}
     summary = row.get('summary', '')
-    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
-    sess = get_session(user['id'])
+    sess = get_session(user['id'], plush_id)
     formatted = format_memory(summary, user['id'], plush)
     return jsonify({
         'summary': summary,
         'summary_formatted': formatted,
         'history': sess['history'],
-        'history_len': len(sess['history'])
+        'history_len': len(sess['history']),
+        'plush_id': plush_id
     })
 
 @app.route('/memory', methods=['DELETE'])
 @require_auth
 def clear_memory(user):
     data = request.json or {}
-    # Optionally verify PIN if set (legacy support)
-    sess = get_session(user['id'])
+    plush_id = data.get('plush_id', '')
+    sess = get_session(user['id'], plush_id)
     sess['history'] = []
     sess['interaction_count'] = 0
-    sb_upsert('memory', {'user_id': user['id'], 'summary': '',
-                          'updated_at': datetime.now(timezone.utc).isoformat()})
+    upsert_data = {'user_id': user['id'], 'summary': '',
+                   'updated_at': datetime.now(timezone.utc).isoformat()}
+    if plush_id:
+        upsert_data['plush_id'] = plush_id
+    sb_upsert('memory', upsert_data)
     return jsonify({'status': 'cleared'})
 
 # ── Profile ───────────────────────────────────────────────────────────────────
@@ -674,9 +712,10 @@ def extract_text(msg: dict) -> str:
             return rd['text'].strip()
     return ''
 
-def chat_with_memory(user_id: str, plush: dict) -> str:
-    sess = get_session(user_id)
-    row = sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}
+def chat_with_memory(user_id: str, plush_id: str, plush: dict) -> str:
+    sess = get_session(user_id, plush_id)
+    filter_str = f'user_id=eq.{user_id}&plush_id=eq.{plush_id}' if plush_id else f'user_id=eq.{user_id}'
+    row = sb_get('memory', 'summary', filter_str) or {}
     summary = row.get('summary', '')
 
     persona = plush.get('persona', '') if plush else ''
@@ -717,13 +756,13 @@ def chat_with_memory(user_id: str, plush: dict) -> str:
     print(f"[Chat] extracted text: {text[:100]}")
     return text
 
-def update_summary(user_id: str, history: list, plush: dict):
+def update_summary(user_id: str, plush_id: str, history: list, plush: dict):
     try:
-        # Ensure memory row exists first
-        row = sb_get('memory', 'summary', f'user_id=eq.{user_id}')
+        filter_str = f'user_id=eq.{user_id}&plush_id=eq.{plush_id}' if plush_id else f'user_id=eq.{user_id}'
+        row = sb_get('memory', 'summary', filter_str)
         if not row:
-            sb_upsert('memory', {'user_id': user_id, 'summary': '',
-                                  'updated_at': datetime.now(timezone.utc).isoformat()})
+            sb_upsert('memory', {'user_id': user_id, 'plush_id': plush_id or None,
+                                  'summary': '', 'updated_at': datetime.now(timezone.utc).isoformat()})
         old = (row or {}).get('summary', '')
         conv = '\n'.join([f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
                          for m in history[-10:]])
@@ -738,8 +777,10 @@ def update_summary(user_id: str, history: list, plush: dict):
         msg = r.json()['choices'][0]['message']
         new_summary = extract_text(msg)
         if new_summary:
-            sb_upsert('memory', {'user_id': user_id, 'summary': new_summary,
-                                  'updated_at': datetime.now(timezone.utc).isoformat()})
+            upsert_data = {'user_id': user_id, 'summary': new_summary,
+                           'updated_at': datetime.now(timezone.utc).isoformat()}
+            if plush_id: upsert_data['plush_id'] = plush_id
+            sb_upsert('memory', upsert_data)
     except Exception as e:
         print(f"[summary] ERROR: {e}")
 
