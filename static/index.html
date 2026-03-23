@@ -90,67 +90,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .auth-switch{text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin-top:14px}
 .auth-switch span{color:var(--brand);font-weight:800;cursor:pointer}
 
-/* ─── PLUSH WORLD ────────────────────────── */
-.plush-world{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1)}
-.plush-world.open{transform:translateY(0)}
-.pw-header{flex-shrink:0;background:var(--white);box-shadow:var(--shadow-sm);position:relative}
-.pw-banner{height:130px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));background-size:cover;background-position:center;position:relative}
-.pw-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.35))}
-.pw-header-row{display:flex;align-items:center;gap:12px;padding:10px 16px 0;margin-top:-28px;position:relative;z-index:2}
-.pw-back{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.25);border:none;color:white;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;backdrop-filter:blur(8px)}
-.pw-back svg{width:18px;height:18px}
-.pw-avatar-wrap{width:60px;height:60px;border-radius:50%;border:3px solid var(--white);overflow:hidden;flex-shrink:0;background:var(--brand-pale);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
-.pw-avatar{width:100%;height:100%;object-fit:cover;font-size:28px;display:flex;align-items:center;justify-content:center}
-.pw-info{flex:1;min-width:0}
-.pw-name{font-size:17px;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pw-desc{font-size:12px;font-weight:600;color:var(--muted);margin-top:1px}
-.pw-status-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.pw-status-dot.online{background:var(--mint)}
-.pw-tabs{display:flex;padding:8px 16px 0;gap:4px}
-.pw-tab{flex:1;padding:10px 4px;background:transparent;border:none;border-bottom:3px solid transparent;font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:5px;transition:all 0.15s}
-.pw-tab svg{width:15px;height:15px}
-.pw-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
-.pw-content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-.pw-panel{flex:1;display:flex;flex-direction:column}
-.pw-activate-wrap{padding:16px;background:var(--white);border-bottom:1.5px solid var(--border)}
-.pw-activate-btn{display:flex;flex-direction:column;align-items:center;gap:8px;background:none;border:none;cursor:pointer;width:100%;padding:4px 0}
-.pw-mic-ring{width:64px;height:64px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(143,160,202,0.5);transition:all 0.2s}
-.pw-mic-ring svg{width:28px;height:28px}
-.pw-mic-ring.recording{background:var(--coral);animation:pulse-ring 1.2s infinite}
-.pw-activate-label{font-size:12px;font-weight:700;color:var(--muted)}
-.pw-text-row{display:flex;gap:8px;margin-top:10px}
-.pw-text-field{flex:1;padding:10px 14px;border-radius:var(--r-sm);border:2px solid var(--border);font-size:13px;font-family:var(--font);outline:none;background:var(--bg)}
-.pw-text-field:focus{border-color:var(--brand)}
-.pw-send-btn{width:42px;height:42px;border-radius:var(--r-sm);background:var(--brand);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
-.pw-send-btn svg{width:18px;height:18px}
-.pw-history{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px}
-.pw-msg{display:flex;flex-direction:column;gap:3px}
-.pw-msg.right{align-items:flex-end}
-.pw-who{font-size:11px;font-weight:700;color:var(--muted);padding:0 4px}
-.pw-bubble{max-width:80%;padding:10px 14px;border-radius:16px;font-size:13px;font-weight:600;line-height:1.45;background:var(--white);color:var(--text);box-shadow:var(--shadow-sm)}
-.pw-bubble.user{background:var(--brand);color:white;border-radius:16px 16px 4px 16px}
-.pw-bubble.plush{border-radius:16px 16px 16px 4px}
-
-/* ─── PLUSH GALLERY (HOME) ────────────────── */
-.plush-gallery{padding:16px;display:flex;flex-direction:column;gap:16px}
-.gallery-section-title{font-size:18px;font-weight:900;color:var(--text);margin-bottom:2px}
-.gallery-section-sub{font-size:12px;font-weight:600;color:var(--muted)}
-.plush-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-.plush-card{background:var(--white);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;position:relative}
-.plush-card:active{transform:scale(0.97)}
-.plush-card-banner{height:90px;background:linear-gradient(135deg,var(--brand),var(--brand-dark));background-size:cover;background-position:center;position:relative}
-.plush-card-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.4))}
-.plush-card-avatar{position:absolute;bottom:-18px;left:12px;width:44px;height:44px;border-radius:50%;border:3px solid var(--white);background:var(--brand-pale);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow-sm);z-index:2;overflow:hidden}
-.plush-card-body{padding:24px 12px 12px}
-.plush-card-name{font-size:14px;font-weight:900;color:var(--text)}
-.plush-card-desc{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.plush-card-last{font-size:11px;font-weight:600;color:var(--muted);margin-top:6px;background:var(--bg);border-radius:var(--r-sm);padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.plush-add-card{background:var(--brand-pale);border-radius:var(--r-xl);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;cursor:pointer;border:2px dashed var(--brand);min-height:160px;transition:background 0.15s}
-.plush-add-card:active{background:var(--brand-pale)}
-.plush-add-icon{width:44px;height:44px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center}
-.plush-add-icon svg{width:22px;height:22px;stroke:white}
-.plush-add-label{font-size:13px;font-weight:800;color:var(--brand)}
-
 /* ─── CHAT INPUT ─────────────────────────── */
 .chat-page{display:flex;flex-direction:column;padding-bottom:0!important}
 .history-scroll{flex:1;overflow-y:auto;padding:0 0 8px}
@@ -744,20 +683,80 @@ select option{background:var(--white)}
 
   <!-- ─── HOME ──────────────────────────────── -->
   <div class="page active" id="page-home">
-    <div class="page-header">
-      <div class="page-header-logo" id="header-logo-inner"></div>
-      <div class="page-header-title">PlushMate</div>
-      <button class="header-notif-btn" id="header-status-btn" onclick="checkServerStatus()">
-        <div class="status-dot" id="status-dot"></div>
-      </button>
-    </div>
-    <div class="plush-gallery" id="plush-gallery">
-      <div>
-        <div class="gallery-section-title" id="gallery-greeting">Mis peluches</div>
-        <div class="gallery-section-sub">Toca uno para empezar a hablar</div>
+    <div class="activate-card" id="activate-card"
+      onmousedown="startActivate()" onmouseup="stopActivate()" onmouseleave="stopActivate()"
+      ontouchstart="startActivate()" ontouchend="stopActivate()" ontouchcancel="stopActivate()">
+      <div class="act-inner">
+        <div class="act-icon-wrap" id="act-icon-wrap">
+          <span id="act-icon-mic"><!-- set by JS --></span>
+          <span id="act-icon-stop" style="display:none"><!-- set by JS --></span>
+        </div>
+        <div class="act-texts">
+          <div class="act-title" id="act-title">Activar PlushMate</div>
+          <div class="act-sub" id="act-sub">Mantén presionado para hablar</div>
+        </div>
+        <svg class="act-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <div class="plush-cards-grid" id="plush-cards-grid">
-        <!-- Populated by loadPlushGallery() -->
+    </div>
+
+    <!-- Volume control -->
+    <div class="vol-card" id="vol-card">
+      <div class="vol-left">
+        <div class="vol-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
+        </div>
+        <div>
+          <div class="vol-label">Volumen</div>
+          <div class="vol-pct" id="vol-pct">70%</div>
+        </div>
+      </div>
+      <div class="vol-right">
+        <button class="vol-btn" onclick="adjustVolume(-0.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="70"
+          oninput="onVolSlider(this.value)" onchange="sendVolume()">
+        <button class="vol-btn" onclick="adjustVolume(0.1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Última conversación</span>
+      <span class="section-link" onclick="goPage('history', document.getElementById('nav-history'))">Ver todo →</span>
+    </div>
+    <div class="convo-card" id="home-preview">
+      <div style="text-align:center;padding:14px 0;color:var(--muted);font-size:13px;font-weight:600">Sin conversaciones aún</div>
+    </div>
+
+    <div class="section-header">
+      <span class="section-title">Acciones rápidas</span>
+    </div>
+    <div class="quick-grid">
+      <div class="quick-card" onclick="goPage('memory', document.getElementById('nav-memory'))">
+        <div class="quick-card-icon" style="background:var(--lavender-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
+        </div>
+        <div><div class="quick-label">Memoria</div><div class="quick-sub">Lo que recuerda</div></div>
+      </div>
+      <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
+        <div class="quick-card-icon" style="background:var(--sunny-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </div>
+        <div><div class="quick-label">Ajustes</div><div class="quick-sub">Personalizar</div></div>
+      </div>
+      <div class="quick-card" onclick="confirmClear()">
+        <div class="quick-card-icon" style="background:var(--coral-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+        </div>
+        <div><div class="quick-label">Borrar</div><div class="quick-sub">Limpiar memoria</div></div>
+      </div>
+      <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
+        <div class="quick-card-icon" style="background:var(--mint-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
+        </div>
+        <div><div class="quick-label">WiFi</div><div class="quick-sub">Cambiar red</div></div>
       </div>
     </div>
   </div>
@@ -1223,181 +1222,6 @@ select option{background:var(--white)}
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Guardar PIN
       </button>
-    </div>
-  </div>
-
-  <!-- ─── PLUSH WORLD ──────────────────────────── -->
-  <div class="plush-world" id="plush-world" style="display:none">
-
-    <!-- Banner + Header -->
-    <div class="pw-header" id="pw-header">
-      <div class="pw-banner" id="pw-banner"></div>
-      <div class="pw-header-row">
-        <button class="pw-back" onclick="closePlushWorld()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-        </button>
-        <div class="pw-avatar-wrap">
-          <div class="pw-avatar" id="pw-avatar"></div>
-        </div>
-        <div class="pw-info">
-          <div class="pw-name" id="pw-name">PlushMate</div>
-          <div class="pw-desc" id="pw-desc"></div>
-        </div>
-        <div class="pw-status-dot" id="pw-status-dot"></div>
-      </div>
-      <!-- Tabs -->
-      <div class="pw-tabs">
-        <button class="pw-tab active" id="pw-tab-chat" onclick="switchPlushTab('chat')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          Chat
-        </button>
-        <button class="pw-tab" id="pw-tab-memory" onclick="switchPlushTab('memory')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-          Memoria
-        </button>
-        <button class="pw-tab" id="pw-tab-config" onclick="switchPlushTab('config')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          Config
-        </button>
-      </div>
-    </div>
-
-    <!-- Tab content — same design as existing pages -->
-    <div class="pw-content">
-
-      <!-- CHAT TAB — same as page-history -->
-      <div class="pw-panel chat-page" id="pw-panel-chat">
-        <div id="pw-history" class="history-scroll">
-          <div class="empty-state">
-            <div class="empty-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-            <div class="empty-text">Sin conversaciones</div>
-            <div class="empty-sub">Escribe o usa el micrófono para comenzar</div>
-          </div>
-        </div>
-        <div class="thinking-wrap" id="pw-thinking" style="display:none">
-          <div class="thinking-dots"><span></span><span></span><span></span></div>
-          <div class="thinking-label">pensando...</div>
-        </div>
-        <div class="chat-input-bar">
-          <button class="chat-voice-btn" id="pw-voice-btn" onclick="pwToggleVoice()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
-          </button>
-          <input type="text" class="chat-input" id="pw-text-input" placeholder="Escríbele..."
-            onkeydown="if(event.key==='Enter') pwSendText()">
-          <button class="chat-send-btn" onclick="pwSendText(true)" title="Enviar al peluche" style="background:var(--mint)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-          </button>
-          <button class="chat-send-btn chat-send-app" onclick="pwSendText(false)" title="Escuchar en app">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- MEMORY TAB — same as page-memory -->
-      <div class="pw-panel" id="pw-panel-memory" style="display:none">
-        <div class="memory-banner">
-          <div class="memory-banner-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
-          </div>
-          <div class="memory-banner-text">
-            <div class="title" id="pw-memory-title">Memoria de PlushMate</div>
-            <div class="sub">Recuerda sobre ti</div>
-          </div>
-        </div>
-        <div id="pw-memory-sections">
-          <div class="memory-box">
-            <div class="memory-empty">Cargando memoria...</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:0;padding:0 20px 16px">
-          <button class="save-btn" onclick="pwUpdateMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            Actualizar
-          </button>
-          <button class="danger-btn" onclick="pwClearMemory()" style="flex:1;margin-bottom:0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-            Borrar
-          </button>
-        </div>
-      </div>
-
-      <!-- CONFIG TAB — same style as settings accordions -->
-      <div class="pw-panel" id="pw-panel-config" style="display:none;overflow-y:auto">
-
-        <!-- Apariencia -->
-        <div class="accordion open" id="pw-acc-appearance">
-          <div class="accordion-header" onclick="toggleAccordion('pw-acc-appearance')">
-            <div class="accordion-icon" style="background:var(--lavender-light)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </div>
-            <div><div class="accordion-title">Apariencia</div><div class="accordion-sub">Banner, avatar, color</div></div>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
-          <div class="accordion-body">
-            <div class="field-label" style="margin-top:14px">Nombre del peluche</div>
-            <input type="text" id="pw-plush-name" placeholder="PlushMate" style="margin-bottom:14px">
-            <div class="field-label">Descripción corta</div>
-            <input type="text" id="pw-description" placeholder="Tu compañero mágico" style="margin-bottom:14px">
-            <div class="field-label">URL de Avatar <span style="font-weight:600;color:var(--muted)">(512×512px)</span></div>
-            <input type="url" id="pw-avatar-url" placeholder="https://i.imgur.com/..." style="margin-bottom:14px">
-            <div class="field-label">URL de Banner <span style="font-weight:600;color:var(--muted)">(1200×400px)</span></div>
-            <input type="url" id="pw-banner-url" placeholder="https://i.imgur.com/..." style="margin-bottom:14px">
-            <div class="field-label">Color de acento</div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input type="color" id="pw-accent-color" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--border);padding:2px;cursor:pointer;background:var(--bg)">
-              <input type="text" id="pw-accent-hex" placeholder="#8FA0CA" style="flex:1;margin-bottom:0">
-            </div>
-          </div>
-        </div>
-
-        <!-- Personalidad e IA — same as the existing IA accordion -->
-        <div class="accordion" id="pw-acc-ai">
-          <div class="accordion-header" onclick="toggleAccordion('pw-acc-ai')">
-            <div class="accordion-icon" style="background:var(--brand-pale)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            </div>
-            <div><div class="accordion-title">Inteligencia Artificial</div><div class="accordion-sub">Personalidad, voz, modelo</div></div>
-            <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
-          <div class="accordion-body">
-            <div class="field-label" style="margin-top:14px">Personalidad</div>
-            <textarea id="pw-persona" rows="3" placeholder="Describe cómo debe comportarse..." style="margin-bottom:14px"></textarea>
-            <div class="field-label">Voice ID de ElevenLabs</div>
-            <input type="text" id="pw-voice-id" placeholder="aaf0KU31jmlzVPqltvJY" style="margin-bottom:14px">
-            <div class="field-label">Modelo de IA</div>
-            <select id="pw-model" style="margin-bottom:16px">
-              <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron Nano (gratis)</option>
-              <option value="arcee-ai/trinity-large-preview:free">Trinity Large (gratis)</option>
-              <option value="openrouter/hunter-alpha">Hunter Alpha</option>
-              <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
-              <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
-            </select>
-            <div class="field-label">Idioma de reconocimiento de voz</div>
-            <select id="pw-stt-lang" style="margin-bottom:16px">
-              <option value="es">🇲🇽 Español</option>
-              <option value="en">🇺🇸 English</option>
-              <option value="fr">🇫🇷 Français</option>
-              <option value="pt">🇧🇷 Português</option>
-              <option value="de">🇩🇪 Deutsch</option>
-              <option value="it">🇮🇹 Italiano</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Save + Danger -->
-        <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:10px;margin-top:4px">
-          <button class="save-btn" onclick="pwSaveConfig()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Guardar cambios
-          </button>
-          <button class="danger-btn" onclick="pwUnpairPlush()" style="margin-bottom:0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 007.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>
-            Desvincular peluche
-          </button>
-        </div>
-
-      </div>
-
     </div>
   </div>
 
@@ -2216,354 +2040,6 @@ function hdr(ct) {
 }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── PLUSH STATE ───────────────────────────────────
-let CURRENT_PLUSH = null;  // {id, name, avatar_url, banner_url, accent_color, ...}
-let ALL_PLUSHES = [];
-
-// ── PLUSH GALLERY ─────────────────────────────────
-async function loadPlushGallery() {
-  if (!AUTH_TOKEN) return;
-  try {
-    const r = await fetch(BASE + '/plushes', {headers: hdr()});
-    if (!r.ok) return;
-    ALL_PLUSHES = await r.json();
-    renderPlushGallery();
-    // Update greeting
-    const name = CURRENT_USER?.name || '';
-    const hour = new Date().getHours();
-    const greet = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
-    const el = document.getElementById('gallery-greeting');
-    if (el) el.textContent = name ? `${greet}, ${name.split(' ')[0]}` : 'Mis peluches';
-  } catch(e) { console.error('loadPlushGallery:', e); }
-}
-
-function renderPlushGallery() {
-  const grid = document.getElementById('plush-cards-grid');
-  if (!grid) return;
-  const cards = ALL_PLUSHES.map(p => {
-    const accent = p.accent_color || '#8FA0CA';
-    const banner = p.banner_url ? `background-image:url('${p.banner_url}')` : `background:linear-gradient(135deg,${accent},${accent}dd)`;
-    const avatarContent = p.avatar_url
-      ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
-      : `<span style="font-size:22px">${p.name?.[0] || '🐻'}</span>`;
-    return `<div class="plush-card" onclick="openPlushWorld('${p.id}')">
-      <div class="plush-card-banner" style="${banner}">
-        <div class="plush-card-avatar">${avatarContent}</div>
-      </div>
-      <div class="plush-card-body">
-        <div class="plush-card-name">${escHtml(p.name || 'PlushMate')}</div>
-        <div class="plush-card-desc">${escHtml(p.description || '')}</div>
-        <div class="plush-card-last" id="plush-last-${p.id}">Toca para hablar</div>
-      </div>
-    </div>`;
-  }).join('');
-  const addCard = `<div class="plush-add-card" onclick="openAddPlush()">
-    <div class="plush-add-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-    <div class="plush-add-label">Vincular peluche</div>
-  </div>`;
-  grid.innerHTML = cards + addCard;
-  // Load last messages from cache
-  ALL_PLUSHES.forEach(p => {
-    const cached = localStorage.getItem(`pm_chat_${p.id}`);
-    if (cached) {
-      try {
-        const hist = JSON.parse(cached);
-        const last = hist[hist.length - 1];
-        if (last) {
-          const el = document.getElementById(`plush-last-${p.id}`);
-          if (el) el.textContent = (last.role === 'user' ? 'Tú: ' : '') + stripTags(last.content).substring(0, 40);
-        }
-      } catch(e) {}
-    }
-  });
-}
-
-// ── PLUSH WORLD ────────────────────────────────────
-async function openPlushWorld(plushId) {
-  haptic('medium');
-  const plush = ALL_PLUSHES.find(p => p.id === plushId);
-  if (!plush) return;
-  CURRENT_PLUSH = plush;
-  // Apply theme
-  applyPlushTheme(plush);
-  // Show overlay
-  const world = document.getElementById('plush-world');
-  world.style.display = 'flex';
-  world.style.flexDirection = 'column';
-  setTimeout(() => world.classList.add('open'), 10);
-  // Load data
-  switchPlushTab('chat');
-  pwLoadHistory();
-}
-
-function closePlushWorld() {
-  haptic('light');
-  const world = document.getElementById('plush-world');
-  world.classList.remove('open');
-  setTimeout(() => { world.style.display = 'none'; }, 400);
-  CURRENT_PLUSH = null;
-  // Refresh gallery
-  loadPlushGallery();
-}
-
-function applyPlushTheme(plush) {
-  const accent = plush.accent_color || '#8FA0CA';
-  // Banner
-  const banner = document.getElementById('pw-banner');
-  if (plush.banner_url) {
-    banner.style.backgroundImage = `url('${plush.banner_url}')`;
-    banner.style.background = '';
-  } else {
-    banner.style.backgroundImage = '';
-    banner.style.background = `linear-gradient(135deg, ${accent}, ${accent}cc)`;
-  }
-  // Avatar
-  const avatarEl = document.getElementById('pw-avatar');
-  if (plush.avatar_url) {
-    avatarEl.innerHTML = `<img src="${plush.avatar_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.innerHTML='🐻'">`;
-  } else {
-    avatarEl.textContent = plush.name?.[0] || '🐻';
-  }
-  // Name + desc
-  document.getElementById('pw-name').textContent = plush.name || 'PlushMate';
-  document.getElementById('pw-desc').textContent = plush.description || '';
-  // Accent color on tabs + mic
-  document.querySelectorAll('.pw-tab.active').forEach(t => t.style.color = accent);
-  const ring = document.getElementById('pw-mic-ring');
-  if (ring) ring.style.background = accent;
-}
-
-function switchPlushTab(tab) {
-  const accent = CURRENT_PLUSH?.accent_color || '#8FA0CA';
-  document.querySelectorAll('.pw-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.pw-tab').forEach(t => { t.classList.remove('active'); t.style.color = ''; });
-  document.getElementById('pw-panel-' + tab).style.display = 'flex';
-  const tabBtn = document.getElementById('pw-tab-' + tab);
-  tabBtn.classList.add('active');
-  tabBtn.style.borderBottomColor = accent;
-  tabBtn.style.color = accent;
-  if (tab === 'memory') pwLoadMemory();
-  if (tab === 'config') pwLoadConfig();
-}
-
-function openAddPlush() {
-  showPairingScreen();
-}
-
-// ── PLUSH WORLD — CHAT ─────────────────────────────
-async function pwLoadHistory() {
-  if (!CURRENT_PLUSH) return;
-  const el = document.getElementById('pw-history');
-  // Show cache instantly
-  const cached = localStorage.getItem(`pm_chat_${CURRENT_PLUSH.id}`);
-  if (cached) {
-    try { pwRenderHistory(JSON.parse(cached)); } catch(e) {}
-  }
-  try {
-    const r = await fetch(BASE + `/memory?plush_id=${CURRENT_PLUSH.id}`, {headers: hdr()});
-    if (!r.ok) return;
-    const d = await r.json();
-    const hist = d.history || [];
-    localStorage.setItem(`pm_chat_${CURRENT_PLUSH.id}`, JSON.stringify(hist.slice(-30)));
-    pwRenderHistory(hist);
-  } catch(e) {}
-}
-
-function pwRenderHistory(history) {
-  const el = document.getElementById('pw-history');
-  if (!el) return;
-  if (!history.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-text">Sin conversaciones</div><div class="empty-sub">¡Di algo!</div></div>';
-    return;
-  }
-  el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
-    const who = m.role === 'user' ? 'Tú' : (CURRENT_PLUSH?.name || 'PlushMate');
-    const audioBtn = (m.role === 'assistant' && m.audio_url)
-      ? `<button class="audio-btn" id="pw-abtn-${i}" onclick="playAudio('${m.audio_url}','pw-abtn-${i}')"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir</button>` : '';
-    return `<div class="msg-item ${m.role==='user'?'right':''}">
-      <div class="convo-who ${m.role==='user'?'user':'plush'}">${who}</div>
-      <div class="bubble-row ${m.role==='user'?'right':''}">
-        <div class="bubble ${m.role==='user'?'user':'plush'}">${escHtml(stripTags(m.content))}${audioBtn}</div>
-      </div>
-    </div>`;
-  }).join('') + '</div>';
-  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
-}
-
-let _pwThinking = false;
-async function pwSendText(sendToPlush = false) {
-  if (!CURRENT_PLUSH || _pwThinking) return;
-  const inp = document.getElementById('pw-text-input');
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = '';
-  haptic('light');
-  // Add user bubble instantly
-  const hist = document.getElementById('pw-history');
-  hist.innerHTML += `<div class="msg-item right"><div class="convo-who user">Tú</div><div class="bubble-row right"><div class="bubble user">${escHtml(text)}</div></div></div>`;
-  hist.scrollTop = hist.scrollHeight;
-  // Show thinking
-  _pwThinking = true;
-  document.getElementById('pw-thinking').style.display = 'flex';
-  try {
-    const r = await fetch(BASE + '/chat/text', {
-      method: 'POST', headers: hdr(true),
-      body: JSON.stringify({text, plush_id: CURRENT_PLUSH.id, send_to_plush: sendToPlush})
-    });
-    const d = await r.json();
-    document.getElementById('pw-thinking').style.display = 'none';
-    _pwThinking = false;
-    if (d.response) {
-      const _who = escHtml(CURRENT_PLUSH.name || 'PlushMate');
-      const _audioBtn = d.audio_url ? `<button class="audio-btn" onclick="playAudio('${d.audio_url}','pw-auto')"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir</button>` : '';
-      hist.innerHTML += `<div class="msg-item"><div class="convo-who plush">${_who}</div><div class="bubble-row"><div class="bubble plush">${escHtml(stripTags(d.response))}${_audioBtn}</div></div></div>`;
-      hist.scrollTop = hist.scrollHeight;
-      if (!sendToPlush && d.audio_url) playAudio(d.audio_url, 'pw-auto');
-      pwLoadHistory(); // refresh cache
-    }
-  } catch(e) {
-    document.getElementById('pw-thinking').style.display = 'none';
-    _pwThinking = false;
-    toast('Error al enviar', 'error');
-  }
-}
-
-// Activate button in plush world
-let _pwActivating = false;
-function pwStartActivate() {
-  if (!CURRENT_PLUSH) return;
-  haptic('medium');
-  // Send activate command to this plush
-  fetch(BASE + '/command', {
-    method: 'POST', headers: hdr(true),
-    body: JSON.stringify({action: 'activate'})
-  }).catch(() => {});
-  const ring = document.getElementById('pw-mic-ring');
-  ring.classList.add('recording');
-  document.getElementById('pw-activate-label').textContent = 'Hablando...';
-  _pwActivating = true;
-}
-function pwStopActivate() {
-  if (!_pwActivating) return;
-  _pwActivating = false;
-  fetch(BASE + '/command', {
-    method: 'POST', headers: hdr(true),
-    body: JSON.stringify({action: 'stop'})
-  }).catch(() => {});
-  const ring = document.getElementById('pw-mic-ring');
-  ring.classList.remove('recording');
-  document.getElementById('pw-activate-label').textContent = 'Mantén para hablar';
-  // Refresh history after a moment
-  setTimeout(() => pwLoadHistory(), 3000);
-}
-
-// ── PLUSH WORLD — MEMORY ──────────────────────────
-async function pwLoadMemory() {
-  if (!CURRENT_PLUSH) return;
-  try {
-    const r = await fetch(BASE + `/memory?plush_id=${CURRENT_PLUSH.id}`, {headers: hdr()});
-    if (!r.ok) return;
-    const d = await r.json();
-    const el = document.getElementById('pw-memory-sections');
-    if (!el) return;
-    const sections = d.summary_formatted || [];
-    // Update title
-    const titleEl = document.getElementById('pw-memory-title');
-    if (titleEl && CURRENT_PLUSH) titleEl.textContent = 'Memoria de ' + (CURRENT_PLUSH.name || 'PlushMate');
-    if (!sections.length) {
-      el.innerHTML = '<div class="memory-box"><div class="memory-empty">Sin memoria aún</div></div>';
-      return;
-    }
-    el.innerHTML = '<div class="memory-box">' + sections.map(s => `
-      <div class="memory-section">
-        <div class="memory-section-header">${s.icon || '💭'} ${escHtml(s.title || '')}</div>
-        ${(s.items || []).map(i => `<div class="memory-item">• ${escHtml(i)}</div>`).join('')}
-      </div>`).join('') + '</div>';
-  } catch(e) {}
-}
-
-async function pwUpdateMemory() {
-  if (!CURRENT_PLUSH) return;
-  toast('Actualizando memoria...', 'info');
-  await pwLoadMemory();
-  toast('Memoria actualizada', 'success');
-}
-
-async function pwClearMemory() {
-  if (!CURRENT_PLUSH) return;
-  const ok = await customConfirm('Borrar memoria', '¿Borrar toda la memoria de ' + (CURRENT_PLUSH.name || 'este peluche') + '?', 'Borrar', 'var(--coral)');
-  if (!ok) return;
-  await fetch(BASE + '/memory', {
-    method: 'DELETE', headers: hdr(true),
-    body: JSON.stringify({plush_id: CURRENT_PLUSH.id})
-  });
-  toast('Memoria borrada', 'success');
-  pwLoadMemory();
-}
-
-// ── PLUSH WORLD — CONFIG ──────────────────────────
-function pwLoadConfig() {
-  if (!CURRENT_PLUSH) return;
-  const p = CURRENT_PLUSH;
-  document.getElementById('pw-avatar-url').value = p.avatar_url || '';
-  document.getElementById('pw-banner-url').value = p.banner_url || '';
-  document.getElementById('pw-accent-color').value = p.accent_color || '#8FA0CA';
-  document.getElementById('pw-accent-hex').value = p.accent_color || '#8FA0CA';
-  document.getElementById('pw-description').value = p.description || '';
-  document.getElementById('pw-plush-name').value = p.name || '';
-  document.getElementById('pw-persona').value = p.persona || '';
-  document.getElementById('pw-voice-id').value = p.voice_id || '';
-  const mdl = document.getElementById('pw-model');
-  if (mdl) {
-    const exists = [...mdl.options].some(o => o.value === p.model);
-    if (!exists && p.model) { const opt = document.createElement('option'); opt.value = p.model; opt.textContent = p.model.split('/').pop().split(':')[0]; mdl.appendChild(opt); }
-    mdl.value = p.model || '';
-  }
-  const lang = document.getElementById('pw-stt-lang');
-  if (lang) lang.value = p.stt_language || 'es';
-  // Sync color inputs
-  document.getElementById('pw-accent-color').oninput = (e) => { document.getElementById('pw-accent-hex').value = e.target.value; };
-  document.getElementById('pw-accent-hex').oninput = (e) => { document.getElementById('pw-accent-color').value = e.target.value; };
-}
-
-async function pwSaveConfig() {
-  if (!CURRENT_PLUSH) return;
-  const data = {
-    name: document.getElementById('pw-plush-name').value.trim(),
-    persona: document.getElementById('pw-persona').value.trim(),
-    voice_id: document.getElementById('pw-voice-id').value.trim(),
-    model: document.getElementById('pw-model').value,
-    stt_language: document.getElementById('pw-stt-lang').value,
-    avatar_url: document.getElementById('pw-avatar-url').value.trim(),
-    banner_url: document.getElementById('pw-banner-url').value.trim(),
-    accent_color: document.getElementById('pw-accent-hex').value.trim() || document.getElementById('pw-accent-color').value,
-    description: document.getElementById('pw-description').value.trim(),
-  };
-  try {
-    const r = await fetch(BASE + `/plush/${CURRENT_PLUSH.id}/config`, {
-      method: 'POST', headers: hdr(true), body: JSON.stringify(data)
-    });
-    if (r.ok) {
-      // Update local plush object
-      Object.assign(CURRENT_PLUSH, data);
-      const idx = ALL_PLUSHES.findIndex(p => p.id === CURRENT_PLUSH.id);
-      if (idx > -1) ALL_PLUSHES[idx] = {...ALL_PLUSHES[idx], ...data};
-      applyPlushTheme(CURRENT_PLUSH);
-      playSound('success'); haptic('success');
-      toast('Guardado', 'success');
-    } else { toast('Error al guardar', 'error'); }
-  } catch(e) { toast('Error de conexión', 'error'); }
-}
-
-async function pwUnpairPlush() {
-  if (!CURRENT_PLUSH) return;
-  const ok = await customConfirm('Desvincular', '¿Desvincular "' + (CURRENT_PLUSH.name || 'este peluche') + '" de tu cuenta?', 'Desvincular', 'var(--coral)');
-  if (!ok) return;
-  await fetch(BASE + '/plush/unpair', {method: 'POST', headers: hdr(true), body: JSON.stringify({plush_id: CURRENT_PLUSH.id})});
-  toast('Peluche desvinculado', 'info');
-  closePlushWorld();
-}
-
 // ── CUSTOM CONFIRM ───────────────────────────────
 let _confirmResolve = null;
 function customConfirm(title, desc, okText='Confirmar', okColor='var(--coral)') {
@@ -3000,9 +2476,8 @@ window.clearMemory = async function() {
   return _origClearMemory.apply(this, arguments);
 };
 
-// prevent default on touch activate (plush world button)
-const _actCard = document.getElementById('activate-card');
-if (_actCard) _actCard.addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
+// prevent default on touch activate
+document.getElementById('activate-card').addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
 
 // ── PIN FLOW ──────────────────────────────────────
 async function initAuth() {
@@ -3239,7 +2714,7 @@ function pwToggleVoice() {
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   _pwVoiceRec = new SR();
-  _pwVoiceRec.lang = CURRENT_PLUSH?.stt_language || 'es-MX';
+  _pwVoiceRec.lang = 'es-MX';
   _pwVoiceRec.continuous = false;
   _pwVoiceRec.interimResults = false;
   _pwVoiceRec.onresult = (e) => {
@@ -3290,7 +2765,6 @@ async function showApp() {
   }
   loadProfile();
   if (CURRENT_USER) applyUserProfile(CURRENT_USER);
-  loadPlushGallery();
 }
 function pinKey(k) {
   if (PIN_ENTERED.length >= 4) return;
