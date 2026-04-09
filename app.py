@@ -388,8 +388,10 @@ def process_audio():
 
         return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+    import traceback
+    error_msg = traceback.format_exc()
+    print(f"[ERROR /process] {error_msg}", flush=True)
+    return jsonify({'error': str(e), 'trace': error_msg}), 500
     finally:
         try: os.unlink(tmp_path)
         except: pass
