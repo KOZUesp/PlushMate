@@ -654,17 +654,25 @@ def chat_with_memory(user_id: str, plush) -> str:
     if not persona: persona = _default_persona
     system_content = persona
     if summary:
+        # Nota: quité la doble diagonal \\n para que el salto de línea sea real
         system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
 
     model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
     messages = [{'role': 'system', 'content': system_content}] + [
         {'role': m['role'], 'content': m['content']} for m in sess['history'][-10:]
     ]
+    
+    print(f"🧠 Llamando a OpenRouter con modelo: {model}...", flush=True)
     r = requests.post('https://openrouter.ai/api/v1/chat/completions',
         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
         json={'model': model, 'max_tokens': 150, 'messages': messages}, timeout=30)
+    
     data = r.json()
-    if not data.get('choices'): return ''
+    if not data.get('choices'):
+        # ¡AQUI ESTA LA MAGIA! Esto imprimirá por qué OpenRouter falló.
+        print("\n🚨 ERROR DE OPENROUTER:", data, flush=True)
+        return ''
+        
     return extract_text(data['choices'][0]['message'])
 
 def update_summary(user_id: str, history: list, plush):
