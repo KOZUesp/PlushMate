@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response, stream_with_context
 from pathlib import Path
 
 app = Flask(__name__)
@@ -340,8 +340,8 @@ def health():
 
 @app.route('/process', methods=['POST'])
 def process_audio():
-    import traceback  # Aseguramos tener traceback disponible
-    
+    import traceback
+
     try:
         plush = verify_plush_request()
         if not plush:
@@ -365,7 +365,7 @@ def process_audio():
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
             f.write(wav_data)
             tmp_path = f.name
-            
+
         try:
             transcript = stt(tmp_path, plush.get('stt_language', 'es'))
             if not transcript:
@@ -378,7 +378,7 @@ def process_audio():
                 sess['history'].pop()
                 return jsonify({'error': 'Sin respuesta'}), 500
 
-            display_text = re.sub(r'\\[.*?\\]', '', ai_text).strip()
+            display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
             sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
             if len(sess['history']) > HISTORY_LIMIT:
                 sess['history'] = sess['history'][-HISTORY_LIMIT:]
@@ -387,31 +387,57 @@ def process_audio():
             if sess['interaction_count'] % 5 == 0:
                 threading.Thread(target=update_summary, args=(owner_id, sess['history'], plush), daemon=True).start()
 
-            audio_filename = tts(ai_text, plush.get('voice_id', ''))
-            audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-            sess['history'][-1]['audio_url'] = audio_url
-
-            return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
         finally:
             try: os.unlink(tmp_path)
             except: pass
 
+        # ── Streaming TTS directo al ESP32 ────────────────────────────
+        vid = plush.get('voice_id', '') or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
+
+        def generate_audio():
+            r = requests.post(
+                f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
+                headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
+                json={
+                    'text': ai_text,
+                    'model_id': 'eleven_flash_v2_5',       # ~75% menos latencia que eleven_v3
+                    'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75},
+                    'optimize_streaming_latency': 4         # máxima optimización
+                },
+                stream=True, timeout=30
+            )
+            if r.status_code != 200:
+                raise Exception(f"TTS error {r.status_code}: {r.text}")
+            for chunk in r.iter_content(chunk_size=4096):
+                if chunk:
+                    yield chunk
+
+        # Codificamos el texto en ASCII para que quepa en los headers HTTP
+        safe_transcript   = transcript.encode('ascii', errors='replace').decode('ascii')
+        safe_display_text = display_text[:200].encode('ascii', errors='replace').decode('ascii')
+
+        return Response(
+            stream_with_context(generate_audio()),
+            mimetype='audio/mpeg',
+            headers={
+                'X-Transcript':     safe_transcript,
+                'X-Response-Text':  safe_display_text,
+                'Cache-Control':    'no-cache',
+                'X-Accel-Buffering': 'no'   # evita que Nginx/Railway bufferee el stream
+            }
+        )
+
     except Exception as e:
-        # 1. Obtenemos el texto exacto del error y la línea donde ocurrió
         error_real = traceback.format_exc()
-        
-        # 2. Forzamos la salida en Railway AHORA MISMO
         print("\n🚨 === ERROR CRITICO EN /process ===", flush=True)
         print(error_real, flush=True)
         print("======================================\n", flush=True)
-        
-        # 3. Lo devolvemos en el JSON (Status 500)
         return jsonify({
             'status': 'error',
             'error': str(e),
             'traceback': error_real
         }), 500
-        
+
 # ── Memory ────────────────────────────────────────────────────────────
 
 @app.route('/memory', methods=['GET'])
@@ -592,7 +618,7 @@ def admin_logs(user):
 def admin_plushes(user):
     return jsonify(sb_get_all('plushes', '*'))
 
-# ── Audio serving ─────────────────────────────────────────────────────
+# ── Audio serving (conservado para otros usos, no lo usa /process) ────
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
@@ -654,25 +680,23 @@ def chat_with_memory(user_id: str, plush) -> str:
     if not persona: persona = _default_persona
     system_content = persona
     if summary:
-        # Nota: quité la doble diagonal \\n para que el salto de línea sea real
         system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
 
     model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
     messages = [{'role': 'system', 'content': system_content}] + [
         {'role': m['role'], 'content': m['content']} for m in sess['history'][-10:]
     ]
-    
+
     print(f"🧠 Llamando a OpenRouter con modelo: {model}...", flush=True)
     r = requests.post('https://openrouter.ai/api/v1/chat/completions',
         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
         json={'model': model, 'max_tokens': 150, 'messages': messages}, timeout=30)
-    
+
     data = r.json()
     if not data.get('choices'):
-        # ¡AQUI ESTA LA MAGIA! Esto imprimirá por qué OpenRouter falló.
         print("\n🚨 ERROR DE OPENROUTER:", data, flush=True)
         return ''
-        
+
     return extract_text(data['choices'][0]['message'])
 
 def update_summary(user_id: str, history: list, plush):
@@ -701,10 +725,11 @@ def update_summary(user_id: str, history: list, plush):
         print(f"[summary] ERROR: {e}")
 
 def tts(text: str, voice_id: str = '') -> str:
+    """TTS clásico a disco — conservado para uso futuro o endpoints secundarios."""
     vid = voice_id or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
     r = requests.post(f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
-        json={'text': text, 'model_id': 'eleven_v3',
+        json={'text': text, 'model_id': 'eleven_flash_v2_5',
               'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75}},
         stream=True, timeout=30)
     if r.status_code != 200:
