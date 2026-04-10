@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify, send_file
 from pathlib import Path
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 # 10 MB limit
 
 # ── Env vars ──────────────────────────────────────────────────────────
 ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY', '').strip()
