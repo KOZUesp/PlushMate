@@ -339,96 +339,78 @@ def health():
 
 @app.route('/process', methods=['POST'])
 def process_audio():
-    plush = verify_plush_request()
-    if not plush:
-        return jsonify({'error': 'Plush token inválido'}), 401
-    owner_id = plush.get('owner_id')
-    if not owner_id:
-        return jsonify({'error': 'Peluche no vinculado a ninguna cuenta'}), 403
-
-    wav_data = request.data
-    if len(wav_data) < 44:
-        return jsonify({'error': 'Audio inválido'}), 400
-
-    # Silence filter
+    import traceback  # Aseguramos tener traceback disponible
+    
     try:
-        samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
-        peak = max(abs(s) for s in samples) if samples else 0
-        if peak < 300:
-            return jsonify({'error': 'Audio demasiado silencioso'}), 400
-    except: pass
+        plush = verify_plush_request()
+        if not plush:
+            return jsonify({'error': 'Plush token inválido'}), 401
+        owner_id = plush.get('owner_id')
+        if not owner_id:
+            return jsonify({'error': 'Peluche no vinculado a ninguna cuenta'}), 403
 
-    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
-        f.write(wav_data)
-        tmp_path = f.name
-    try:
-        transcript = stt(tmp_path, plush.get('stt_language', 'es'))
-        if not transcript:
-            return jsonify({'error': 'No se entendió el audio'}), 400
+        wav_data = request.data
+        if len(wav_data) < 44:
+            return jsonify({'error': 'Audio inválido'}), 400
 
-        sess = get_session(owner_id)
-        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
-        ai_text = chat_with_memory(owner_id, plush)
-        if not ai_text:
-            sess['history'].pop()
-            return jsonify({'error': 'Sin respuesta'}), 500
-
-        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(sess['history']) > HISTORY_LIMIT:
-            sess['history'] = sess['history'][-HISTORY_LIMIT:]
-
-        sess['interaction_count'] = sess.get('interaction_count', 0) + 1
-        if sess['interaction_count'] % 5 == 0:
-            threading.Thread(target=update_summary, args=(owner_id, sess['history'], plush), daemon=True).start()
-
-        audio_filename = tts(ai_text, plush.get('voice_id', ''))
-        audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-        sess['history'][-1]['audio_url'] = audio_url
-
-        return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-    finally:
-        try: os.unlink(tmp_path)
+        # Silence filter
+        try:
+            samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
+            peak = max(abs(s) for s in samples) if samples else 0
+            if peak < 300:
+                return jsonify({'error': 'Audio demasiado silencioso'}), 400
         except: pass
 
-@app.route('/chat/text', methods=['POST'])
-@require_auth
-def chat_text(user):
-    data = request.json or {}
-    text = data.get('text', '').strip()
-    send_to_plush = data.get('send_to_plush', False)
-    if not text: return jsonify({'error': 'Texto vacío'}), 400
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+            f.write(wav_data)
+            tmp_path = f.name
+            
+        try:
+            transcript = stt(tmp_path, plush.get('stt_language', 'es'))
+            if not transcript:
+                return jsonify({'error': 'No se entendió el audio'}), 400
 
-    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+            sess = get_session(owner_id)
+            sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
+            ai_text = chat_with_memory(owner_id, plush)
+            if not ai_text:
+                sess['history'].pop()
+                return jsonify({'error': 'Sin respuesta'}), 500
 
-    sess = get_session(user['id'])
-    sess['history'].append({'role': 'user', 'content': text, 'audio_url': None})
-    try:
-        ai_text = chat_with_memory(user['id'], plush)
-        if not ai_text:
-            sess['history'].pop()
-            return jsonify({'error': 'Sin respuesta'}), 500
-        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(sess['history']) > HISTORY_LIMIT:
-            sess['history'] = sess['history'][-HISTORY_LIMIT:]
+            display_text = re.sub(r'\\[.*?\\]', '', ai_text).strip()
+            sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+            if len(sess['history']) > HISTORY_LIMIT:
+                sess['history'] = sess['history'][-HISTORY_LIMIT:]
 
-        voice_id = plush.get('voice_id', '') if plush else ''
-        audio_filename = tts(ai_text, voice_id)
-        audio_url = f"{SERVER_URL}/audio/{audio_filename}"
-        sess['history'][-1]['audio_url'] = audio_url
+            sess['interaction_count'] = sess.get('interaction_count', 0) + 1
+            if sess['interaction_count'] % 5 == 0:
+                threading.Thread(target=update_summary, args=(owner_id, sess['history'], plush), daemon=True).start()
 
-        if send_to_plush and plush:
-            with pending_commands_lock:
-                pending_commands[plush['plush_token']] = {'action': 'play_audio', 'url': audio_url}
+            audio_filename = tts(ai_text, plush.get('voice_id', ''))
+            audio_url = f"{SERVER_URL}/audio/{audio_filename}"
+            sess['history'][-1]['audio_url'] = audio_url
 
-        return jsonify({'response': display_text, 'audio_url': audio_url})
+            return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
+        finally:
+            try: os.unlink(tmp_path)
+            except: pass
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        # 1. Obtenemos el texto exacto del error y la línea donde ocurrió
+        error_real = traceback.format_exc()
+        
+        # 2. Forzamos la salida en Railway AHORA MISMO
+        print("\n🚨 === ERROR CRITICO EN /process ===", flush=True)
+        print(error_real, flush=True)
+        print("======================================\n", flush=True)
+        
+        # 3. Lo devolvemos en el JSON (Status 500)
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'traceback': error_real
+        }), 500
+        
 # ── Memory ────────────────────────────────────────────────────────────
 
 @app.route('/memory', methods=['GET'])
