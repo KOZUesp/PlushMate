@@ -734,7 +734,7 @@ def format_memory(summary: str, user_id: str, plush) -> list:
 def stt(wav_path: str, language: str = 'es') -> str:
     with open(wav_path, 'rb') as f:
         audio_data = f.read()
-    r = requests.post('https://api.elevenlabs.io/v2/speech-to-text',
+    r = requests.post('https://api.elevenlabs.io/v1/speech-to-text',
                       headers={'xi-api-key': ELEVENLABS_API_KEY},
                       files={'file': ('audio.wav', audio_data, 'audio/wav')},
                       data={
@@ -825,7 +825,7 @@ def tts(text: str, voice_id: str = '') -> bytes:
     """
     vid = voice_id or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
     r   = requests.post(
-        f'https://api.elevenlabs.io/v2/text-to-speech/{vid}/stream',
+        f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
         json={
             'text':     text,
