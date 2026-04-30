@@ -363,38 +363,32 @@ def health():
 # AUDIO EN VIVO — endpoint que el ESP32 llama para reproducir la respuesta
 # ═══════════════════════════════════════════════════════════════════════
 
-@app.route('/audio/live/<plush_token>')
-def serve_live_audio(plush_token):
-    """
-    El ESP32 hace GET a esta URL (vía media_player).
-    Espera hasta 10s a que el TTS en background termine y deje el MP3 en audio_live_cache.
-    En cuanto está, lo sirve con streaming para que el ESP32 empiece a reproducir
-    sin esperar a que se descargue el archivo completo.
-    """
+@app.route('/audio/live/<plush_token>/<audio_id>')
+def serve_live_audio(plush_token, audio_id):
+    cache_key = f"{plush_token}/{audio_id}"
     timeout_s = 10.0
     step      = 0.05
     waited    = 0.0
 
     while waited < timeout_s:
         with audio_live_lock:
-            data = audio_live_cache.get(plush_token)
+            data = audio_live_cache.get(cache_key)
         if data is not None:
             with audio_live_lock:
-                del audio_live_cache[plush_token]  # consumir una sola vez
+                del audio_live_cache[cache_key]
             return Response(
                 io.BytesIO(data),
                 mimetype='audio/mpeg',
                 headers={
-                    'Content-Length':      str(len(data)),
-                    'Cache-Control':       'no-store',
-                    'Accept-Ranges':       'bytes',
+                    'Content-Length': str(len(data)),
+                    'Cache-Control':  'no-store',
+                    'Accept-Ranges':  'bytes',
                 }
             )
         time.sleep(step)
         waited += step
 
-    return jsonify({'error': 'TTS timeout — audio no disponible'}), 504
-
+    return jsonify({'error': 'TTS timeout'}), 504
 
 # ── Audio legacy (archivos en disco) ─────────────────────────────────
 @app.route('/audio/<filename>')
@@ -470,13 +464,15 @@ def process_audio():
             # ── 3. TTS en background — NO bloqueamos la respuesta ─────
             # La URL se construye ANTES de que el TTS termine.
             # El ESP32 llama a /audio/live/<token> y el endpoint espera ahí.
+            audio_id = str(uuid.uuid4())[:8]  # ID único por respuesta
             audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
 
             def run_tts_background():
+                cache_key = f"{plush_token}/{audio_id}"
                 try:
                     audio_bytes = tts(ai_text, plush.get('voice_id', ''))
                     with audio_live_lock:
-                        audio_live_cache[plush_token] = audio_bytes
+                        audio_live_cache[cache_key] = audio_bytes
                     # Guardar URL en historial (referencia legacy para la app)
                     filename = f"{uuid.uuid4()}.mp3"
                     path     = AUDIO_DIR / filename
