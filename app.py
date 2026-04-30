@@ -1,15 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════
-# PlushMate Server v6.0 — Latency optimized
-# Cambios vs v5.0:
-#   - TTS se lanza en background thread inmediatamente tras el LLM
-#   - /process devuelve audio_url ANTES de que el TTS termine
-#   - /audio/live/<token> espera el audio en memoria y lo sirve con streaming
-#   - Audio en memoria (dict) en lugar de disco para respuestas activas
-#   - Modelo TTS: eleven_flash_v2_5 (~300ms vs ~1.2s de eleven_v3)
-#   - optimize_streaming_latency: 3 en TTS
-#   - max_tokens LLM: 80 (respuestas cortas = TTS más rápido)
-#   - Prompt forzado a respuestas de 1-2 oraciones
-#   - Poll interval recomendado: 400ms en el YAML
+# PlushMate Server v6.1 — Fix audio retrasado
+# Cambios vs v6.0:
+#   - audio_live_cache limpiado ANTES de lanzar el TTS background thread
+#     para evitar que una request anterior quede "huérfana" en el cache
+#   - Endpoint /audio/live/<token> regresado a URL simple (sin audio_id)
+#   - Limpieza de audio huérfano en process_audio antes de generar TTS
 # ═══════════════════════════════════════════════════════════════════════
 
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re, io
@@ -36,13 +31,10 @@ _default_persona = (
 )
 
 HISTORY_LIMIT = 20
-# Directorio de audio legacy (para /audio/<filename> antiguo — se mantiene por compatibilidad)
 AUDIO_DIR = Path('/tmp/plushmate_audio')
 AUDIO_DIR.mkdir(exist_ok=True)
 
 # ── Audio en memoria para respuestas en vivo ──────────────────────────
-# Clave: plush_token  →  bytes del MP3 ya generado
-# Se llena desde el background thread del TTS y se consume desde /audio/live/<token>
 audio_live_cache: dict[str, bytes] = {}
 audio_live_lock = threading.Lock()
 
@@ -357,25 +349,28 @@ def static_icons(filename):
 
 @app.route('/health')
 def health():
-    return jsonify({'status': 'ok', 'version': '6.0'})
+    return jsonify({'status': 'ok', 'version': '6.1'})
 
 # ═══════════════════════════════════════════════════════════════════════
-# AUDIO EN VIVO — endpoint que el ESP32 llama para reproducir la respuesta
+# AUDIO EN VIVO
 # ═══════════════════════════════════════════════════════════════════════
 
-@app.route('/audio/live/<plush_token>/<audio_id>')
-def serve_live_audio(plush_token, audio_id):
-    cache_key = f"{plush_token}/{audio_id}"
+@app.route('/audio/live/<plush_token>')
+def serve_live_audio(plush_token):
+    """
+    El ESP32 hace GET a esta URL.
+    Espera hasta 10s a que el TTS en background deje el MP3 en audio_live_cache.
+    """
     timeout_s = 10.0
     step      = 0.05
     waited    = 0.0
 
     while waited < timeout_s:
         with audio_live_lock:
-            data = audio_live_cache.get(cache_key)
+            data = audio_live_cache.get(plush_token)
         if data is not None:
             with audio_live_lock:
-                del audio_live_cache[cache_key]
+                del audio_live_cache[plush_token]
             return Response(
                 io.BytesIO(data),
                 mimetype='audio/mpeg',
@@ -388,7 +383,8 @@ def serve_live_audio(plush_token, audio_id):
         time.sleep(step)
         waited += step
 
-    return jsonify({'error': 'TTS timeout'}), 504
+    return jsonify({'error': 'TTS timeout — audio no disponible'}), 504
+
 
 # ── Audio legacy (archivos en disco) ─────────────────────────────────
 @app.route('/audio/<filename>')
@@ -461,19 +457,25 @@ def process_audio():
                     daemon=True
                 ).start()
 
-            # ── 3. TTS en background — NO bloqueamos la respuesta ─────
-            # La URL se construye ANTES de que el TTS termine.
-            # El ESP32 llama a /audio/live/<token> y el endpoint espera ahí.
-            audio_id = str(uuid.uuid4())[:8]  # ID único por respuesta
+            # ── 3. Limpiar cache huérfano ANTES de generar nuevo TTS ──
+            # FIX v6.1: si había un audio anterior que el ESP32 no consumió
+            # (por ejemplo porque se cortó la conexión), lo descartamos aquí.
+            # Esto evita que el ESP32 reciba el audio de una request anterior.
+            with audio_live_lock:
+                if plush_token in audio_live_cache:
+                    print(f"[TTS] Descartando audio huérfano para {plush_token}", flush=True)
+                    del audio_live_cache[plush_token]
+
+            # ── 4. TTS en background ──────────────────────────────────
             audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
 
             def run_tts_background():
-                cache_key = f"{plush_token}/{audio_id}"
                 try:
                     audio_bytes = tts(ai_text, plush.get('voice_id', ''))
                     with audio_live_lock:
-                        audio_live_cache[cache_key] = audio_bytes
-                    # Guardar URL en historial (referencia legacy para la app)
+                        audio_live_cache[plush_token] = audio_bytes
+                    print(f"[TTS] Audio listo para {plush_token} ({len(audio_bytes)} bytes)", flush=True)
+                    # Guardar en disco (referencia legacy para la app)
                     filename = f"{uuid.uuid4()}.mp3"
                     path     = AUDIO_DIR / filename
                     with open(str(path), 'wb') as fh:
@@ -483,7 +485,7 @@ def process_audio():
                     for old_file in files[:-50]:
                         try: old_file.unlink()
                         except: pass
-                    # Actualizar historial con URL legacy
+                    # Actualizar historial con URL legacy para la app
                     with session_lock:
                         h = session_data.get(owner_id, {}).get('history', [])
                         for msg in reversed(h):
@@ -495,12 +497,11 @@ def process_audio():
 
             threading.Thread(target=run_tts_background, daemon=True).start()
 
-            # ── 4. Devolver respuesta inmediatamente ──────────────────
-            # El ESP32 recibe esto ~1-2s antes que en v5, porque no esperamos el TTS
+            # ── 5. Devolver respuesta inmediatamente ──────────────────
             return jsonify({
                 'transcript': transcript,
                 'response':   display_text,
-                'audio_url':  audio_url,   # apunta a /audio/live/<token>
+                'audio_url':  audio_url,
             })
 
         finally:
@@ -685,7 +686,7 @@ def admin_logs(user):
         'active_sessions':  len(session_data),
         'sessions':         stats,
         'pending_commands': len(pending_commands),
-        'pending_audio':    pending_audio,   # debug: tokens con audio esperando ser consumido
+        'pending_audio':    pending_audio,
     })
 
 @app.route('/admin/plushes', methods=['GET'])
@@ -751,7 +752,6 @@ def chat_with_memory(user_id: str, plush) -> str:
     persona = plush.get('persona', '') if plush else ''
     if not persona: persona = _default_persona
 
-    # Instrucción de brevedad — clave para latencia baja y naturalidad en voz
     brevity_instruction = (
         "\n\nIMPORTANTE: Estás hablando en voz alta con un niño. "
         "Responde SIEMPRE en máximo 2 oraciones cortas y naturales. "
@@ -778,7 +778,7 @@ def chat_with_memory(user_id: str, plush) -> str:
                          headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
                          json={
                              'model':      model,
-                             'max_tokens': 80,   # 2 oraciones cortas max — reduce tiempo TTS
+                             'max_tokens': 80,
                              'messages':   messages,
                          },
                          timeout=30)
@@ -814,23 +814,18 @@ def update_summary(user_id: str, history: list, plush):
         print(f"[summary] ERROR: {e}")
 
 def tts(text: str, voice_id: str = '') -> bytes:
-    """
-    Genera audio TTS y devuelve los bytes del MP3.
-    Usa eleven_v3 (latencia ~300ms vs ~1.2s de eleven_v3).
-    optimize_streaming_latency=3 reduce el buffer inicial de ElevenLabs.
-    """
     vid = voice_id or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
     r   = requests.post(
         f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
         json={
             'text':     text,
-            'model_id': 'eleven_v3',   # ← CAMBIO CLAVE: ~75% menos latencia vs eleven_v3
+            'model_id': 'eleven_flash_v2_5',
             'voice_settings': {
                 'stability':        0.5,
                 'similarity_boost': 0.75,
             },
-            'optimize_streaming_latency': 3,   # 0-4, mayor = menos latencia, algo menos calidad
+            'optimize_streaming_latency': 3,
         },
         stream=True,
         timeout=30,
@@ -838,7 +833,6 @@ def tts(text: str, voice_id: str = '') -> bytes:
     if r.status_code != 200:
         raise Exception(f"TTS error {r.status_code}: {r.text[:200]}")
 
-    # Leer todos los chunks en memoria
     buf = io.BytesIO()
     for chunk in r.iter_content(chunk_size=4096):
         if chunk:
