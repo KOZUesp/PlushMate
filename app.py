@@ -850,3 +850,120 @@ threading.Thread(target=keep_alive, daemon=True).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+# Buffer para chunks de audio por token
+stream_buffers: dict[str, bytearray] = {}
+stream_locks: dict[str, threading.Lock] = {}
+stream_buffer_lock = threading.Lock()
+
+def get_stream_lock(token):
+    with stream_buffer_lock:
+        if token not in stream_locks:
+            stream_locks[token] = threading.Lock()
+        return stream_locks[token]
+
+@app.route('/stream/<plush_token>', methods=['POST'])
+def stream_chunk(plush_token):
+    # Verificar token
+    plush = sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
+    if not plush:
+        return jsonify({'error': 'Token inválido'}), 401
+    
+    chunk = request.data
+    is_final = request.headers.get('X-Final-Chunk', 'false') == 'true'
+    
+    lock = get_stream_lock(plush_token)
+    with lock:
+        if plush_token not in stream_buffers:
+            stream_buffers[plush_token] = bytearray()
+        stream_buffers[plush_token].extend(chunk)
+    
+    if not is_final:
+        return jsonify({'ok': True, 'bytes': len(chunk)}), 200
+    
+    # Chunk final — procesar el audio completo
+    with lock:
+        wav_data = bytes(stream_buffers.pop(plush_token, b''))
+    
+    if len(wav_data) < 100:
+        return jsonify({'error': 'Audio muy corto'}), 400
+    
+    # Procesar igual que /process pero con wav_data ya en memoria
+    owner_id = plush.get('owner_id')
+    if not owner_id:
+        return jsonify({'error': 'Sin cuenta vinculada'}), 403
+    
+    # Filtro de silencio
+    try:
+        samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
+        peak = max(abs(s) for s in samples) if samples else 0
+        if peak < 300:
+            return jsonify({'error': 'Audio silencioso'}), 400
+    except:
+        pass
+    
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
+        f.write(wav_data)
+        tmp_path = f.name
+    
+    try:
+        transcript = stt(tmp_path, plush.get('stt_language', 'es'))
+        if not transcript:
+            return jsonify({'error': 'No se entendió'}), 400
+        
+        sess = get_session(owner_id)
+        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
+        
+        ai_text = chat_with_memory(owner_id, plush)
+        if not ai_text:
+            sess['history'].pop()
+            return jsonify({'error': 'Sin respuesta'}), 500
+        
+        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
+        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+        if len(sess['history']) > HISTORY_LIMIT:
+            sess['history'] = sess['history'][-HISTORY_LIMIT:]
+        
+        sess['interaction_count'] = sess.get('interaction_count', 0) + 1
+        if sess['interaction_count'] % 5 == 0:
+            threading.Thread(target=update_summary,
+                           args=(owner_id, sess['history'], plush), daemon=True).start()
+        
+        with audio_live_lock:
+            if plush_token in audio_live_cache:
+                del audio_live_cache[plush_token]
+        
+        audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
+        
+        def run_tts():
+            try:
+                audio_bytes = tts(ai_text, plush.get('voice_id', ''))
+                with audio_live_lock:
+                    audio_live_cache[plush_token] = audio_bytes
+                filename = f"{uuid.uuid4()}.mp3"
+                path = AUDIO_DIR / filename
+                with open(str(path), 'wb') as fh:
+                    fh.write(audio_bytes)
+                files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
+                for old in files[:-50]:
+                    try: old.unlink()
+                    except: pass
+                with session_lock:
+                    h = session_data.get(owner_id, {}).get('history', [])
+                    for msg in reversed(h):
+                        if msg['role'] == 'assistant' and msg['audio_url'] is None:
+                            msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
+                            break
+            except Exception as e:
+                print(f"[TTS] ERROR: {e}", flush=True)
+        
+        threading.Thread(target=run_tts, daemon=True).start()
+        
+        return jsonify({
+            'transcript': transcript,
+            'response': display_text,
+            'audio_url': audio_url,
+        })
+    finally:
+        try: os.unlink(tmp_path)
+        except: pass
