@@ -820,7 +820,7 @@ def tts(text: str, voice_id: str = '') -> bytes:
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
         json={
             'text':     text,
-            'model_id': 'eleven_flash_v2_5',
+            'model_id': 'eleven_v3',
             'voice_settings': {
                 'stability':        0.5,
                 'similarity_boost': 0.75,
