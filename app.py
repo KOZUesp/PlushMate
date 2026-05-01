@@ -1,28 +1,32 @@
 # ═══════════════════════════════════════════════════════════════════════
-# PlushMate Server v6.1 — Fix audio retrasado
-# Cambios vs v6.0:
-#   - audio_live_cache limpiado ANTES de lanzar el TTS background thread
-#     para evitar que una request anterior quede "huérfana" en el cache
-#   - Endpoint /audio/live/<token> regresado a URL simple (sin audio_id)
-#   - Limpieza de audio huérfano en process_audio antes de generar TTS
+# PlushMate Server v7.0 — Streaming de audio sin límite de duración
+#
+# Cambios vs v6.1:
+#   - POST /stream/<token>/chunk  → recibe chunks de audio PCM crudo
+#   - POST /stream/<token>/end    → finaliza stream y procesa
+#   - POST /stream/<token>/abort  → cancela stream activo
+#   - Chunks escritos a disco → sin límite de RAM ni de duración
+#   - /process original se mantiene para la app móvil
+#   - Amplificación x8 movida al servidor (menos trabajo para el ESP32)
+#   - Limpieza automática de streams huérfanos cada 60s
 # ═══════════════════════════════════════════════════════════════════════
 
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re, io
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, send_file, Response, stream_with_context
+from flask import Flask, request, jsonify, send_file, Response
 from pathlib import Path
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB limit
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB por chunk
 
 # ── Env vars ──────────────────────────────────────────────────────────
-ELEVENLABS_API_KEY  = os.environ.get('ELEVENLABS_API_KEY',  '').strip()
-OPENROUTER_API_KEY  = os.environ.get('OPENROUTER_API_KEY',  '').strip()
-SUPABASE_URL        = os.environ.get('SUPABASE_URL',        '').strip()
-SUPABASE_KEY        = os.environ.get('SUPABASE_KEY',        '').strip()
-SUPABASE_ANON_KEY   = os.environ.get('SUPABASE_ANON_KEY',   '').strip()
-_server_url         = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
-SERVER_URL          = f"https://{_server_url}" if not _server_url.startswith('http') else _server_url
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '').strip()
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '').strip()
+SUPABASE_URL       = os.environ.get('SUPABASE_URL',       '').strip()
+SUPABASE_KEY       = os.environ.get('SUPABASE_KEY',       '').strip()
+SUPABASE_ANON_KEY  = os.environ.get('SUPABASE_ANON_KEY',  '').strip()
+_server_url        = os.environ.get('SERVER_URL', 'http://localhost:5000').strip()
+SERVER_URL         = f"https://{_server_url}" if not _server_url.startswith('http') else _server_url
 
 _default_persona = (
     "Eres PlushMate, un peluche mágico e inteligente. "
@@ -31,14 +35,21 @@ _default_persona = (
 )
 
 HISTORY_LIMIT = 20
-AUDIO_DIR = Path('/tmp/plushmate_audio')
+AUDIO_DIR     = Path('/tmp/plushmate_audio')
 AUDIO_DIR.mkdir(exist_ok=True)
+STREAM_DIR    = Path('/tmp/plushmate_streams')
+STREAM_DIR.mkdir(exist_ok=True)
 
 # ── Audio en memoria para respuestas en vivo ──────────────────────────
-audio_live_cache: dict[str, bytes] = {}
-audio_live_lock = threading.Lock()
+audio_live_cache: dict = {}
+audio_live_lock  = threading.Lock()
 
-# ── Per-session state (por user_id) ───────────────────────────────────
+# ── Streams activos ───────────────────────────────────────────────────
+# token → {file, path, lock, peak, total_bytes, created_at}
+active_streams: dict = {}
+streams_lock   = threading.Lock()
+
+# ── Sesiones por usuario ──────────────────────────────────────────────
 session_data: dict = {}
 session_lock = threading.Lock()
 
@@ -59,9 +70,9 @@ def sb_headers(token=None):
 
 def sb_get(table, select='*', filter_str='', token=None):
     try:
-        url = f"{SUPABASE_URL}/rest/v1/{table}?select={select}"
+        url  = f"{SUPABASE_URL}/rest/v1/{table}?select={select}"
         if filter_str: url += f"&{filter_str}"
-        r = requests.get(url, headers=sb_headers(token), timeout=5)
+        r    = requests.get(url, headers=sb_headers(token), timeout=5)
         data = r.json()
         return data[0] if isinstance(data, list) and data else (data if not isinstance(data, list) else None)
     except: return None
@@ -70,7 +81,7 @@ def sb_get_all(table, select='*', filter_str='', token=None):
     try:
         url = f"{SUPABASE_URL}/rest/v1/{table}?select={select}"
         if filter_str: url += f"&{filter_str}"
-        r = requests.get(url, headers=sb_headers(token), timeout=5)
+        r   = requests.get(url, headers=sb_headers(token), timeout=5)
         return r.json() if isinstance(r.json(), list) else []
     except: return []
 
@@ -95,7 +106,8 @@ def verify_token(token: str):
     if not token: return None
     try:
         r = requests.get(f"{SUPABASE_URL}/auth/v1/user",
-                         headers={'apikey': SUPABASE_ANON_KEY, 'Authorization': f'Bearer {token}'},
+                         headers={'apikey': SUPABASE_ANON_KEY,
+                                  'Authorization': f'Bearer {token}'},
                          timeout=5)
         if r.status_code != 200: return None
         user    = r.json()
@@ -204,9 +216,9 @@ def refresh_token():
 @app.route('/auth/status', methods=['GET'])
 def auth_status():
     try:
-        r    = requests.get(f"{SUPABASE_URL}/rest/v1/pin?id=eq.1&select=hash",
-                            headers=sb_headers(), timeout=5)
-        data = r.json()
+        r       = requests.get(f"{SUPABASE_URL}/rest/v1/pin?id=eq.1&select=hash",
+                               headers=sb_headers(), timeout=5)
+        data    = r.json()
         has_pin = bool(data and data[0].get('hash'))
     except:
         has_pin = False
@@ -255,7 +267,8 @@ def auth_verify():
         return jsonify({'error': 'PIN incorrecto'}), 401
     if device_id and user_id:
         sb_upsert('devices', {'id': device_id, 'user_id': user_id, 'name': device_name,
-                               'last_seen': datetime.now(timezone.utc).isoformat(), 'revoked': False})
+                               'last_seen': datetime.now(timezone.utc).isoformat(),
+                               'revoked': False})
     return jsonify({'ok': True})
 
 @app.route('/auth/me', methods=['GET'])
@@ -302,7 +315,7 @@ def pair_plush(user):
     if plush.get('owner_id') and plush['owner_id'] != user['id']:
         return jsonify({'error': 'Este peluche ya está vinculado a otra cuenta'}), 409
     sb_patch('plushes', {
-        'owner_id': user['id'],
+        'owner_id':  user['id'],
         'paired_at': datetime.now(timezone.utc).isoformat()
     }, f'plush_token=eq.{plush_token}')
     return jsonify({'ok': True, 'plush': {'id': plush['id'], 'name': plush.get('name', 'PlushMate')}})
@@ -349,7 +362,263 @@ def static_icons(filename):
 
 @app.route('/health')
 def health():
-    return jsonify({'status': 'ok', 'version': '6.1'})
+    with streams_lock:
+        n_streams = len(active_streams)
+    return jsonify({'status': 'ok', 'version': '7.0', 'active_streams': n_streams})
+
+# ═══════════════════════════════════════════════════════════════════════
+# STREAMING — tres endpoints que el ESP32 llama en secuencia:
+#
+#   1. POST /stream/<token>/chunk   → envía PCM crudo, sin límite
+#   2. POST /stream/<token>/end     → finaliza y devuelve audio_url
+#   3. POST /stream/<token>/abort   → cancela (botón suelto sin audio)
+#
+# El primer /chunk crea el stream automáticamente.
+# Los datos van directo a disco — cero acumulación en RAM.
+# ═══════════════════════════════════════════════════════════════════════
+
+def _cleanup_stream(plush_token: str):
+    with streams_lock:
+        info = active_streams.pop(plush_token, None)
+    if info:
+        try:
+            fh = info.get('file')
+            if fh and not fh.closed:
+                fh.close()
+        except: pass
+        try:
+            path = info.get('path')
+            if path and os.path.exists(path):
+                os.unlink(path)
+        except: pass
+
+def _get_or_create_stream(plush_token: str) -> dict:
+    with streams_lock:
+        if plush_token not in active_streams:
+            tmp = tempfile.NamedTemporaryFile(
+                suffix='.pcm', delete=False,
+                dir=str(STREAM_DIR), prefix=f"pm_"
+            )
+            active_streams[plush_token] = {
+                'file':        tmp,
+                'path':        tmp.name,
+                'lock':        threading.Lock(),
+                'peak':        0,
+                'total_bytes': 0,
+                'created_at':  time.time(),
+            }
+            print(f"[stream] Nuevo: {plush_token} → {tmp.name}", flush=True)
+        return active_streams[plush_token]
+
+
+@app.route('/stream/<plush_token>/chunk', methods=['POST'])
+def stream_chunk(plush_token):
+    """Recibe un chunk de PCM crudo (sin header WAV) y lo escribe a disco."""
+    plush = sb_get('plushes', 'owner_id,plush_token', f'plush_token=eq.{plush_token}')
+    if not plush:
+        return jsonify({'error': 'Token inválido'}), 401
+
+    chunk = request.data
+    if not chunk:
+        return jsonify({'error': 'Chunk vacío'}), 400
+
+    info = _get_or_create_stream(plush_token)
+
+    with info['lock']:
+        # Calcular amplitud pico sin amplificar (la amplificación se hace en /end)
+        n = len(chunk) // 2
+        if n > 0:
+            samples    = struct.unpack(f'<{n}h', chunk[:n*2])
+            peak_chunk = max(abs(s) for s in samples)
+            if peak_chunk > info['peak']:
+                info['peak'] = peak_chunk
+
+        info['file'].write(chunk)
+        info['file'].flush()
+        info['total_bytes'] += len(chunk)
+
+    return jsonify({
+        'ok':          True,
+        'total_bytes': info['total_bytes'],
+        'peak':        info['peak'],
+    }), 200
+
+
+@app.route('/stream/<plush_token>/end', methods=['POST'])
+def stream_end(plush_token):
+    """Cierra el stream, amplifica, construye WAV, procesa y devuelve audio_url."""
+    import traceback
+
+    plush = sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
+    if not plush:
+        return jsonify({'error': 'Token inválido'}), 401
+
+    with streams_lock:
+        info = active_streams.get(plush_token)
+    if not info:
+        return jsonify({'error': 'Sin stream activo'}), 400
+
+    try:
+        # Cerrar archivo
+        with info['lock']:
+            info['file'].flush()
+            info['file'].close()
+            pcm_path    = info['path']
+            peak_raw    = info['peak']
+            total_bytes = info['total_bytes']
+
+        # Limpiar entrada del dict (ya tenemos los datos en disco)
+        with streams_lock:
+            active_streams.pop(plush_token, None)
+
+        print(f"[stream] END {plush_token}: {total_bytes}B peak_raw={peak_raw}", flush=True)
+
+        # Validaciones
+        if total_bytes < 3200:
+            try: os.unlink(pcm_path)
+            except: pass
+            return jsonify({'error': 'Audio demasiado corto — habla más tiempo'}), 400
+
+        if peak_raw < 38:   # sin amplificar x8, threshold es 300/8 ≈ 38
+            try: os.unlink(pcm_path)
+            except: pass
+            return jsonify({'error': 'Audio demasiado silencioso'}), 400
+
+        # Leer PCM, amplificar x8 y construir WAV
+        with open(pcm_path, 'rb') as f:
+            raw_pcm = f.read()
+        try: os.unlink(pcm_path)
+        except: pass
+
+        n       = len(raw_pcm) // 2
+        samples = struct.unpack(f'<{n}h', raw_pcm[:n*2])
+        amp     = struct.pack(
+            f'<{n}h',
+            *[max(-32768, min(32767, s * 8)) for s in samples]
+        )
+
+        wav_path = str(STREAM_DIR / f"pm_{plush_token}_{uuid.uuid4().hex[:8]}.wav")
+        with open(wav_path, 'wb') as wf:
+            data_len = len(amp)
+            wf.write(b'RIFF')
+            wf.write(struct.pack('<I', 36 + data_len))
+            wf.write(b'WAVE')
+            wf.write(b'fmt ')
+            wf.write(struct.pack('<I', 16))
+            wf.write(struct.pack('<H', 1))       # PCM
+            wf.write(struct.pack('<H', 1))       # mono
+            wf.write(struct.pack('<I', 16000))   # sample rate
+            wf.write(struct.pack('<I', 32000))   # byte rate
+            wf.write(struct.pack('<H', 2))       # block align
+            wf.write(struct.pack('<H', 16))      # bits/sample
+            wf.write(b'data')
+            wf.write(struct.pack('<I', data_len))
+            wf.write(amp)
+
+        # ── STT → LLM → TTS ──────────────────────────────────────────
+        owner_id = plush.get('owner_id')
+        if not owner_id:
+            try: os.unlink(wav_path)
+            except: pass
+            return jsonify({'error': 'Peluche sin cuenta vinculada'}), 403
+
+        try:
+            transcript = stt(wav_path, plush.get('stt_language', 'es'))
+        finally:
+            try: os.unlink(wav_path)
+            except: pass
+
+        if not transcript:
+            return jsonify({'error': 'No se entendió el audio'}), 400
+
+        sess = get_session(owner_id)
+        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
+
+        ai_text = chat_with_memory(owner_id, plush)
+        if not ai_text:
+            sess['history'].pop()
+            return jsonify({'error': 'Sin respuesta del modelo'}), 500
+
+        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
+        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
+        if len(sess['history']) > HISTORY_LIMIT:
+            sess['history'] = sess['history'][-HISTORY_LIMIT:]
+
+        sess['interaction_count'] = sess.get('interaction_count', 0) + 1
+        if sess['interaction_count'] % 5 == 0:
+            threading.Thread(target=update_summary,
+                             args=(owner_id, sess['history'], plush),
+                             daemon=True).start()
+
+        # Limpiar audio huérfano
+        with audio_live_lock:
+            if plush_token in audio_live_cache:
+                del audio_live_cache[plush_token]
+
+        audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
+
+        def run_tts():
+            try:
+                audio_bytes = tts(ai_text, plush.get('voice_id', ''))
+                with audio_live_lock:
+                    audio_live_cache[plush_token] = audio_bytes
+                print(f"[TTS] Listo {plush_token} ({len(audio_bytes)}B)", flush=True)
+                filename = f"{uuid.uuid4()}.mp3"
+                path     = AUDIO_DIR / filename
+                with open(str(path), 'wb') as fh:
+                    fh.write(audio_bytes)
+                files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
+                for old in files[:-50]:
+                    try: old.unlink()
+                    except: pass
+                with session_lock:
+                    h = session_data.get(owner_id, {}).get('history', [])
+                    for msg in reversed(h):
+                        if msg['role'] == 'assistant' and msg['audio_url'] is None:
+                            msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
+                            break
+            except Exception as e:
+                print(f"[TTS] ERROR: {e}", flush=True)
+
+        threading.Thread(target=run_tts, daemon=True).start()
+
+        return jsonify({
+            'transcript': transcript,
+            'response':   display_text,
+            'audio_url':  audio_url,
+        })
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"\n🚨 ERROR /stream/end:\n{tb}\n", flush=True)
+        _cleanup_stream(plush_token)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/stream/<plush_token>/abort', methods=['POST'])
+def stream_abort(plush_token):
+    """Cancela y limpia un stream activo."""
+    _cleanup_stream(plush_token)
+    print(f"[stream] Abortado: {plush_token}", flush=True)
+    return jsonify({'ok': True}), 200
+
+
+# ── Limpieza de streams huérfanos (>2 min) ───────────────────────────
+def _cleanup_stale():
+    while True:
+        time.sleep(60)
+        now   = time.time()
+        stale = []
+        with streams_lock:
+            for token, info in active_streams.items():
+                if now - info.get('created_at', now) > 120:
+                    stale.append(token)
+        for token in stale:
+            print(f"[stream] Limpiando huérfano: {token}", flush=True)
+            _cleanup_stream(token)
+
+threading.Thread(target=_cleanup_stale, daemon=True).start()
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # AUDIO EN VIVO
@@ -357,14 +626,9 @@ def health():
 
 @app.route('/audio/live/<plush_token>')
 def serve_live_audio(plush_token):
-    """
-    El ESP32 hace GET a esta URL.
-    Espera hasta 10s a que el TTS en background deje el MP3 en audio_live_cache.
-    """
-    timeout_s = 10.0
+    timeout_s = 12.0
     step      = 0.05
     waited    = 0.0
-
     while waited < timeout_s:
         with audio_live_lock:
             data = audio_live_cache.get(plush_token)
@@ -382,11 +646,9 @@ def serve_live_audio(plush_token):
             )
         time.sleep(step)
         waited += step
+    return jsonify({'error': 'TTS timeout'}), 504
 
-    return jsonify({'error': 'TTS timeout — audio no disponible'}), 504
 
-
-# ── Audio legacy (archivos en disco) ─────────────────────────────────
 @app.route('/audio/<filename>')
 def serve_audio(filename):
     path = AUDIO_DIR / filename
@@ -394,8 +656,9 @@ def serve_audio(filename):
         return jsonify({'error': 'Not found'}), 404
     return send_file(str(path), mimetype='audio/mpeg')
 
+
 # ═══════════════════════════════════════════════════════════════════════
-# /process — pipeline principal de audio
+# /process — pipeline original (mantener para app móvil)
 # ═══════════════════════════════════════════════════════════════════════
 
 @app.route('/process', methods=['POST'])
@@ -405,87 +668,57 @@ def process_audio():
         plush = verify_plush_request()
         if not plush:
             return jsonify({'error': 'Plush token inválido'}), 401
-
         owner_id    = plush.get('owner_id')
         plush_token = plush.get('plush_token', '')
         if not owner_id:
-            return jsonify({'error': 'Peluche no vinculado a ninguna cuenta'}), 403
-
+            return jsonify({'error': 'Peluche no vinculado'}), 403
         wav_data = request.data
         if len(wav_data) < 44:
             return jsonify({'error': 'Audio inválido'}), 400
-
-        # Filtro de silencio
         try:
             samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
             peak    = max(abs(s) for s in samples) if samples else 0
             if peak < 300:
                 return jsonify({'error': 'Audio demasiado silencioso'}), 400
-        except:
-            pass
-
+        except: pass
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
             f.write(wav_data)
             tmp_path = f.name
-
         try:
-            # ── 1. STT ────────────────────────────────────────────────
             transcript = stt(tmp_path, plush.get('stt_language', 'es'))
             if not transcript:
                 return jsonify({'error': 'No se entendió el audio'}), 400
-
-            # ── 2. Historial + LLM ────────────────────────────────────
             sess = get_session(owner_id)
             sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
-
             ai_text = chat_with_memory(owner_id, plush)
             if not ai_text:
                 sess['history'].pop()
-                return jsonify({'error': 'Sin respuesta del modelo'}), 500
-
+                return jsonify({'error': 'Sin respuesta'}), 500
             display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-
             sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
             if len(sess['history']) > HISTORY_LIMIT:
                 sess['history'] = sess['history'][-HISTORY_LIMIT:]
-
             sess['interaction_count'] = sess.get('interaction_count', 0) + 1
             if sess['interaction_count'] % 5 == 0:
-                threading.Thread(
-                    target=update_summary,
-                    args=(owner_id, sess['history'], plush),
-                    daemon=True
-                ).start()
-
-            # ── 3. Limpiar cache huérfano ANTES de generar nuevo TTS ──
-            # FIX v6.1: si había un audio anterior que el ESP32 no consumió
-            # (por ejemplo porque se cortó la conexión), lo descartamos aquí.
-            # Esto evita que el ESP32 reciba el audio de una request anterior.
+                threading.Thread(target=update_summary,
+                                 args=(owner_id, sess['history'], plush), daemon=True).start()
             with audio_live_lock:
                 if plush_token in audio_live_cache:
-                    print(f"[TTS] Descartando audio huérfano para {plush_token}", flush=True)
                     del audio_live_cache[plush_token]
-
-            # ── 4. TTS en background ──────────────────────────────────
             audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
-
-            def run_tts_background():
+            def run_tts_bg():
                 try:
                     audio_bytes = tts(ai_text, plush.get('voice_id', ''))
                     with audio_live_lock:
                         audio_live_cache[plush_token] = audio_bytes
-                    print(f"[TTS] Audio listo para {plush_token} ({len(audio_bytes)} bytes)", flush=True)
-                    # Guardar en disco (referencia legacy para la app)
                     filename = f"{uuid.uuid4()}.mp3"
                     path     = AUDIO_DIR / filename
                     with open(str(path), 'wb') as fh:
                         fh.write(audio_bytes)
-                    # Limpiar archivos viejos (mantener últimos 50)
                     files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
-                    for old_file in files[:-50]:
-                        try: old_file.unlink()
+                    for old in files[:-50]:
+                        try: old.unlink()
                         except: pass
-                    # Actualizar historial con URL legacy para la app
                     with session_lock:
                         h = session_data.get(owner_id, {}).get('history', [])
                         for msg in reversed(h):
@@ -493,27 +726,16 @@ def process_audio():
                                 msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
                                 break
                 except Exception as e:
-                    print(f"[TTS background] ERROR: {e}", flush=True)
-
-            threading.Thread(target=run_tts_background, daemon=True).start()
-
-            # ── 5. Devolver respuesta inmediatamente ──────────────────
-            return jsonify({
-                'transcript': transcript,
-                'response':   display_text,
-                'audio_url':  audio_url,
-            })
-
+                    print(f"[TTS bg] ERROR: {e}", flush=True)
+            threading.Thread(target=run_tts_bg, daemon=True).start()
+            return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
         finally:
             try: os.unlink(tmp_path)
             except: pass
-
     except Exception as e:
-        error_real = traceback.format_exc()
-        print("\n🚨 === ERROR CRITICO EN /process ===", flush=True)
-        print(error_real, flush=True)
-        print("======================================\n", flush=True)
-        return jsonify({'status': 'error', 'error': str(e), 'traceback': error_real}), 500
+        print(f"\n🚨 ERROR /process:\n{traceback.format_exc()}\n", flush=True)
+        return jsonify({'error': str(e)}), 500
+
 
 # ── Memory ────────────────────────────────────────────────────────────
 @app.route('/memory', methods=['GET'])
@@ -524,9 +746,9 @@ def get_memory(user):
         sb_upsert('memory', {'user_id': user['id'], 'summary': '',
                               'updated_at': datetime.now(timezone.utc).isoformat()})
         row = {}
-    summary = row.get('summary', '')
-    plush   = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
-    sess    = get_session(user['id'])
+    summary   = row.get('summary', '')
+    plush     = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+    sess      = get_session(user['id'])
     formatted = format_memory(summary, user['id'], plush)
     return jsonify({
         'summary':           summary,
@@ -565,15 +787,13 @@ def set_profile(user):
 @app.route('/devices', methods=['GET'])
 @require_auth
 def list_devices(user):
-    devices = sb_get_all('devices', '*',
-                          f'user_id=eq.{user["id"]}&revoked=eq.false&order=last_seen.desc')
-    return jsonify(devices)
+    return jsonify(sb_get_all('devices', '*',
+                              f'user_id=eq.{user["id"]}&revoked=eq.false&order=last_seen.desc'))
 
 @app.route('/devices/<device_id>', methods=['DELETE'])
 @require_auth
 def revoke_device(user, device_id):
-    sb_patch('devices', {'revoked': True},
-             f'id=eq.{device_id}&user_id=eq.{user["id"]}')
+    sb_patch('devices', {'revoked': True}, f'id=eq.{device_id}&user_id=eq.{user["id"]}')
     return jsonify({'ok': True})
 
 # ── Command queue ─────────────────────────────────────────────────────
@@ -589,9 +809,10 @@ def get_command():
 @app.route('/command', methods=['POST'])
 @require_auth
 def set_command(user):
-    data  = request.json or {}
+    data   = request.json or {}
     action = data.get('action')
-    valid  = ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode', 'play_audio', 'scan_networks')
+    valid  = ('activate', 'stop', 'wifi_change', 'volume_set', 'ap_mode',
+              'play_audio', 'scan_networks')
     if action not in valid:
         return jsonify({'error': 'Acción inválida'}), 400
     plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
@@ -611,10 +832,11 @@ def set_wifi(user):
     plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
     if not plush: return jsonify({'error': 'Sin peluche vinculado'}), 404
     with pending_commands_lock:
-        pending_commands[plush['plush_token']] = {'action': 'wifi_change', 'ssid': ssid, 'password': password}
+        pending_commands[plush['plush_token']] = {
+            'action': 'wifi_change', 'ssid': ssid, 'password': password
+        }
     return jsonify({'status': 'queued'})
 
-# Networks scan
 available_networks: dict = {}
 
 @app.route('/networks/scan', methods=['POST'])
@@ -631,16 +853,14 @@ def networks_scan(user):
 def networks_results(user):
     plush = sb_get('plushes', 'plush_token', f'owner_id=eq.{user["id"]}')
     if not plush: return jsonify({'status': 'no_plush', 'networks': []}), 404
-    token = plush['plush_token']
-    nets  = available_networks.get(token, [])
+    nets  = available_networks.get(plush['plush_token'], [])
     return jsonify({'status': 'ready' if nets else 'waiting', 'networks': nets})
 
 @app.route('/networks/results', methods=['POST'])
 def networks_results_post():
     token = request.headers.get('X-Plush-Token', '')
     if not token: return jsonify({'error': 'No token'}), 401
-    data  = request.json or {}
-    available_networks[token] = data.get('networks', [])
+    available_networks[token] = (request.json or {}).get('networks', [])
     return jsonify({'ok': True})
 
 # ── Admin ─────────────────────────────────────────────────────────────
@@ -649,17 +869,18 @@ def networks_results_post():
 def admin_list_users(user):
     try:
         r        = requests.get(f"{SUPABASE_URL}/auth/v1/admin/users",
-                                headers={'apikey': SUPABASE_KEY, 'Authorization': f'Bearer {SUPABASE_KEY}'},
+                                headers={'apikey': SUPABASE_KEY,
+                                         'Authorization': f'Bearer {SUPABASE_KEY}'},
                                 timeout=10)
         users    = r.json().get('users', [])
         profiles = sb_get_all('profiles', '*')
-        profile_map = {p['id']: p for p in profiles}
-        result = []
-        for u in users:
-            p = profile_map.get(u['id'], {})
-            result.append({'id': u['id'], 'email': u.get('email'), 'role': p.get('role', 'user'),
-                           'name': p.get('name', ''), 'created_at': u.get('created_at')})
-        return jsonify(result)
+        pmap     = {p['id']: p for p in profiles}
+        return jsonify([{
+            'id': u['id'], 'email': u.get('email'),
+            'role': pmap.get(u['id'], {}).get('role', 'user'),
+            'name': pmap.get(u['id'], {}).get('name', ''),
+            'created_at': u.get('created_at'),
+        } for u in users])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -682,11 +903,15 @@ def admin_logs(user):
                  for uid, s in session_data.items()]
     with audio_live_lock:
         pending_audio = list(audio_live_cache.keys())
+    with streams_lock:
+        active = {t: {'bytes': i['total_bytes'], 'peak': i['peak']}
+                  for t, i in active_streams.items()}
     return jsonify({
         'active_sessions':  len(session_data),
         'sessions':         stats,
         'pending_commands': len(pending_commands),
         'pending_audio':    pending_audio,
+        'active_streams':   active,
     })
 
 @app.route('/admin/plushes', methods=['GET'])
@@ -704,22 +929,23 @@ def extract_text(msg: dict) -> str:
         for rd in msg['reasoning_details']:
             if rd.get('text'): return rd['text']
     if not text:
-        raw = str(msg)
-        m   = re.search(r'<think>(.*?)</think>', raw, re.DOTALL)
+        m = re.search(r'<think>(.*?)</think>', str(msg), re.DOTALL)
         if m: return m.group(1).strip()
     return text.strip()
 
 def format_memory(summary: str, user_id: str, plush) -> list:
     if not summary or not summary.strip(): return []
     try:
-        model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
-        r     = requests.post('https://openrouter.ai/api/v1/chat/completions',
-                              headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
-                              json={'model': model, 'max_tokens': 400,
-                                    'messages': [{'role': 'user', 'content':
-                                        f'Convierte este resumen en JSON con secciones. Solo JSON, sin markdown.\n'
-                                        f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
-                                        f'Resumen: {summary}'}]}, timeout=10)
+        model = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                 if plush else 'arcee-ai/trinity-large-preview:free')
+        r     = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                     'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 400, 'messages': [{'role': 'user', 'content':
+                f'Convierte este resumen en JSON con secciones. Solo JSON, sin markdown.\n'
+                f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
+                f'Resumen: {summary}'}]}, timeout=10)
         msg = r.json()['choices'][0]['message']
         raw = extract_text(msg)
         raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
@@ -731,16 +957,13 @@ def format_memory(summary: str, user_id: str, plush) -> list:
 def stt(wav_path: str, language: str = 'es') -> str:
     with open(wav_path, 'rb') as f:
         audio_data = f.read()
-    r = requests.post('https://api.elevenlabs.io/v1/speech-to-text',
-                      headers={'xi-api-key': ELEVENLABS_API_KEY},
-                      files={'file': ('audio.wav', audio_data, 'audio/wav')},
-                      data={
-                          'model_id':         'scribe_v1',
-                          'tag_audio_events': 'false',
-                          'diarize':          'false',
-                          'language_code':    language,
-                      },
-                      timeout=30)
+    r = requests.post(
+        'https://api.elevenlabs.io/v1/speech-to-text',
+        headers={'xi-api-key': ELEVENLABS_API_KEY},
+        files={'file': ('audio.wav', audio_data, 'audio/wav')},
+        data={'model_id': 'scribe_v1', 'tag_audio_events': 'false',
+              'diarize': 'false', 'language_code': language},
+        timeout=60)
     try:    return r.json().get('text', '').strip()
     except: return ''
 
@@ -748,95 +971,78 @@ def chat_with_memory(user_id: str, plush) -> str:
     sess    = get_session(user_id)
     row     = sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}
     summary = row.get('summary', '')
-
-    persona = plush.get('persona', '') if plush else ''
-    if not persona: persona = _default_persona
-
-    brevity_instruction = (
+    persona = (plush.get('persona', '') if plush else '') or _default_persona
+    brevity = (
         "\n\nIMPORTANTE: Estás hablando en voz alta con un niño. "
         "Responde SIEMPRE en máximo 2 oraciones cortas y naturales. "
         "Usa lenguaje sencillo, cálido y conversacional. "
         "Nunca uses listas, viñetas ni texto formateado. "
         "Si no sabes algo, di que no sabes de forma amigable en una oración."
     )
-
-    system_content = persona + brevity_instruction
-
+    system_content = persona + brevity
     if summary:
         system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
-
-    model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
-
+    model    = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                if plush else 'arcee-ai/trinity-large-preview:free')
     messages = [{'role': 'system', 'content': system_content}] + [
         {'role': m['role'], 'content': m['content']}
         for m in sess['history'][-10:]
     ]
-
     print(f"🧠 LLM: {model} | historial: {len(sess['history'])} msgs", flush=True)
-
-    r    = requests.post('https://openrouter.ai/api/v1/chat/completions',
-                         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
-                         json={
-                             'model':      model,
-                             'max_tokens': 80,
-                             'messages':   messages,
-                         },
-                         timeout=30)
+    r    = requests.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                 'Content-Type': 'application/json'},
+        json={'model': model, 'max_tokens': 80, 'messages': messages},
+        timeout=30)
     data = r.json()
     if not data.get('choices'):
-        print(f"\n🚨 ERROR OPENROUTER: {data}", flush=True)
+        print(f"🚨 ERROR OPENROUTER: {data}", flush=True)
         return ''
     return extract_text(data['choices'][0]['message'])
 
 def update_summary(user_id: str, history: list, plush):
     try:
-        row = sb_get('memory', 'summary', f'user_id=eq.{user_id}')
+        row   = sb_get('memory', 'summary', f'user_id=eq.{user_id}')
         if not row:
             sb_upsert('memory', {'user_id': user_id, 'summary': '',
                                   'updated_at': datetime.now(timezone.utc).isoformat()})
-        old  = (row or {}).get('summary', '')
-        conv = '\n'.join([f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
-                          for m in history[-10:]])
-        model = plush.get('model', 'arcee-ai/trinity-large-preview:free') if plush else 'arcee-ai/trinity-large-preview:free'
-        r     = requests.post('https://openrouter.ai/api/v1/chat/completions',
-                              headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
-                              json={'model': model, 'max_tokens': 200,
-                                    'messages': [{'role': 'user', 'content':
-                                        f'Resumen existente: {old}\nConversación nueva:\n{conv}\n'
-                                        f'Actualiza el resumen en 3-5 oraciones. Solo el resumen.'}]},
-                              timeout=15)
-        msg         = r.json()['choices'][0]['message']
-        new_summary = extract_text(msg)
+        old   = (row or {}).get('summary', '')
+        conv  = '\n'.join([
+            f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
+            for m in history[-10:]
+        ])
+        model = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                 if plush else 'arcee-ai/trinity-large-preview:free')
+        r     = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                     'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 200, 'messages': [{'role': 'user', 'content':
+                f'Resumen existente: {old}\nConversación nueva:\n{conv}\n'
+                f'Actualiza el resumen en 3-5 oraciones. Solo el resumen.'}]},
+            timeout=15)
+        new_summary = extract_text(r.json()['choices'][0]['message'])
         if new_summary:
             sb_upsert('memory', {'user_id': user_id, 'summary': new_summary,
                                   'updated_at': datetime.now(timezone.utc).isoformat()})
     except Exception as e:
-        print(f"[summary] ERROR: {e}")
+        print(f"[summary] ERROR: {e}", flush=True)
 
 def tts(text: str, voice_id: str = '') -> bytes:
     vid = voice_id or os.environ.get('ELEVENLABS_VOICE_ID', 'aaf0KU31jmlzVPqltvJY')
     r   = requests.post(
         f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
-        json={
-            'text':     text,
-            'model_id': 'eleven_v3',
-            'voice_settings': {
-                'stability':        0.5,
-                'similarity_boost': 0.75,
-            },
-            'optimize_streaming_latency': 3,
-        },
-        stream=True,
-        timeout=30,
-    )
+        json={'text': text, 'model_id': 'eleven_flash_v2_5',
+              'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75},
+              'optimize_streaming_latency': 3},
+        stream=True, timeout=30)
     if r.status_code != 200:
         raise Exception(f"TTS error {r.status_code}: {r.text[:200]}")
-
     buf = io.BytesIO()
     for chunk in r.iter_content(chunk_size=4096):
-        if chunk:
-            buf.write(chunk)
+        if chunk: buf.write(chunk)
     return buf.getvalue()
 
 # ── Keep-alive ────────────────────────────────────────────────────────
@@ -850,120 +1056,3 @@ threading.Thread(target=keep_alive, daemon=True).start()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
-# Buffer para chunks de audio por token
-stream_buffers: dict[str, bytearray] = {}
-stream_locks: dict[str, threading.Lock] = {}
-stream_buffer_lock = threading.Lock()
-
-def get_stream_lock(token):
-    with stream_buffer_lock:
-        if token not in stream_locks:
-            stream_locks[token] = threading.Lock()
-        return stream_locks[token]
-
-@app.route('/stream/<plush_token>', methods=['POST'])
-def stream_chunk(plush_token):
-    # Verificar token
-    plush = sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
-    if not plush:
-        return jsonify({'error': 'Token inválido'}), 401
-    
-    chunk = request.data
-    is_final = request.headers.get('X-Final-Chunk', 'false') == 'true'
-    
-    lock = get_stream_lock(plush_token)
-    with lock:
-        if plush_token not in stream_buffers:
-            stream_buffers[plush_token] = bytearray()
-        stream_buffers[plush_token].extend(chunk)
-    
-    if not is_final:
-        return jsonify({'ok': True, 'bytes': len(chunk)}), 200
-    
-    # Chunk final — procesar el audio completo
-    with lock:
-        wav_data = bytes(stream_buffers.pop(plush_token, b''))
-    
-    if len(wav_data) < 100:
-        return jsonify({'error': 'Audio muy corto'}), 400
-    
-    # Procesar igual que /process pero con wav_data ya en memoria
-    owner_id = plush.get('owner_id')
-    if not owner_id:
-        return jsonify({'error': 'Sin cuenta vinculada'}), 403
-    
-    # Filtro de silencio
-    try:
-        samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
-        peak = max(abs(s) for s in samples) if samples else 0
-        if peak < 300:
-            return jsonify({'error': 'Audio silencioso'}), 400
-    except:
-        pass
-    
-    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
-        f.write(wav_data)
-        tmp_path = f.name
-    
-    try:
-        transcript = stt(tmp_path, plush.get('stt_language', 'es'))
-        if not transcript:
-            return jsonify({'error': 'No se entendió'}), 400
-        
-        sess = get_session(owner_id)
-        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
-        
-        ai_text = chat_with_memory(owner_id, plush)
-        if not ai_text:
-            sess['history'].pop()
-            return jsonify({'error': 'Sin respuesta'}), 500
-        
-        display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(sess['history']) > HISTORY_LIMIT:
-            sess['history'] = sess['history'][-HISTORY_LIMIT:]
-        
-        sess['interaction_count'] = sess.get('interaction_count', 0) + 1
-        if sess['interaction_count'] % 5 == 0:
-            threading.Thread(target=update_summary,
-                           args=(owner_id, sess['history'], plush), daemon=True).start()
-        
-        with audio_live_lock:
-            if plush_token in audio_live_cache:
-                del audio_live_cache[plush_token]
-        
-        audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
-        
-        def run_tts():
-            try:
-                audio_bytes = tts(ai_text, plush.get('voice_id', ''))
-                with audio_live_lock:
-                    audio_live_cache[plush_token] = audio_bytes
-                filename = f"{uuid.uuid4()}.mp3"
-                path = AUDIO_DIR / filename
-                with open(str(path), 'wb') as fh:
-                    fh.write(audio_bytes)
-                files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
-                for old in files[:-50]:
-                    try: old.unlink()
-                    except: pass
-                with session_lock:
-                    h = session_data.get(owner_id, {}).get('history', [])
-                    for msg in reversed(h):
-                        if msg['role'] == 'assistant' and msg['audio_url'] is None:
-                            msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
-                            break
-            except Exception as e:
-                print(f"[TTS] ERROR: {e}", flush=True)
-        
-        threading.Thread(target=run_tts, daemon=True).start()
-        
-        return jsonify({
-            'transcript': transcript,
-            'response': display_text,
-            'audio_url': audio_url,
-        })
-    finally:
-        try: os.unlink(tmp_path)
-        except: pass
