@@ -425,7 +425,7 @@ def stream_chunk(plush_token):
     info = _get_or_create_stream(plush_token)
 
     with info['lock']:
-        # Calcular amplitud pico sin amplificar (la amplificación se hace en /end)
+        # Calcular amplitud pico — el ESP32 ya amplificó x8
         n = len(chunk) // 2
         if n > 0:
             samples    = struct.unpack(f'<{n}h', chunk[:n*2])
@@ -433,6 +433,7 @@ def stream_chunk(plush_token):
             if peak_chunk > info['peak']:
                 info['peak'] = peak_chunk
 
+        # Escribir directo a disco sin modificar
         info['file'].write(chunk)
         info['file'].flush()
         info['total_bytes'] += len(chunk)
@@ -479,27 +480,20 @@ def stream_end(plush_token):
             except: pass
             return jsonify({'error': 'Audio demasiado corto — habla más tiempo'}), 400
 
-        if peak_raw < 38:   # sin amplificar x8, threshold es 300/8 ≈ 38
+        if peak_raw < 300:   # el ESP32 ya amplificó x8, threshold normal
             try: os.unlink(pcm_path)
             except: pass
             return jsonify({'error': 'Audio demasiado silencioso'}), 400
 
-        # Leer PCM, amplificar x8 y construir WAV
+        # Leer PCM y construir WAV directamente — sin re-amplificar
         with open(pcm_path, 'rb') as f:
             raw_pcm = f.read()
         try: os.unlink(pcm_path)
         except: pass
 
-        n       = len(raw_pcm) // 2
-        samples = struct.unpack(f'<{n}h', raw_pcm[:n*2])
-        amp     = struct.pack(
-            f'<{n}h',
-            *[max(-32768, min(32767, s * 8)) for s in samples]
-        )
-
-        wav_path = str(STREAM_DIR / f"pm_{plush_token}_{uuid.uuid4().hex[:8]}.wav")
+        wav_path = str(STREAM_DIR / f"pm_{uuid.uuid4().hex[:8]}.wav")
         with open(wav_path, 'wb') as wf:
-            data_len = len(amp)
+            data_len = len(raw_pcm)
             wf.write(b'RIFF')
             wf.write(struct.pack('<I', 36 + data_len))
             wf.write(b'WAVE')
@@ -513,7 +507,7 @@ def stream_end(plush_token):
             wf.write(struct.pack('<H', 16))      # bits/sample
             wf.write(b'data')
             wf.write(struct.pack('<I', data_len))
-            wf.write(amp)
+            wf.write(raw_pcm)
 
         # ── STT → LLM → TTS ──────────────────────────────────────────
         owner_id = plush.get('owner_id')
