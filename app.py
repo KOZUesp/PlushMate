@@ -1034,7 +1034,7 @@ def tts(text: str, voice_id: str = '') -> bytes:
     r   = requests.post(
         f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
-        json={'text': text, 'model_id': 'eleven_flash_v2_5',
+        json={'text': text, 'model_id': 'eleven_v3',
               'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75},
               'optimize_streaming_latency': 3},
         stream=True, timeout=30)
