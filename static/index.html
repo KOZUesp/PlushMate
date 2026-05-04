@@ -831,7 +831,7 @@ select option{background:var(--white)}
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:0">
-      <button class="save-btn" onclick="refreshMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
+      <button class="save-btn" onclick="loadMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         Actualizar
       </button>
@@ -1660,7 +1660,7 @@ function resetBtn() {
 
 // ── History ───────────────────────────────────────
 async function loadHistory() {
-  // Mostrar cache instantáneamente
+  // Show cached history instantly while fetching
   const cached = localStorage.getItem('pm_chat_cache');
   if (cached) {
     try {
@@ -1673,7 +1673,7 @@ async function loadHistory() {
     const d = await r.json();
     const history = d.history || [];
     document.getElementById('history-count-badge').textContent = history.length + ' msgs';
-    if (history.length) renderHistory(history);  // solo renderiza si hay datos
+    renderHistory(history);
     updateHomePreview(history);
   } catch(e) { console.error('loadHistory:', e); }
 }
@@ -1721,6 +1721,7 @@ function updateHomePreview(history) {
 // ── Memory ────────────────────────────────────────
 async function loadMemory() {
   const sectionsEl = document.getElementById('memory-sections');
+  const el = document.getElementById('memory-content');
   try {
     const r = await fetch(BASE + '/memory');
     const d = await r.json();
@@ -1728,52 +1729,54 @@ async function loadMemory() {
     const formatted = d.summary_formatted || [];
     document.getElementById('mem-msgs').textContent = d.history_len || 0;
     document.getElementById('mem-words').textContent = summary ? summary.split(' ').length : 0;
-    renderMemorySections(formatted, summary, sectionsEl);
+
+    if (formatted && formatted.length > 0) {
+      sectionsEl.innerHTML = formatted.map(sec => `
+        <div class="mem-section">
+          <div class="mem-section-header">
+            <span class="mem-section-emoji">${sec.icon || '🧠'}</span>
+            <span class="mem-section-title">${esc(sec.title || '')}</span>
+          </div>
+          ${(sec.items || []).map(item => `<div class="mem-item">${esc(item)}</div>`).join('')}
+        </div>`).join('');
+    } else if (summary) {
+      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-text">${esc(summary)}</div></div>`;
+    } else {
+      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-empty">Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻</div></div>`;
+    }
   } catch(e) {
     sectionsEl.innerHTML = '<div class="memory-box"><div class="memory-empty">Error al cargar la memoria.</div></div>';
   }
 }
-
-// Nueva función: fuerza generación del summary
-async function refreshMemory() {
-  const sectionsEl = document.getElementById('memory-sections');
-  sectionsEl.innerHTML = '<div class="memory-box"><div class="memory-empty">Generando resumen...</div></div>';
-  try {
-    const r = await fetch(BASE + '/memory/refresh', {method:'POST', headers:hdr(true)});
-    if (!r.ok) { 
-      const d = await r.json();
-      toast(d.error || 'Sin historial para resumir', 'error');
-      await loadMemory(); // recargar lo que había
-      return;
+function confirmClear() { playSound('tap'); document.getElementById('modal').classList.add('show'); }
+function closeModal()   { document.getElementById('modal').classList.remove('show'); }
+async function clearMemory() {
+  closeModal();
+  requirePin(
+    '¿Borrar memoria?',
+    'Confirma con tu PIN para continuar',
+    async (pin) => {
+      try {
+        const r = await fetch(BASE + '/memory', {
+          method:'DELETE', headers:hdr(true),
+          body: JSON.stringify({pin})
+        });
+        if (r.ok) {
+          playSound('success'); haptic('heavy');
+          toast('Memoria borrada', 'success');
+          loadMemory();
+          closePinConfirm();
+          return true;
+        } else {
+          const d = await r.json();
+          if (d.error === 'PIN incorrecto') return false;
+          toast('Error al borrar', 'error'); closePinConfirm(); return true;
+        }
+      } catch(e) { toast('Error de conexión', 'error'); closePinConfirm(); return true; }
     }
-    const d = await r.json();
-    document.getElementById('mem-msgs').textContent = d.history_len || 0;
-    document.getElementById('mem-words').textContent = d.summary ? d.summary.split(' ').length : 0;
-    renderMemorySections(d.summary_formatted || [], d.summary || '', sectionsEl);
-    toast('Memoria actualizada', 'success');
-    playSound('success');
-  } catch(e) {
-    toast('Error al actualizar', 'error');
-    await loadMemory();
-  }
+  );
 }
 
-function renderMemorySections(formatted, summary, sectionsEl) {
-  if (formatted && formatted.length > 0) {
-    sectionsEl.innerHTML = formatted.map(sec => `
-      <div class="mem-section">
-        <div class="mem-section-header">
-          <span class="mem-section-emoji">${sec.icon || '🧠'}</span>
-          <span class="mem-section-title">${esc(sec.title || '')}</span>
-        </div>
-        ${(sec.items || []).map(item => `<div class="mem-item">${esc(item)}</div>`).join('')}
-      </div>`).join('');
-  } else if (summary) {
-    sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-text">${esc(summary)}</div></div>`;
-  } else {
-    sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-empty">Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻</div></div>`;
-  }
-}
 // ── Config ────────────────────────────────────────
 async function loadConfig() {
   // Auth via JWT — no secret needed
@@ -2240,17 +2243,6 @@ function appendChatBubble(role, text, audioUrl, id) {
     </div>`;
   wrap.appendChild(div);
   list.scrollTop = list.scrollHeight;
-   // Actualizar cache local
-try {
-  const wrap = list.querySelector('.msg-wrap');
-  if (wrap) {
-    const msgs = [...wrap.querySelectorAll('.msg-item')].map(el => ({
-      role: el.classList.contains('right') ? 'user' : 'assistant',
-      content: el.querySelector('.bubble')?.textContent?.trim() || ''
-    }));
-    localStorage.setItem('pm_chat_cache', JSON.stringify(msgs.slice(-30)));
-  }
-} catch(e) {}
 }
 
 function appendThinking(id) {
@@ -2506,13 +2498,14 @@ async function initAuth() {
       }
       clearAuth(); showAuthOverlay(); return;
     }
-   if (r.ok) {
-     const user = await r.json();
-     CURRENT_USER = user;
-     localStorage.setItem('pm_user', JSON.stringify(user));
-     // Verificar PIN PRIMERO, sin importar si tiene plush
-     await checkPinRequired();
-   } else { showAuthOverlay(); }
+    if (r.ok) {
+      const user = await r.json();
+      CURRENT_USER = user;
+      localStorage.setItem('pm_user', JSON.stringify(user));
+      if (!user.plush) { showPairingScreen(); return; }
+      // Check PIN after JWT is valid
+      await checkPinRequired();
+    } else { showAuthOverlay(); }
   } catch(e) {
     if (CURRENT_USER) showApp();
     else showAuthOverlay();
@@ -2640,11 +2633,12 @@ async function doPairing() {
   finally { btn.disabled = false; btn.textContent = 'Vincular peluche'; }
 }
 function skipPairing() {
-  localStorage.setItem('pm_pairing_skipped', '1');
   document.getElementById('auth-overlay').style.display = 'none';
-  loadProfile();
-  if (CURRENT_USER) applyUserProfile(CURRENT_USER);
-   }
+  showApp();
+  // Only ask PIN on first time (new account)
+  if (!localStorage.getItem('pm_pin_asked')) {
+    setTimeout(() => askSetupPin(), 500);
+  }
 }
 async function askSetupPin(force=false) {
   if (!force && localStorage.getItem('pm_pin_asked')) return;
@@ -2759,17 +2753,13 @@ async function showApp() {
   sessionStorage.setItem('pm_pin_verified', '1');
   document.getElementById('pin-screen').style.display = 'none';
   document.getElementById('auth-overlay').style.display = 'none';
+  // Always re-fetch user to get latest role
   if (AUTH_TOKEN) {
     try {
       const r = await fetch(BASE + '/auth/me', {headers: hdr()});
       if (r.ok) {
         CURRENT_USER = await r.json();
         localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER));
-        // Si no tiene plush, mostrar pairing DESPUÉS del PIN
-        if (!CURRENT_USER.plush && !localStorage.getItem('pm_pairing_skipped')) {
-          showPairingScreen();
-          return;
-        }
       }
     } catch(e) {}
   }
@@ -3044,4 +3034,4 @@ async function changePIN() {
 </script>
 </body>
 </html>
-</html>
+   </html>
