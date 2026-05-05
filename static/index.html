@@ -13,31 +13,12 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/static/icons/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
 <style>
-
-/* ═══════════════════════════════════════════════
-   ██████╗  ██████╗ ███╗  ██╗███████╗██╗ ██████╗
-   ██╔════╝██╔═══██╗████╗ ██║██╔════╝██║██╔════╝
-   ██║     ██║   ██║██╔██╗██║█████╗  ██║██║  ███╗
-   ██║     ██║   ██║██║╚████║██╔══╝  ██║██║   ██║
-   ╚██████╗╚██████╔╝██║ ╚███║██║     ██║╚██████╔╝
-    ╚═════╝ ╚═════╝ ╚═╝  ╚══╝╚═╝     ╚═╝ ╚═════╝
-
-   PlushMate App — index.html
-   ════════════════════════════════════════════ */
-
-/* ─── CONFIG SECTION ───────────────────────────
-   Edita estas variables para personalizar la app
-   ─────────────────────────────────────────────*/
 :root {
-  /* Brand colors */
   --brand:       #8FA0CA;
   --brand-dark:  #6B82B8;
   --brand-light: #C5CFEA;
   --brand-pale:  #EEF1F8;
-
-  /* Accent colors */
   --coral:          #FF7F7F;
   --coral-light:    #FFE8E8;
   --mint:           #7ECBA1;
@@ -46,38 +27,22 @@
   --sunny-light:    #FFF3CC;
   --lavender:       #C9A8F0;
   --lavender-light: #F0E6FF;
-
-  /* Layout */
   --bg:     #F0F3FC;
   --white:  #FFFFFF;
   --text:   #3D4A6B;
   --muted:  #8A95B5;
   --border: #DDE3F3;
-
-  /* Shadows */
   --shadow:    0 4px 20px rgba(143,160,202,0.2);
   --shadow-sm: 0 2px 10px rgba(143,160,202,0.15);
-
-  /* Border radius */
   --r-sm:   10px;
   --r-md:   16px;
   --r-lg:   22px;
   --r-xl:   30px;
   --r-full: 100px;
-
-  /* Sounds: set to '' to disable */
-  --sfx-activate: 'activate';
-  --sfx-send:     'send';
-  --sfx-success:  'success';
-  --sfx-error:    'error';
 }
-/* ─── END CONFIG ────────────────────────────── */
-
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative}
-
-/* ─── AUTH SCREENS ───────────────────────── */
 .auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:800;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
 .auth-screen{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center}
 .auth-logo{text-align:center;margin-bottom:24px;display:flex;flex-direction:column;align-items:center}
@@ -89,8 +54,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .auth-error{font-size:12px;font-weight:700;color:var(--coral);min-height:18px;margin-top:8px}
 .auth-switch{text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin-top:14px}
 .auth-switch span{color:var(--brand);font-weight:800;cursor:pointer}
-
-/* ─── CHAT INPUT ─────────────────────────── */
 .chat-page{display:flex;flex-direction:column;padding-bottom:0!important}
 .history-scroll{flex:1;overflow-y:auto;padding:0 0 8px}
 .history-scroll::-webkit-scrollbar{display:none}
@@ -109,8 +72,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .chat-thinking span:nth-child(2){animation-delay:0.2s}
 .chat-thinking span:nth-child(3){animation-delay:0.4s}
 @keyframes thinkdot{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-4px);opacity:1}}
-
-/* ─── MEMORY SECTIONS ─────────────────────── */
 .mem-section{background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:10px}
 .mem-section-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .mem-section-emoji{font-size:18px}
@@ -118,17 +79,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .mem-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);line-height:1.4}
 .mem-item:last-child{border-bottom:none;padding-bottom:0}
 .mem-item::before{content:'•';color:var(--brand);font-weight:900;flex-shrink:0;margin-top:1px}
-
-/* ─── SWIPE ───────────────────────────────── */
 .page{touch-action:pan-y}
-
-/* ─── LEGAL ───────────────────────────────── */
 .legal-section{background:var(--white);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow-sm);margin-bottom:10px}
 .legal-icon{font-size:24px;margin-bottom:8px}
 .legal-title{font-size:14px;font-weight:900;color:var(--text);margin-bottom:6px}
 .legal-text{font-size:13px;font-weight:600;color:var(--muted);line-height:1.6}
-
-/* ─── WIFI MODE TABS ─────────────────────── */
 .wifi-mode-tabs{display:flex;gap:6px;background:var(--bg);border-radius:var(--r-sm);padding:4px}
 .wifi-mode-tab{flex:1;padding:8px;background:transparent;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:800;color:var(--muted);cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s}
 .wifi-mode-tab.active{background:var(--white);color:var(--brand);box-shadow:var(--shadow-sm)}
@@ -138,8 +93,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .wifi-setup-num{width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 .wifi-setup-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:3px}
 .wifi-setup-sub{font-size:12px;font-weight:600;color:var(--muted);line-height:1.4}
-
-/* ─── WIFI NETWORK ITEMS ─────────────────── */
 .net-item{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s}
 .net-item:active,.net-item.selected{background:var(--brand-pale);border-color:var(--brand)}
 .net-signal{flex-shrink:0;display:flex;align-items:flex-end;gap:1.5px;height:16px}
@@ -151,14 +104,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .net-name{flex:1;font-size:13px;font-weight:700;color:var(--text)}
 .net-lock{width:14px;height:14px;color:var(--muted);flex-shrink:0}
 .net-saved-badge{font-size:9px;font-weight:800;background:var(--brand-pale);color:var(--brand);padding:2px 6px;border-radius:var(--r-full)}
-
-/* ─── REFRESH BTN ────────────────────────── */
 .refresh-btn{width:30px;height:30px;border-radius:9px;background:var(--brand-pale);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--brand);transition:all 0.2s}
 .refresh-btn:active{transform:scale(0.9)}
 .refresh-btn svg{width:15px;height:15px}
 .refresh-btn.spinning svg{animation:spin 0.6s linear}
-
-/* ─── VOLUME CARD ────────────────────────── */
 .vol-card{background:var(--white);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm);margin-bottom:18px;flex-wrap:wrap;gap:10px}
 .vol-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .vol-icon{width:36px;height:36px;border-radius:11px;background:var(--brand-pale);display:flex;align-items:center;justify-content:center}
@@ -172,16 +121,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .vol-slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
 .vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;box-shadow:0 2px 6px rgba(143,160,202,0.5)}
 .vol-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--brand);cursor:pointer;border:none}
-
-/* ─── AUDIO PLAYER ───────────────────────── */
 .audio-btn{display:inline-flex;align-items:center;gap:5px;background:var(--brand-pale);border:none;border-radius:var(--r-full);padding:5px 12px 5px 8px;cursor:pointer;font-size:11px;font-weight:800;color:var(--brand);margin-top:7px;transition:all 0.15s;font-family:'Nunito',sans-serif}
 .audio-btn:active{background:var(--brand-light);transform:scale(0.97)}
 .audio-btn svg{width:14px;height:14px;flex-shrink:0}
 .audio-btn.playing{background:var(--brand);color:#fff}
 @keyframes spin{to{transform:rotate(360deg)}}
 .audio-btn.playing svg{animation:spin 1s linear infinite}
-
-/* ─── PIN CONFIRM SHEET ───────────────────── */
 .pin-confirm-overlay{position:fixed;inset:0;background:rgba(61,74,107,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:600;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(6px)}
 .pin-confirm-overlay.show{opacity:1;pointer-events:all}
 .pin-confirm-sheet{background:var(--white);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:24px 24px 40px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1)}
@@ -197,14 +142,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .pin-mini-key-empty:active{transform:none;background:transparent}
 .pin-mini-key-del{background:var(--brand-pale)}
 .pin-mini-key-del svg{width:18px;height:18px;color:var(--brand)}
-
-/* ─── MOTION PREFERENCE ──────────────────── */
-.no-motion *,.no-motion *::before,.no-motion *::after{
-  animation-duration:0.01ms !important;
-  transition-duration:0.01ms !important;
-}
-
-/* ─── ACCORDION ────────────────────────────── */
+.no-motion *,.no-motion *::before,.no-motion *::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}
 .accordion{background:var(--white);border-radius:var(--r-md);box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:10px}
 .accordion-header{display:flex;align-items:center;padding:15px 16px;cursor:pointer;gap:12px;user-select:none}
 .accordion-icon{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -215,8 +153,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .accordion.open .accordion-arrow{transform:rotate(90deg)}
 .accordion-body{display:none;padding:0 16px 16px;border-top:1.5px solid var(--border)}
 .accordion.open .accordion-body{display:block}
-
-/* toggle row */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
 .toggle-row:last-child{border-bottom:none}
 .toggle-label{font-size:14px;font-weight:700;color:var(--text)}
@@ -225,8 +161,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .toggle.on{background:var(--brand)}
 .toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:white;top:3px;left:3px;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.15)}
 .toggle.on::after{transform:translateX(18px)}
-
-/* sub-page overlay */
 .subpage{position:fixed;inset:0;background:var(--bg);z-index:500;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1);overflow-y:auto;padding-bottom:40px}
 .subpage.open{transform:translateX(0)}
 .subpage-header{display:flex;align-items:center;gap:12px;padding:20px 20px 16px;position:sticky;top:0;background:var(--bg);z-index:1}
@@ -234,8 +168,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .subpage-back svg{width:18px;height:18px;color:var(--text)}
 .subpage-title{font-size:18px;font-weight:900;color:var(--text)}
 .subpage-content{padding:0 20px}
-
-/* ─── PIN SCREEN ─────────────────────────── */
 .pin-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:900;padding:20px}
 .pin-wrap{width:100%;max-width:320px;text-align:center}
 .pin-avatar{font-size:56px;margin-bottom:12px;line-height:1}
@@ -256,8 +188,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .pin-key-empty:active{transform:none;background:transparent}
 .pin-key-del{background:var(--brand-pale)}
 .pin-key-del svg{width:22px;height:22px;color:var(--brand)}
-
-/* ─── SPLASH ──────────────────────────────── */
 .splash{position:fixed;inset:0;background:var(--brand);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.5s ease,transform 0.5s ease}
 .splash.fade-out{opacity:0;transform:scale(1.05);pointer-events:none}
 .splash-bear{width:100px;height:100px;animation:splashbounce 0.8s cubic-bezier(0.34,1.8,0.64,1) 0.3s both}
@@ -271,14 +201,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .splash-dot:nth-child(3){animation:dotload 1.2s ease 1.6s infinite}
 @keyframes splashfade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes dotload{0%,100%{background:rgba(255,255,255,0.3)}50%{background:#fff}}
-
-/* ─── BG BLOBS ────────────────────────────── */
 .bg-blob{position:fixed;border-radius:50%;opacity:0.10;pointer-events:none;z-index:0}
 .bg-blob-1{width:280px;height:280px;background:var(--brand);top:-80px;right:-60px}
 .bg-blob-2{width:200px;height:200px;background:var(--coral);bottom:80px;left:-70px}
 .bg-blob-3{width:140px;height:140px;background:var(--sunny);top:38%;right:-40px}
-
-/* ─── HEADER ──────────────────────────────── */
 .header{padding:20px 20px 0;position:relative;z-index:10;flex-shrink:0}
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .logo-wrap{display:flex;align-items:center;gap:10px}
@@ -292,8 +218,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .status-dot.orange{background:var(--sunny);animation:dotpulse 0.6s ease-in-out infinite}
 .status-dot.red{background:var(--coral);animation:none}
 @keyframes dotpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.3)}}
-
-/* ─── NAV ─────────────────────────────────── */
 .nav{display:flex;padding:0 20px 14px;gap:4px;position:relative;z-index:10;flex-shrink:0}
 .nav-btn{flex:1;padding:9px 4px;background:transparent;border:none;color:var(--muted);font-size:10px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;border-radius:var(--r-sm);transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:0.01em}
 .nav-btn svg{width:20px;height:20px;transition:transform 0.2s}
@@ -301,14 +225,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .nav-btn.active svg{transform:scale(1.1)}
 .nav-btn-pip{width:5px;height:5px;border-radius:50%;background:transparent;transition:background 0.2s;margin-top:1px}
 .nav-btn.active .nav-btn-pip{background:var(--brand)}
-
-/* ─── PAGES ───────────────────────────────── */
 .pages{flex:1;overflow:hidden;position:relative;min-height:0}
 .page{position:absolute;inset:0;overflow-y:auto;padding:0 20px 100px;opacity:0;pointer-events:none;transform:translateY(14px);transition:all 0.3s cubic-bezier(0.34,1.4,0.64,1)}
 .page.active{opacity:1;pointer-events:all;transform:translateY(0)}
 .page::-webkit-scrollbar{display:none}
-
-/* ─── ACTIVATE CARD ────────────────────────── */
 .activate-card{background:var(--brand);border-radius:var(--r-xl);padding:22px;margin-bottom:18px;position:relative;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform 0.15s}
 .activate-card::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.1)}
 .activate-card::after{content:'';position:absolute;bottom:-30px;left:50%;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.07)}
@@ -323,8 +243,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .act-title{color:#fff;font-size:17px;font-weight:900;margin-bottom:3px}
 .act-sub{color:rgba(255,255,255,0.72);font-size:12px;font-weight:600}
 .act-chevron{width:28px;height:28px;color:rgba(255,255,255,0.5);position:relative;z-index:1}
-
-/* ─── STAT ROW ────────────────────────────── */
 .stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
 .stat-card{background:var(--white);border-radius:var(--r-md);padding:13px 10px;text-align:center;box-shadow:var(--shadow-sm)}
 .stat-icon-wrap{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 7px}
@@ -334,13 +252,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .badge-green{background:var(--mint-light);color:#2E9965}
 .badge-blue{background:var(--brand-pale);color:var(--brand-dark)}
 .badge-yellow{background:var(--sunny-light);color:#A87000}
-
-/* ─── SECTION ─────────────────────────────── */
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
 .section-title{font-size:16px;font-weight:900;color:var(--text)}
 .section-link{font-size:11px;font-weight:800;color:var(--brand);cursor:pointer}
-
-/* ─── CONVO PREVIEW ────────────────────────── */
 .convo-card{background:var(--white);border-radius:var(--r-lg);padding:15px;box-shadow:var(--shadow-sm);margin-bottom:18px}
 .convo-msg{margin-bottom:10px}
 .convo-msg:last-child{margin-bottom:0}
@@ -353,8 +267,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .bubble{display:inline-block;padding:9px 13px;border-radius:16px;font-size:13px;font-weight:600;line-height:1.4;max-width:82%}
 .bubble.plush{background:var(--brand-pale);color:var(--text);border-bottom-left-radius:4px}
 .bubble.user{background:var(--coral-light);color:var(--text);border-bottom-right-radius:4px}
-
-/* ─── QUICK GRID ──────────────────────────── */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .quick-card{background:var(--white);border-radius:var(--r-md);padding:15px;display:flex;align-items:center;gap:11px;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform 0.15s}
 .quick-card:active{transform:scale(0.96)}
@@ -362,8 +274,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .quick-card-icon svg{width:20px;height:20px}
 .quick-label{font-size:13px;font-weight:800;color:var(--text)}
 .quick-sub{font-size:11px;font-weight:600;color:var(--muted);margin-top:1px}
-
-/* ─── PROFILE ────────────────────────────── */
 .profile-card{background:var(--brand);border-radius:var(--r-xl);padding:28px 20px 20px;text-align:center;margin-bottom:18px;position:relative;overflow:hidden}
 .profile-card::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.1)}
 .profile-avatar-wrap{position:relative;width:80px;height:80px;margin:0 auto 12px}
@@ -381,7 +291,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .color-opt{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.15s}
 .color-opt.active{border-color:var(--text);transform:scale(1.1)}
 .device-item{background:var(--white);border-radius:var(--r-md);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;box-shadow:var(--shadow-sm)}
-.device-item.revoked{opacity:0.5}
 .device-icon{width:38px;height:38px;border-radius:12px;background:var(--brand-pale);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .device-icon svg{width:18px;height:18px;color:var(--brand)}
 .device-info{flex:1;min-width:0}
@@ -389,11 +298,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .device-time{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px}
 .device-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:var(--r-full)}
 .device-this{background:var(--mint-light);color:#2E9965}
-.device-revoked{background:var(--coral-light);color:var(--coral)}
 .device-revoke-btn{width:32px;height:32px;border-radius:10px;background:var(--coral-light);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--coral)}
 .device-revoke-btn svg{width:16px;height:16px}
-
-/* ─── HISTORY ─────────────────────────────── */
 .history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;margin-top:4px}
 .msg-wrap{display:flex;flex-direction:column;gap:12px}
 .empty-state{text-align:center;padding:56px 0;color:var(--muted)}
@@ -401,8 +307,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .empty-icon-wrap svg{width:32px;height:32px;color:var(--brand)}
 .empty-text{font-size:14px;font-weight:800;color:var(--text)}
 .empty-sub{font-size:12px;font-weight:600;margin-top:4px}
-
-/* ─── MEMORY ──────────────────────────────── */
 .memory-banner{background:linear-gradient(135deg,var(--brand),var(--brand-dark));border-radius:var(--r-xl);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
 .memory-banner-deco{position:absolute;right:14px;top:50%;transform:translateY(-50%);opacity:0.18;width:56px;height:56px}
 .memory-banner-icon{width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -419,8 +323,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .danger-btn{width:100%;padding:15px;background:var(--coral-light);border:2px solid rgba(255,127,127,0.25);border-radius:var(--r-md);color:var(--coral);font-size:14px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:9px}
 .danger-btn svg{width:18px;height:18px}
 .danger-btn:active{background:#ffd8d8}
-
-/* ─── SETTINGS ────────────────────────────── */
 .settings-section{margin-bottom:20px}
 .field-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:7px;display:flex;align-items:center;gap:6px}
 .field-label svg{width:14px;height:14px}
@@ -439,9 +341,6 @@ select option{background:var(--white)}
 .wifi-btn svg{width:16px;height:16px}
 .wifi-btn:active{opacity:0.85}
 .wifi-status{font-size:12px;font-weight:700;color:var(--brand-dark);text-align:center;margin-top:8px;min-height:16px}
-.secret-wrap{background:var(--white);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow-sm)}
-
-/* Voice dropdown */
 .voice-select-wrap{position:relative}
 .voice-custom{background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:0;overflow:hidden;transition:border-color 0.2s}
 .voice-custom.open{border-color:var(--brand)}
@@ -462,16 +361,12 @@ select option{background:var(--white)}
 .voice-custom-input{padding:10px 14px;border-top:2px solid var(--border)}
 .voice-custom-input input{border:none;padding:4px 0;background:transparent;font-size:13px;border-bottom:2px solid var(--border)}
 .voice-custom-input input:focus{border-bottom-color:var(--brand);outline:none}
-
-/* ─── TOAST ───────────────────────────────── */
 .toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 22px;border-radius:var(--r-full);font-size:13px;font-weight:700;font-family:'Nunito',sans-serif;opacity:0;transition:all 0.3s cubic-bezier(0.34,1.3,0.64,1);pointer-events:none;white-space:nowrap;z-index:999;box-shadow:0 8px 24px rgba(61,74,107,0.3);display:flex;align-items:center;gap:7px}
 .toast svg{width:16px;height:16px;flex-shrink:0}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.success{background:var(--mint)}
 .toast.error{background:var(--coral)}
 .toast.info{background:var(--brand)}
-
-/* ─── MODAL ───────────────────────────────── */
 .modal-bg{position:fixed;inset:0;background:rgba(61,74,107,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(6px)}
 .modal-bg.show{opacity:1;pointer-events:all}
 .modal{background:var(--white);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:24px 24px 40px;width:100%;max-width:430px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.1,0.64,1)}
@@ -491,17 +386,14 @@ select option{background:var(--white)}
 </head>
 <body>
 
-<!-- ─── PIN SCREEN ─────────────────────────── -->
 <div class="pin-screen" id="pin-screen" style="display:none">
   <div class="pin-wrap">
     <div class="pin-avatar" id="pin-avatar">🐻</div>
     <div class="pin-title" id="pin-title">Hola de nuevo</div>
     <div class="pin-sub" id="pin-sub">Ingresa tu PIN para continuar</div>
     <div class="pin-dots" id="pin-dots-wrap">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
     </div>
     <div class="pin-error" id="pin-error"></div>
     <div class="pin-pad">
@@ -523,15 +415,10 @@ select option{background:var(--white)}
   </div>
 </div>
 
-<!-- ─── AUTH SCREENS ────────────────────────── -->
 <div class="auth-overlay" id="auth-overlay" style="display:none">
-
-  <!-- Login -->
   <div class="auth-screen" id="auth-login">
     <div class="auth-logo">
-      <div class="auth-logo-img" id="auth-logo-wrap">
-        <!-- set by JS -->
-      </div>
+      <div class="auth-logo-img" id="auth-logo-wrap"></div>
       <div class="auth-brand">PlushMate</div>
       <div class="auth-tagline">Because having a mate, matters</div>
     </div>
@@ -540,23 +427,17 @@ select option{background:var(--white)}
       <div class="field-label" style="margin-top:14px">Email</div>
       <input type="email" id="login-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
-      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
-        onkeydown="if(event.key==='Enter') doLogin()">
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()">
       <div class="auth-error" id="login-error"></div>
       <button class="save-btn" onclick="doLogin()" id="login-btn" style="margin-top:16px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-        Entrar
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>Entrar
       </button>
       <div class="auth-switch">¿No tienes cuenta? <span onclick="showAuthScreen('auth-signup')">Regístrate</span></div>
     </div>
   </div>
-
-  <!-- Signup -->
   <div class="auth-screen" id="auth-signup" style="display:none">
     <div class="auth-logo">
-      <div class="auth-logo-img">
-        <img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'">
-      </div>
+      <div class="auth-logo-img"><img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'"></div>
       <div class="auth-brand">PlushMate</div>
       <div class="auth-tagline">Crea tu cuenta</div>
     </div>
@@ -567,23 +448,17 @@ select option{background:var(--white)}
       <div class="field-label" style="margin-top:10px">Email</div>
       <input type="email" id="signup-email" placeholder="tu@email.com" autocomplete="email">
       <div class="field-label" style="margin-top:10px">Contraseña</div>
-      <input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password"
-        onkeydown="if(event.key==='Enter') doSignup()">
+      <input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password" onkeydown="if(event.key==='Enter') doSignup()">
       <div class="auth-error" id="signup-error"></div>
       <button class="save-btn" onclick="doSignup()" id="signup-btn" style="margin-top:16px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8zM19 8v6M22 11h-6"/></svg>
-        Crear cuenta
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8zM19 8v6M22 11h-6"/></svg>Crear cuenta
       </button>
       <div class="auth-switch">¿Ya tienes cuenta? <span onclick="showAuthScreen('auth-login')">Inicia sesión</span></div>
     </div>
   </div>
-
-  <!-- Pairing -->
   <div class="auth-screen" id="auth-pairing" style="display:none">
     <div class="auth-logo">
-      <div class="auth-logo-img">
-        <img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'">
-      </div>
+      <div class="auth-logo-img"><img src="./static/icons/Logo.svg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'"></div>
       <div class="auth-brand">Vincula tu peluche</div>
       <div class="auth-tagline">Escanea el QR de la tarjeta que vino con él</div>
     </div>
@@ -592,7 +467,6 @@ select option{background:var(--white)}
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3v3M21 21h-1M14 3v3h3M14 16v1h1M14 21h2v-2h2v2h1"/></svg>
         <span id="qr-scan-btn-txt">Escanear QR</span>
       </button>
-      <!-- Camera preview for QR -->
       <div id="qr-preview-wrap" style="display:none;position:relative;margin-top:12px;border-radius:var(--r-md);overflow:hidden;background:#000">
         <video id="qr-video" style="width:100%;max-height:220px;object-fit:cover" playsinline muted></video>
         <canvas id="qr-canvas" style="display:none"></canvas>
@@ -602,44 +476,31 @@ select option{background:var(--white)}
         <button onclick="stopQRScan()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">✕ Cancelar</button>
       </div>
       <div style="text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0">— o ingresa el código manualmente —</div>
-      <input type="text" id="pair-token-input" placeholder="PLUSH-XXXX-XXXX" autocomplete="off"
-        style="text-align:center;text-transform:uppercase;letter-spacing:2px;font-weight:800">
+      <input type="text" id="pair-token-input" placeholder="PLUSH-XXXX-XXXX" autocomplete="off" style="text-align:center;text-transform:uppercase;letter-spacing:2px;font-weight:800">
       <div class="auth-error" id="pair-error"></div>
       <button class="save-btn" onclick="doPairing()" id="pair-btn" style="margin-top:10px;background:var(--mint)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        Vincular peluche
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Vincular peluche
       </button>
       <button class="modal-btn cancel" onclick="skipPairing()" style="width:100%;margin-top:8px">Vincular después</button>
     </div>
   </div>
-
 </div>
 
-<!-- ─── SPLASH SCREEN ──────────────────────── -->
 <div class="splash" id="splash">
-  <!-- Bear SVG logo -->
-  <div id="splash-icon" style="width:100px;height:100px;animation:splashbounce 0.8s cubic-bezier(0.34,1.8,0.64,1) 0.3s both;display:flex;align-items:center;justify-content:center"><!-- set by JS --></div>
+  <div id="splash-icon" style="width:100px;height:100px;animation:splashbounce 0.8s cubic-bezier(0.34,1.8,0.64,1) 0.3s both;display:flex;align-items:center;justify-content:center"></div>
   <div class="splash-title">PlushMate</div>
   <div class="splash-sub">Because having a mate, matters</div>
-  <div class="splash-dots">
-    <div class="splash-dot"></div>
-    <div class="splash-dot"></div>
-    <div class="splash-dot"></div>
-  </div>
+  <div class="splash-dots"><div class="splash-dot"></div><div class="splash-dot"></div><div class="splash-dot"></div></div>
 </div>
 
-<!-- bg blobs -->
 <div class="bg-blob bg-blob-1"></div>
 <div class="bg-blob bg-blob-2"></div>
 <div class="bg-blob bg-blob-3"></div>
 
-<!-- ─── HEADER ──────────────────────────────── -->
 <div class="header">
   <div class="header-top">
     <div class="logo-wrap">
-      <div class="logo-bear-wrap">
-        <span id="header-logo-inner"><!-- set by JS --></span>
-      </div>
+      <div class="logo-bear-wrap"><span id="header-logo-inner"></span></div>
       <span class="logo-text">Plush<span>Mate</span></span>
     </div>
     <div class="status-pill">
@@ -649,47 +510,38 @@ select option{background:var(--white)}
   </div>
 </div>
 
-<!-- ─── NAV ────────────────────────────────── -->
 <div class="nav">
   <button class="nav-btn active" onclick="goPage('home',this)" id="nav-home">
-    <span id="nav-home-icon"><!-- set by JS --></span>
-    Inicio
-    <div class="nav-btn-pip"></div>
+    <span id="nav-home-icon"></span>Inicio<div class="nav-btn-pip"></div>
   </button>
   <button class="nav-btn" onclick="goPage('history',this)" id="nav-history">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 10h8M8 14h5M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
-    Chat
-    <div class="nav-btn-pip"></div>
+    Chat<div class="nav-btn-pip"></div>
   </button>
   <button class="nav-btn" onclick="goPage('memory',this)" id="nav-memory">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
-    Memoria
-    <div class="nav-btn-pip"></div>
+    Memoria<div class="nav-btn-pip"></div>
   </button>
   <button class="nav-btn" onclick="goPage('profile',this)" id="nav-profile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-    Perfil
-    <div class="nav-btn-pip"></div>
+    Perfil<div class="nav-btn-pip"></div>
   </button>
   <button class="nav-btn" onclick="goPage('settings',this)" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-    Ajustes
-    <div class="nav-btn-pip"></div>
+    Ajustes<div class="nav-btn-pip"></div>
   </button>
-
 </div>
 
 <div class="pages">
-
-  <!-- ─── HOME ──────────────────────────────── -->
+  <!-- HOME -->
   <div class="page active" id="page-home">
     <div class="activate-card" id="activate-card"
       onmousedown="startActivate()" onmouseup="stopActivate()" onmouseleave="stopActivate()"
       ontouchstart="startActivate()" ontouchend="stopActivate()" ontouchcancel="stopActivate()">
       <div class="act-inner">
         <div class="act-icon-wrap" id="act-icon-wrap">
-          <span id="act-icon-mic"><!-- set by JS --></span>
-          <span id="act-icon-stop" style="display:none"><!-- set by JS --></span>
+          <span id="act-icon-mic"></span>
+          <span id="act-icon-stop" style="display:none"></span>
         </div>
         <div class="act-texts">
           <div class="act-title" id="act-title">Activar PlushMate</div>
@@ -698,30 +550,19 @@ select option{background:var(--white)}
         <svg class="act-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
     </div>
-
-    <!-- Volume control -->
     <div class="vol-card" id="vol-card">
       <div class="vol-left">
         <div class="vol-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>
         </div>
-        <div>
-          <div class="vol-label">Volumen</div>
-          <div class="vol-pct" id="vol-pct">70%</div>
-        </div>
+        <div><div class="vol-label">Volumen</div><div class="vol-pct" id="vol-pct">70%</div></div>
       </div>
       <div class="vol-right">
-        <button class="vol-btn" onclick="adjustVolume(-0.1)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
-        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="70"
-          oninput="onVolSlider(this.value)" onchange="sendVolume()">
-        <button class="vol-btn" onclick="adjustVolume(0.1)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        </button>
+        <button class="vol-btn" onclick="adjustVolume(-0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="70" oninput="onVolSlider(this.value)" onchange="sendVolume()">
+        <button class="vol-btn" onclick="adjustVolume(0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       </div>
     </div>
-
     <div class="section-header">
       <span class="section-title">Última conversación</span>
       <span class="section-link" onclick="goPage('history', document.getElementById('nav-history'))">Ver todo →</span>
@@ -729,40 +570,28 @@ select option{background:var(--white)}
     <div class="convo-card" id="home-preview">
       <div style="text-align:center;padding:14px 0;color:var(--muted);font-size:13px;font-weight:600">Sin conversaciones aún</div>
     </div>
-
-    <div class="section-header">
-      <span class="section-title">Acciones rápidas</span>
-    </div>
+    <div class="section-header"><span class="section-title">Acciones rápidas</span></div>
     <div class="quick-grid">
       <div class="quick-card" onclick="goPage('memory', document.getElementById('nav-memory'))">
-        <div class="quick-card-icon" style="background:var(--lavender-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
-        </div>
+        <div class="quick-card-icon" style="background:var(--lavender-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg></div>
         <div><div class="quick-label">Memoria</div><div class="quick-sub">Lo que recuerda</div></div>
       </div>
       <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
-        <div class="quick-card-icon" style="background:var(--sunny-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        </div>
+        <div class="quick-card-icon" style="background:var(--sunny-light)"><svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
         <div><div class="quick-label">Ajustes</div><div class="quick-sub">Personalizar</div></div>
       </div>
       <div class="quick-card" onclick="confirmClear()">
-        <div class="quick-card-icon" style="background:var(--coral-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-        </div>
+        <div class="quick-card-icon" style="background:var(--coral-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></div>
         <div><div class="quick-label">Borrar</div><div class="quick-sub">Limpiar memoria</div></div>
       </div>
       <div class="quick-card" onclick="goPage('settings', document.getElementById('nav-settings'))">
-        <div class="quick-card-icon" style="background:var(--mint-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-        </div>
+        <div class="quick-card-icon" style="background:var(--mint-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg></div>
         <div><div class="quick-label">WiFi</div><div class="quick-sub">Cambiar red</div></div>
       </div>
     </div>
   </div>
 
-
-  <!-- ─── HISTORY / CHAT ──────────────────────── -->
+  <!-- CHAT -->
   <div class="page chat-page" id="page-history">
     <div class="history-header">
       <span class="section-title">Chat</span>
@@ -780,16 +609,11 @@ select option{background:var(--white)}
         <div class="empty-sub">Escribe o usa el micrófono para comenzar</div>
       </div>
     </div>
-    <div class="thinking-wrap" id="thinking-wrap" style="display:none">
-      <div class="thinking-dots"><span></span><span></span><span></span></div>
-      <div class="thinking-label">pensando...</div>
-    </div>
     <div class="chat-input-bar">
       <button class="chat-voice-btn" id="chat-voice-btn" onclick="toggleChatVoice()">
         <svg id="chat-voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>
       </button>
-      <input type="text" class="chat-input" id="chat-input" placeholder="Escríbele a PlushMate..."
-        onkeydown="if(event.key==='Enter') sendTextMessage()">
+      <input type="text" class="chat-input" id="chat-input" placeholder="Escríbele a PlushMate..." onkeydown="if(event.key==='Enter') sendTextMessage()">
       <button class="chat-send-btn" id="chat-plush-btn" onclick="sendTextMessage(true)" title="Enviar al peluche">
         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
       </button>
@@ -799,39 +623,25 @@ select option{background:var(--white)}
     </div>
   </div>
 
-  <!-- ─── MEMORY ──────────────────────────────── -->
+  <!-- MEMORIA -->
   <div class="page" id="page-memory">
     <div class="memory-banner">
       <svg class="memory-banner-deco" viewBox="0 0 56 56" fill="white"><path d="M28 4a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L31 22H25l-.7-3C22.3 17.7 21 15.5 21 13a7 7 0 017-7zM24 26h8M24 30h5"/></svg>
-      <div class="memory-banner-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg>
-      </div>
+      <div class="memory-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L15 18H9l-.7-3C6.3 13.7 5 11.5 5 9a7 7 0 017-7z"/><path d="M9 21h6"/></svg></div>
       <div class="memory-banner-text">
         <div class="title">Memoria persistente</div>
         <div class="sub">PlushMate recuerda sobre ti</div>
       </div>
     </div>
-
     <div class="mem-stats">
-      <div class="mem-stat">
-        <div class="mem-stat-num" id="mem-msgs">0</div>
-        <div class="mem-stat-label">Mensajes sesión</div>
-      </div>
-      <div class="mem-stat">
-        <div class="mem-stat-num" id="mem-words">0</div>
-        <div class="mem-stat-label">Palabras guardadas</div>
-      </div>
+      <div class="mem-stat"><div class="mem-stat-num" id="mem-msgs">0</div><div class="mem-stat-label">Mensajes sesión</div></div>
+      <div class="mem-stat"><div class="mem-stat-num" id="mem-words">0</div><div class="mem-stat-label">Palabras guardadas</div></div>
     </div>
-
-    <!-- Formatted memory sections -->
     <div id="memory-sections">
-      <div class="memory-box">
-        <div id="memory-content" class="memory-empty">Cargando memoria...</div>
-      </div>
+      <div class="memory-box"><div id="memory-content" class="memory-empty">Cargando memoria...</div></div>
     </div>
-
     <div style="display:flex;gap:10px;margin-bottom:0">
-      <button class="save-btn" onclick="loadMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
+      <button class="save-btn" onclick="refreshMemory()" style="flex:1;background:var(--brand-pale);color:var(--brand);box-shadow:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         Actualizar
       </button>
@@ -842,70 +652,42 @@ select option{background:var(--white)}
     </div>
   </div>
 
-  <!-- ─── PROFILE ───────────────────────────── -->
+  <!-- PERFIL -->
   <div class="page" id="page-profile">
-
-    <!-- Profile card -->
     <div class="profile-card" id="profile-card">
       <div class="profile-avatar-wrap">
         <div class="profile-avatar" id="profile-avatar-display">🐻</div>
-        <button class="profile-avatar-edit" onclick="toggleAvatarPicker()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
+        <button class="profile-avatar-edit" onclick="toggleAvatarPicker()"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>
       <div class="profile-name" id="profile-name-display">Cargando...</div>
       <div class="profile-color-strip" id="profile-color-strip"></div>
     </div>
-
-    <!-- Avatar picker -->
     <div class="avatar-picker" id="avatar-picker" style="display:none">
       <div class="section-title" style="margin-bottom:10px">Elige un avatar</div>
       <div class="emoji-grid" id="emoji-grid"></div>
       <div class="field-label" style="margin-top:14px">O URL de imagen</div>
       <input type="text" id="avatar-url" placeholder="https://..." oninput="previewAvatarUrl(this.value)" style="margin-top:6px">
     </div>
-
-    <!-- Edit form -->
     <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-        Tu nombre
-      </div>
+      <div class="field-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>Tu nombre</div>
       <input type="text" id="profile-name-input" placeholder="Tu nombre">
     </div>
-
     <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-        Color de perfil
-      </div>
+      <div class="field-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>Color de perfil</div>
       <div class="color-options" id="color-options"></div>
     </div>
-
     <button class="save-btn" onclick="saveProfile()" style="margin-bottom:24px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-      Guardar perfil
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar perfil
     </button>
-
     <div class="divider"></div>
-
-    <!-- Devices -->
     <div class="section-header">
       <span class="section-title">Dispositivos</span>
       <span class="section-link" onclick="loadDevices()">↻ Actualizar</span>
     </div>
-    <div id="devices-list">
-      <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Cargando...</div>
-    </div>
-
+    <div id="devices-list"><div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-weight:600">Cargando...</div></div>
     <div class="divider"></div>
-
-    <!-- Account -->
     <div class="settings-section">
-      <div class="field-label">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-        Cuenta
-      </div>
+      <div class="field-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>Cuenta</div>
       <div style="background:var(--brand-pale);border-radius:var(--r-md);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text)" id="profile-email-display">—</div>
@@ -913,7 +695,6 @@ select option{background:var(--white)}
         </div>
         <div id="admin-badge" style="display:none;background:var(--brand);color:white;font-size:10px;font-weight:900;padding:3px 10px;border-radius:var(--r-full)">ADMIN</div>
       </div>
-      <!-- Plush pairing status -->
       <div style="background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" id="plush-status-card">
         <div>
           <div style="font-size:13px;font-weight:800;color:var(--text)" id="plush-name-display">Sin peluche vinculado</div>
@@ -922,24 +703,16 @@ select option{background:var(--white)}
         <button class="wifi-btn" onclick="showPairingScreen()" style="width:auto;padding:8px 14px;font-size:12px" id="pair-action-btn">Vincular</button>
       </div>
       <button class="danger-btn" onclick="doLogout()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        Cerrar sesión
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Cerrar sesión
       </button>
     </div>
-
-
-
   </div>
 
-  <!-- ─── SETTINGS ────────────────────────────── -->
+  <!-- AJUSTES -->
   <div class="page" id="page-settings">
-
-    <!-- AI Accordion -->
     <div class="accordion" id="acc-ai">
       <div class="accordion-header" onclick="toggleAccordion('acc-ai')">
-        <div class="accordion-icon" style="background:var(--brand-pale)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        </div>
+        <div class="accordion-icon" style="background:var(--brand-pale)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
         <div><div class="accordion-title">Inteligencia Artificial</div><div class="accordion-sub">Modelo, personalidad, voz</div></div>
         <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
@@ -966,8 +739,7 @@ select option{background:var(--white)}
           <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
         </select>
         <div class="field-label" style="margin-top:14px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
-          Idioma de reconocimiento de voz
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>Idioma de reconocimiento de voz
         </div>
         <select id="cfg-language" style="margin-bottom:16px">
           <option value="es">🇲🇽 Español</option>
@@ -980,292 +752,141 @@ select option{background:var(--white)}
           <option value="zh">🇨🇳 中文</option>
         </select>
         <button class="save-btn" id="save-btn" onclick="saveConfig()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Guardar cambios
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar cambios
         </button>
       </div>
     </div>
-
-    <!-- WiFi Accordion -->
     <div class="accordion" id="acc-wifi">
       <div class="accordion-header" onclick="toggleAccordion('acc-wifi')">
-        <div class="accordion-icon" style="background:var(--mint-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
-        </div>
+        <div class="accordion-icon" style="background:var(--mint-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.2" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg></div>
         <div><div class="accordion-title">Red WiFi</div><div class="accordion-sub">Cambiar red del peluche</div></div>
         <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
       <div class="accordion-body">
-
-        <!-- MODE TABS -->
         <div class="wifi-mode-tabs" style="margin-top:14px;margin-bottom:16px">
           <button class="wifi-mode-tab active" id="tab-connected" onclick="switchWifiMode('connected')">Peluche conectado</button>
           <button class="wifi-mode-tab" id="tab-setup" onclick="switchWifiMode('setup')">Sin internet</button>
         </div>
-
-        <!-- MODE: CONNECTED -->
         <div id="wifi-mode-connected">
           <div id="saved-nets-wrap" style="display:none">
             <div class="field-label">Redes guardadas</div>
             <div id="saved-nets-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
           </div>
-
           <div class="field-label">Red WiFi</div>
           <input id="wifi-ssid" type="text" placeholder="Nombre de la red" style="margin-bottom:10px" autocomplete="off">
           <div class="field-label">Contraseña</div>
           <input id="wifi-pass" type="password" placeholder="Contraseña" style="margin-bottom:12px" autocomplete="new-password">
           <button class="wifi-btn" onclick="sendWifi()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Enviar al peluche
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Enviar al peluche
           </button>
           <div class="wifi-status" id="wifi-status"></div>
         </div>
-
-        <!-- MODE: NO INTERNET / SETUP -->
         <div id="wifi-mode-setup" style="display:none">
           <div class="wifi-setup-card">
-            <div class="wifi-setup-step">
-              <div class="wifi-setup-num">1</div>
-              <div class="wifi-setup-txt">
-                <div class="wifi-setup-title">Desconecta y reconecta el peluche</div>
-                <div class="wifi-setup-sub">Si no encuentra WiFi, activa su propio hotspot en ~10 segundos</div>
-              </div>
-            </div>
-            <div class="wifi-setup-step">
-              <div class="wifi-setup-num">2</div>
-              <div class="wifi-setup-txt">
-                <div class="wifi-setup-title">Ve a Ajustes WiFi de tu celular</div>
-                <div class="wifi-setup-sub">Conéctate a <strong>PlushMate Setup</strong> · Contraseña: <strong>plushmate</strong></div>
-              </div>
-            </div>
-            <div class="wifi-setup-step">
-              <div class="wifi-setup-num">3</div>
-              <div class="wifi-setup-txt">
-                <div class="wifi-setup-title">Abre la página de configuración</div>
-                <div class="wifi-setup-sub">Se abre automáticamente, o usa el botón de abajo. Verás las redes disponibles y podrás conectarte.</div>
-              </div>
-            </div>
+            <div class="wifi-setup-step"><div class="wifi-setup-num">1</div><div class="wifi-setup-txt"><div class="wifi-setup-title">Desconecta y reconecta el peluche</div><div class="wifi-setup-sub">Si no encuentra WiFi, activa su propio hotspot en ~10 segundos</div></div></div>
+            <div class="wifi-setup-step"><div class="wifi-setup-num">2</div><div class="wifi-setup-txt"><div class="wifi-setup-title">Ve a Ajustes WiFi de tu celular</div><div class="wifi-setup-sub">Conéctate a <strong>PlushMate Setup</strong> · Contraseña: <strong>plushmate</strong></div></div></div>
+            <div class="wifi-setup-step"><div class="wifi-setup-num">3</div><div class="wifi-setup-txt"><div class="wifi-setup-title">Abre la página de configuración</div><div class="wifi-setup-sub">Se abre automáticamente, o usa el botón de abajo.</div></div></div>
           </div>
-          <!-- Step 0: Activate hotspot from app if plush has internet -->
           <div style="background:var(--white);border-radius:var(--r-md);padding:14px;box-shadow:var(--shadow-sm);margin-bottom:14px">
             <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">¿El peluche tiene internet ahora?</div>
-            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Activa el hotspot directamente desde la app sin reiniciar</div>
+            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px">Activa el hotspot directamente desde la app</div>
             <button class="wifi-btn" onclick="activateHotspot()" id="activate-hotspot-btn" style="background:var(--brand)">
               <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
               <span id="hotspot-btn-txt">Activar hotspot del peluche</span>
             </button>
           </div>
-
           <button class="wifi-btn" onclick="openSetupPage()" style="background:var(--mint)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Abrir configuración del peluche
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Abrir configuración del peluche
           </button>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:10px;background:var(--bg);border-radius:var(--r-sm);padding:8px">
-            URL: <code style="color:var(--brand)">http://192.168.4.1</code>
-          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:10px;background:var(--bg);border-radius:var(--r-sm);padding:8px">URL: <code style="color:var(--brand)">http://192.168.4.1</code></div>
         </div>
-
       </div>
     </div>
-
-    <!-- Accessibility → sub-page -->
-    <div class="accordion">
-      <div class="accordion-header" onclick="openSubpage('subpage-access')">
-        <div class="accordion-icon" style="background:var(--lavender-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-        </div>
-        <div><div class="accordion-title">Accesibilidad</div><div class="accordion-sub">Sonido, vibración, movimiento</div></div>
-        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-    </div>
-
-    <!-- Legal → sub-page -->
-    <div class="accordion">
-      <div class="accordion-header" onclick="openSubpage('subpage-legal')">
-        <div class="accordion-icon" style="background:#f0f4ff">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#6B82B8" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </div>
-        <div><div class="accordion-title">Info Legal</div><div class="accordion-sub">Términos, privacidad, contacto</div></div>
-        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-    </div>
-
-    <!-- Security → sub-page -->
-    <div class="accordion">
-      <div class="accordion-header" onclick="openSubpage('subpage-pin-setup')">
-        <div class="accordion-icon" style="background:var(--coral-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        </div>
-        <div><div class="accordion-title">Seguridad</div><div class="accordion-sub">PIN de acceso a la app</div></div>
-        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-    </div>
-
-    <!-- Advanced → sub-page -->
-    <div class="accordion">
-      <div class="accordion-header" onclick="openSubpage('subpage-advanced')">
-        <div class="accordion-icon" style="background:var(--sunny-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        </div>
-        <div><div class="accordion-title">Avanzado</div><div class="accordion-sub">App Secret, diagnóstico</div></div>
-        <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
-      </div>
-    </div>
-
+    <div class="accordion"><div class="accordion-header" onclick="openSubpage('subpage-access')"><div class="accordion-icon" style="background:var(--lavender-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--lavender)" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div><div><div class="accordion-title">Accesibilidad</div><div class="accordion-sub">Sonido, vibración, movimiento</div></div><svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    <div class="accordion"><div class="accordion-header" onclick="openSubpage('subpage-legal')"><div class="accordion-icon" style="background:#f0f4ff"><svg viewBox="0 0 24 24" fill="none" stroke="#6B82B8" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><div><div class="accordion-title">Info Legal</div><div class="accordion-sub">Términos, privacidad, contacto</div></div><svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    <div class="accordion"><div class="accordion-header" onclick="openSubpage('subpage-pin-setup')"><div class="accordion-icon" style="background:var(--coral-light)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div><div><div class="accordion-title">Seguridad</div><div class="accordion-sub">PIN de acceso a la app</div></div><svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
+    <div class="accordion"><div class="accordion-header" onclick="openSubpage('subpage-advanced')"><div class="accordion-icon" style="background:var(--sunny-light)"><svg viewBox="0 0 24 24" fill="none" stroke="#C87F00" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div><div><div class="accordion-title">Avanzado</div><div class="accordion-sub">Diagnóstico</div></div><svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg></div></div>
   </div>
-
-  </div>
-
 </div>
 
-
-  <!-- ─── SUBPAGE: ACCESSIBILITY ──────────────── -->
-  <div class="subpage" id="subpage-access">
-    <div class="subpage-header">
-      <button class="subpage-back" onclick="closeSubpage('subpage-access')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      </button>
-      <span class="subpage-title">Accesibilidad</span>
-    </div>
-    <div class="subpage-content">
-      <div class="memory-box">
-        <div class="toggle-row">
-          <div><div class="toggle-label">Sonidos</div><div class="toggle-sub">Efectos de sonido en acciones</div></div>
-          <button class="toggle" id="tog-sound" onclick="togglePref('sound','tog-sound')"></button>
-        </div>
-        <div class="toggle-row">
-          <div><div class="toggle-label">Vibración</div><div class="toggle-sub">Feedback táctil al interactuar</div></div>
-          <button class="toggle" id="tog-haptic" onclick="togglePref('haptic','tog-haptic')"></button>
-        </div>
-        <div class="toggle-row">
-          <div><div class="toggle-label">Animaciones</div><div class="toggle-sub">Transiciones y efectos visuales</div></div>
-          <button class="toggle" id="tog-motion" onclick="togglePref('motion','tog-motion')"></button>
-        </div>
-      </div>
+<!-- SUBPAGES -->
+<div class="subpage" id="subpage-access">
+  <div class="subpage-header"><button class="subpage-back" onclick="closeSubpage('subpage-access')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="subpage-title">Accesibilidad</span></div>
+  <div class="subpage-content">
+    <div class="memory-box">
+      <div class="toggle-row"><div><div class="toggle-label">Sonidos</div><div class="toggle-sub">Efectos de sonido en acciones</div></div><button class="toggle" id="tog-sound" onclick="togglePref('sound','tog-sound')"></button></div>
+      <div class="toggle-row"><div><div class="toggle-label">Vibración</div><div class="toggle-sub">Feedback táctil al interactuar</div></div><button class="toggle" id="tog-haptic" onclick="togglePref('haptic','tog-haptic')"></button></div>
+      <div class="toggle-row"><div><div class="toggle-label">Animaciones</div><div class="toggle-sub">Transiciones y efectos visuales</div></div><button class="toggle" id="tog-motion" onclick="togglePref('motion','tog-motion')"></button></div>
     </div>
   </div>
-
-  <!-- ─── SUBPAGE: ADVANCED ───────────────────── -->
-  <div class="subpage" id="subpage-advanced">
-    <div class="subpage-header">
-      <button class="subpage-back" onclick="closeSubpage('subpage-advanced')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      </button>
-      <span class="subpage-title">Avanzado</span>
-    </div>
-    <div class="subpage-content">
-      <div class="memory-box">
-        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Estado del servidor</div>
-        <div style="font-size:12px;font-weight:600;color:var(--muted)">Autenticación: JWT (Supabase)</div>
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:4px" id="adv-user-id">User ID: cargando...</div>
-      </div>
+</div>
+<div class="subpage" id="subpage-advanced">
+  <div class="subpage-header"><button class="subpage-back" onclick="closeSubpage('subpage-advanced')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="subpage-title">Avanzado</span></div>
+  <div class="subpage-content">
+    <div class="memory-box">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Estado del servidor</div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted)">Autenticación: JWT (Supabase)</div>
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:4px" id="adv-user-id">User ID: cargando...</div>
     </div>
   </div>
+</div>
+<div class="subpage" id="subpage-pin-setup">
+  <div class="subpage-header"><button class="subpage-back" onclick="closeSubpage('subpage-pin-setup')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="subpage-title">Seguridad — PIN</span></div>
+  <div class="subpage-content">
+    <div class="memory-box" style="margin-bottom:16px">
+      <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px">🔐 PIN de seguridad</div>
+      <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.5">El PIN se pide cada vez que abres la app.</div>
+    </div>
+    <div class="field-label">PIN actual (si ya tienes uno)</div>
+    <input type="password" id="sec-pin-current" placeholder="PIN actual" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+    <div class="field-label">PIN nuevo (4 dígitos)</div>
+    <input type="password" id="sec-pin-new" placeholder="••••" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
+    <div class="field-label">Confirmar PIN nuevo</div>
+    <input type="password" id="sec-pin-confirm" placeholder="••••" maxlength="4" inputmode="numeric">
+    <button class="save-btn" onclick="changePIN()" style="margin-top:14px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Guardar PIN
+    </button>
+  </div>
+</div>
+<div class="subpage" id="subpage-legal">
+  <div class="subpage-header"><button class="subpage-back" onclick="closeSubpage('subpage-legal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="subpage-title">Información Legal</span></div>
+  <div class="subpage-content">
+    <div class="legal-section"><div class="legal-icon">📄</div><div class="legal-title">Términos de Uso</div><div class="legal-text">PlushMate es un prototipo de asistente de voz con inteligencia artificial. Al usar esta aplicación aceptas que las conversaciones son procesadas por servicios de terceros incluyendo ElevenLabs y OpenRouter.</div></div>
+    <div class="legal-section"><div class="legal-icon">🔒</div><div class="legal-title">Privacidad y Datos</div><div class="legal-text">Las grabaciones de voz son enviadas a ElevenLabs para transcripción. Los resúmenes de conversación se guardan en Supabase de forma segura.</div></div>
+    <div class="legal-section"><div class="legal-icon">🤖</div><div class="legal-title">Inteligencia Artificial</div><div class="legal-text">Las respuestas son generadas por modelos de IA a través de OpenRouter. El contenido puede contener errores.</div></div>
+    <div class="legal-section"><div class="legal-icon">👶</div><div class="legal-title">Uso por Menores</div><div class="legal-text">PlushMate está diseñado para su uso bajo supervisión de adultos.</div></div>
+    <div style="text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:20px 0">PlushMate v1.0 Prototype · 2026</div>
+  </div>
+</div>
 
-
-<!-- ─── PIN CONFIRM OVERLAY ──────────────── -->
+<!-- PIN CONFIRM -->
 <div class="pin-confirm-overlay" id="pin-confirm-overlay">
   <div class="pin-confirm-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-    </div>
+    <div class="modal-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></div>
     <div class="modal-title" id="pin-confirm-title">Confirmar con PIN</div>
     <div class="modal-desc" id="pin-confirm-desc">Ingresa tu PIN para continuar</div>
     <div class="pin-mini-dots" id="pin-mini-dots">
-      <div class="pin-mini-dot" id="pmd0"></div>
-      <div class="pin-mini-dot" id="pmd1"></div>
-      <div class="pin-mini-dot" id="pmd2"></div>
-      <div class="pin-mini-dot" id="pmd3"></div>
+      <div class="pin-mini-dot" id="pmd0"></div><div class="pin-mini-dot" id="pmd1"></div>
+      <div class="pin-mini-dot" id="pmd2"></div><div class="pin-mini-dot" id="pmd3"></div>
     </div>
     <div class="pin-error" id="pin-confirm-error" style="text-align:center"></div>
     <div class="pin-mini-pad">
-      <button class="pin-mini-key" onclick="pinMiniKey('1')">1</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('2')">2</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('3')">3</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('4')">4</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('5')">5</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('6')">6</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('7')">7</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('8')">8</button>
-      <button class="pin-mini-key" onclick="pinMiniKey('9')">9</button>
-      <button class="pin-mini-key pin-mini-key-empty"></button>
-      <button class="pin-mini-key" onclick="pinMiniKey('0')">0</button>
-      <button class="pin-mini-key pin-mini-key-del" onclick="pinMiniDel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2zM18 9l-6 6M12 9l6 6"/></svg>
-      </button>
+      <button class="pin-mini-key" onclick="pinMiniKey('1')">1</button><button class="pin-mini-key" onclick="pinMiniKey('2')">2</button><button class="pin-mini-key" onclick="pinMiniKey('3')">3</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('4')">4</button><button class="pin-mini-key" onclick="pinMiniKey('5')">5</button><button class="pin-mini-key" onclick="pinMiniKey('6')">6</button>
+      <button class="pin-mini-key" onclick="pinMiniKey('7')">7</button><button class="pin-mini-key" onclick="pinMiniKey('8')">8</button><button class="pin-mini-key" onclick="pinMiniKey('9')">9</button>
+      <button class="pin-mini-key pin-mini-key-empty"></button><button class="pin-mini-key" onclick="pinMiniKey('0')">0</button>
+      <button class="pin-mini-key pin-mini-key-del" onclick="pinMiniDel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2zM18 9l-6 6M12 9l6 6"/></svg></button>
     </div>
     <button class="modal-btn cancel" onclick="closePinConfirm()" style="margin-top:16px;width:100%">Cancelar</button>
   </div>
 </div>
 
-  <!-- ─── SUBPAGE: PIN SETUP ─────────────────── -->
-  <div class="subpage" id="subpage-pin-setup">
-    <div class="subpage-header">
-      <button class="subpage-back" onclick="closeSubpage('subpage-pin-setup')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      </button>
-      <span class="subpage-title">Seguridad — PIN</span>
-    </div>
-    <div class="subpage-content">
-      <div class="memory-box" style="margin-bottom:16px">
-        <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px">🔐 PIN de seguridad</div>
-        <div style="font-size:13px;font-weight:600;color:var(--muted);line-height:1.5">El PIN se pide cada vez que abres la app. Usa el mismo PIN en todos tus dispositivos.</div>
-      </div>
-      <div class="field-label">PIN actual (si ya tienes uno)</div>
-      <input type="password" id="sec-pin-current" placeholder="PIN actual (vacío si es nuevo)" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
-      <div class="field-label">PIN nuevo (4 dígitos)</div>
-      <input type="password" id="sec-pin-new" placeholder="••••" maxlength="4" inputmode="numeric" style="margin-bottom:10px">
-      <div class="field-label">Confirmar PIN nuevo</div>
-      <input type="password" id="sec-pin-confirm" placeholder="••••" maxlength="4" inputmode="numeric">
-      <button class="save-btn" onclick="changePIN()" style="margin-top:14px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Guardar PIN
-      </button>
-    </div>
-  </div>
-
-  <!-- ─── SUBPAGE: LEGAL ──────────────────────── -->
-  <div class="subpage" id="subpage-legal">
-    <div class="subpage-header">
-      <button class="subpage-back" onclick="closeSubpage('subpage-legal')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      </button>
-      <span class="subpage-title">Información Legal</span>
-    </div>
-    <div class="subpage-content">
-      <div class="legal-section">
-        <div class="legal-icon">📄</div>
-        <div class="legal-title">Términos de Uso</div>
-        <div class="legal-text">PlushMate es un prototipo de asistente de voz con inteligencia artificial. Al usar esta aplicación aceptas que las conversaciones son procesadas por servicios de terceros incluyendo ElevenLabs y OpenRouter para proveer funcionalidades de voz e inteligencia artificial.</div>
-      </div>
-      <div class="legal-section">
-        <div class="legal-icon">🔒</div>
-        <div class="legal-title">Privacidad y Datos</div>
-        <div class="legal-text">Las grabaciones de voz son enviadas a ElevenLabs para transcripción. Los resúmenes de conversación se guardan en Supabase de forma segura. No compartimos tus datos con terceros más allá de los servicios necesarios para el funcionamiento de la app.</div>
-      </div>
-      <div class="legal-section">
-        <div class="legal-icon">🤖</div>
-        <div class="legal-title">Inteligencia Artificial</div>
-        <div class="legal-text">Las respuestas son generadas por modelos de IA a través de OpenRouter. El contenido puede contener errores. PlushMate no debe usarse como sustituto de asesoría profesional médica, legal o financiera.</div>
-      </div>
-      <div class="legal-section">
-        <div class="legal-icon">👶</div>
-        <div class="legal-title">Uso por Menores</div>
-        <div class="legal-text">PlushMate está diseñado para su uso bajo supervisión de adultos. Los padres o tutores son responsables de supervisar las interacciones y configurar la personalidad del asistente apropiadamente.</div>
-      </div>
-      <div style="text-align:center;font-size:11px;font-weight:600;color:var(--muted);padding:20px 0">PlushMate v1.0 Prototype · 2026</div>
-    </div>
-  </div>
-
-
-<!-- ─── CUSTOM CONFIRM MODAL ─────────────────── -->
+<!-- MODAL CONFIRM -->
 <div class="modal-bg" id="custom-confirm">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-icon-wrap" id="confirm-icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    </div>
+    <div class="modal-icon-wrap" id="confirm-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
     <div class="modal-title" id="confirm-title">¿Estás seguro?</div>
     <div class="modal-desc" id="confirm-desc"></div>
     <div class="modal-btns">
@@ -1275,21 +896,16 @@ select option{background:var(--white)}
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast">
   <svg id="toast-icon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
   <span id="toast-msg"></span>
 </div>
-
-<!-- Modal -->
 <div class="modal-bg" id="modal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-icon-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-    </div>
+    <div class="modal-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg></div>
     <div class="modal-title">¿Borrar toda la memoria?</div>
-    <div class="modal-desc">Se eliminará el historial de esta sesión y el resumen de Supabase. PlushMate olvidará todo lo que sabe de ti.</div>
+    <div class="modal-desc">Se eliminará el historial y el resumen. PlushMate olvidará todo lo que sabe de ti.</div>
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
       <button class="modal-btn confirm" onclick="clearMemory()">Borrar todo</button>
@@ -1298,21 +914,10 @@ select option{background:var(--white)}
 </div>
 
 <script>
-/* ══════════════════════════════════════════════
-   ██████╗ ██████╗ ███╗  ██╗███████╗██╗ ██████╗
-   ██╔════╝██╔═══██╗████╗ ██║██╔════╝██║██╔════╝
-   ██║     ██║   ██║██╔██╗██║█████╗  ██║██║  ███╗
-   ██║     ██║   ██║██║╚████║██╔══╝  ██║██║   ██║
-   ╚██████╗╚██████╔╝██║ ╚███║██║     ██║╚██████╔╝
-
-   ╔════════════════════════════════════════════╗
-   ║           CONFIG SECTION                  ║
-   ║  Edita esta sección para personalizar     ║
-   ╚════════════════════════════════════════════╝ */
-
+// ══════════════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════════════
 const CONFIG = {
-  // Voces disponibles en el dropdown
-  // Agrega o quita voces según tus clones en ElevenLabs
   voices: [
     { name: 'PlushMate (default)', id: 'aaf0KU31jmlzVPqltvJY', desc: 'Voz principal' },
     { name: 'Rachel',              id: '21m00Tcm4TlvDq8ikWAM', desc: 'Inglés · suave' },
@@ -1320,71 +925,35 @@ const CONFIG = {
     { name: 'Antoni',              id: 'ErXwobaYiN019PkySvjV', desc: 'Masculino · cálido' },
     { name: 'Elli',                id: 'MF3mGyEYCl7XYWbV9V6O', desc: 'Joven · expresiva' },
   ],
-
-  // Efectos de sonido — genera tonos con Web Audio API
-  // Cambia las frecuencias para personalizar el sonido
   sounds: {
     enabled:  true,
-    activate: { type: 'up',   freqs: [440, 660],      dur: 0.18 }, // botón presionado
-    send:     { type: 'down', freqs: [660, 440],      dur: 0.18 }, // enviado
-    success:  { type: 'up',   freqs: [440, 554, 659], dur: 0.28 }, // respuesta recibida
-    error:    { type: 'buzz', freqs: [220, 196],      dur: 0.25 }, // error
-    tap:      { type: 'tap',  freqs: [880],            dur: 0.08 }, // tap genérico
+    activate: { type: 'up',   freqs: [440, 660],      dur: 0.18 },
+    send:     { type: 'down', freqs: [660, 440],      dur: 0.18 },
+    success:  { type: 'up',   freqs: [440, 554, 659], dur: 0.28 },
+    error:    { type: 'buzz', freqs: [220, 196],      dur: 0.25 },
+    tap:      { type: 'tap',  freqs: [880],            dur: 0.08 },
   },
-
-  // Splash screen duration (ms)
   splashDuration: 2200,
-
-  // Emojis disponibles para el avatar — edita esta lista libremente
   avatarEmojis: [
     '🐻','🐼','🐨','🦊','🐱','🐶','🐯','🦁','🐸','🐺',
     '🦝','🐹','🐭','🐮','🐷','🦋','🌈','⭐','🎀','💫',
     '✨','🌸','🎭','🦄','🐙','🦖','🌻','🍀','🎵','🏆',
   ],
-
-  // Server URL (auto-detect en producción, manual en desarrollo)
   serverUrl: window.location.origin,
-
-  // ─── ICONOS ────────────────────────────────────────────────────────────
-  // Pon aquí rutas a tus propios PNG/SVG/WebP
-  // Ejemplos: './icons/bear.png' | 'https://cdn.../icon.svg' | null (usa SVG por defecto)
   icons: {
-    // Logo del oso en la barra superior y splash screen
-    logo:     './static/icons/Logo.svg',  // logo en header
-
-    // Botón central de activar
-    mic:      null,   // ej: './icons/mic.png'             (recomendado 32x32px)
-    micStop:  null,   // ej: './icons/mic-stop.png'        (recomendado 32x32px)
-
-    // Iconos de tabs de navegación
-    navHome:     null, // ej: './icons/nav-home.png'       (recomendado 24x24px)
-    navChat:     null, // ej: './icons/nav-chat.png'       (recomendado 24x24px)
-    navMemory:   null, // ej: './icons/nav-memory.png'     (recomendado 24x24px)
-    navSettings: null, // ej: './icons/nav-settings.png'  (recomendado 24x24px)
-
-    // Iconos de acciones rápidas en home
-    quickMemory:   null, // ej: './icons/quick-memory.png'   (recomendado 24x24px)
-    quickSettings: null, // ej: './icons/quick-settings.png' (recomendado 24x24px)
-    quickDelete:   null, // ej: './icons/quick-delete.png'   (recomendado 24x24px)
-    quickWifi:     null, // ej: './icons/quick-wifi.png'     (recomendado 24x24px)
-
-    // Splash screen (si null usa el oso SVG)
-    splash: './static/icons/Logo.svg',    // splash screen
+    logo:   './static/icons/Logo.svg',
+    splash: './static/icons/Logo.svg',
+    mic: null, micStop: null,
   },
 };
-/* ════════════════════════════════════════════ */
 
 const BASE = CONFIG.serverUrl;
-// SECRET removed — using JWT auth
 let selectedVoiceId = '';
 
-// ── Web Audio ──────────────────────────────────
+// ── Audio context ──────────────────────────────────────────────────────
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let actx = null;
-function getAudioCtx() {
-  if (!actx) actx = new AudioCtx();
-  return actx;
-}
+function getAudioCtx() { if (!actx) actx = new AudioCtx(); return actx; }
 function playSound(key) {
   if (!CONFIG.sounds.enabled || !PREFS.sound) return;
   const s = CONFIG.sounds[key];
@@ -1392,32 +961,27 @@ function playSound(key) {
   try {
     const ctx = getAudioCtx();
     if (ctx.state === 'suspended') ctx.resume();
-    const freqs = s.freqs;
-    const dur = s.dur;
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+    s.freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
       osc.type = s.type === 'buzz' ? 'sawtooth' : 'sine';
       osc.frequency.value = freq;
-      const start = ctx.currentTime + (s.type === 'up' || s.type === 'down' ? i * dur * 0.6 : 0);
+      const start = ctx.currentTime + (s.type === 'up' || s.type === 'down' ? i * s.dur * 0.6 : 0);
       gain.gain.setValueAtTime(0.18, start);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
-      osc.start(start);
-      osc.stop(start + dur + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + s.dur);
+      osc.start(start); osc.stop(start + s.dur + 0.02);
     });
   } catch(e) {}
 }
 
-// ── Splash ─────────────────────────────────────
-// Default SVGs (usados cuando no hay PNG configurado)
+// ── Default icons ──────────────────────────────────────────────────────
 const DEFAULT_ICONS = {
-  logo: `<svg viewBox="0 0 40 40" fill="none"><circle cx="9" cy="10" r="6" fill="white" opacity="0.85"/><circle cx="31" cy="10" r="6" fill="white" opacity="0.85"/><rect x="4" y="12" width="32" height="24" rx="12" fill="white"/><circle cx="14.5" cy="21" r="2.5" fill="#8FA0CA"/><circle cx="25.5" cy="21" r="2.5" fill="#8FA0CA"/><circle cx="14.5" cy="20" r="1" fill="white"/><circle cx="25.5" cy="20" r="1" fill="white"/><ellipse cx="20" cy="27" rx="4" ry="2.5" fill="#C5CFEA"/><path d="M17 29 Q20 31.5 23 29" stroke="#8FA0CA" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>`,
-  splash: `<svg viewBox="0 0 80 80" fill="none" style="width:100px;height:100px"><circle cx="18" cy="20" r="12" fill="white" opacity="0.9"/><circle cx="62" cy="20" r="12" fill="white" opacity="0.9"/><rect x="8" y="24" width="64" height="48" rx="24" fill="white"/><circle cx="29" cy="42" r="5" fill="#8FA0CA"/><circle cx="51" cy="42" r="5" fill="#8FA0CA"/><circle cx="29" cy="40" r="2" fill="white"/><circle cx="51" cy="40" r="2" fill="white"/><ellipse cx="40" cy="54" rx="8" ry="5" fill="#C5CFEA"/><circle cx="40" cy="52" r="3" fill="#8FA0CA"/><path d="M34 58 Q40 63 46 58" stroke="#8FA0CA" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`,
+  logo: `<svg viewBox="0 0 40 40" fill="none"><circle cx="9" cy="10" r="6" fill="white" opacity="0.85"/><circle cx="31" cy="10" r="6" fill="white" opacity="0.85"/><rect x="4" y="12" width="32" height="24" rx="12" fill="white"/><circle cx="14.5" cy="21" r="2.5" fill="#8FA0CA"/><circle cx="25.5" cy="21" r="2.5" fill="#8FA0CA"/><ellipse cx="20" cy="27" rx="4" ry="2.5" fill="#C5CFEA"/></svg>`,
+  splash: `<svg viewBox="0 0 80 80" fill="none" style="width:100px;height:100px"><circle cx="18" cy="20" r="12" fill="white" opacity="0.9"/><circle cx="62" cy="20" r="12" fill="white" opacity="0.9"/><rect x="8" y="24" width="64" height="48" rx="24" fill="white"/><circle cx="29" cy="42" r="5" fill="#8FA0CA"/><circle cx="51" cy="42" r="5" fill="#8FA0CA"/><circle cx="29" cy="40" r="2" fill="white"/><circle cx="51" cy="40" r="2" fill="white"/><ellipse cx="40" cy="54" rx="8" ry="5" fill="#C5CFEA"/></svg>`,
   mic: `<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" style="width:28px;height:28px"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/></svg>`,
   micStop: `<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>`,
 };
+
 function setIcon(elementId, configKey, fallbackKey, size) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -1425,72 +989,117 @@ function setIcon(elementId, configKey, fallbackKey, size) {
   if (src) {
     const img = document.createElement('img');
     img.src = src;
-    img.style.cssText = 'width:' + size + 'px;height:' + size + 'px;object-fit:contain';
-    img.onerror = function() {
-      el.innerHTML = DEFAULT_ICONS[fallbackKey] || '';
-    };
-    el.innerHTML = '';
-    el.appendChild(img);
-  } else {
-    el.innerHTML = DEFAULT_ICONS[fallbackKey] || '';
-  }
+    img.style.cssText = `width:${size}px;height:${size}px;object-fit:contain`;
+    img.onerror = () => { el.innerHTML = DEFAULT_ICONS[fallbackKey] || ''; };
+    el.innerHTML = ''; el.appendChild(img);
+  } else { el.innerHTML = DEFAULT_ICONS[fallbackKey] || ''; }
 }
-
 function applyIcons() {
-  setIcon('header-logo-inner', 'logo',    'logo',    28);
-  setIcon('splash-icon',       'splash',  'splash',  100);
-  setIcon('act-icon-mic',      'mic',     'mic',     28);
-  setIcon('act-icon-stop',     'micStop', 'micStop', 28);
-  // Auth logo
+  setIcon('header-logo-inner', 'logo', 'logo', 28);
+  setIcon('splash-icon', 'splash', 'splash', 100);
+  setIcon('act-icon-mic', 'mic', 'mic', 28);
+  setIcon('act-icon-stop', 'micStop', 'micStop', 28);
   const authWrap = document.getElementById('auth-logo-wrap');
   if (authWrap) {
     const src = CONFIG.icons.logo;
-    if (src) {
-      authWrap.innerHTML = `<img src="${src}" style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(143,160,202,0.4))" onerror="this.style.display='none'">`;
-    } else {
-      // Default SVG bear with brand color background circle
-      authWrap.innerHTML = DEFAULT_ICONS.splash.replace('width:100px;height:100px', 'width:80px;height:80px');
-    }
+    if (src) authWrap.innerHTML = `<img src="${src}" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'">`;
+    else authWrap.innerHTML = DEFAULT_ICONS.splash.replace('width:100px;height:100px','width:80px;height:80px');
   }
 }
 
+// ── Preferences ────────────────────────────────────────────────────────
+const PREFS = {
+  sound:  localStorage.getItem('pref_sound')  !== 'false',
+  haptic: localStorage.getItem('pref_haptic') !== 'false',
+  motion: localStorage.getItem('pref_motion') !== 'false',
+};
+function savePref(key, val) {
+  PREFS[key] = val;
+  localStorage.setItem('pref_' + key, val);
+  if (key === 'motion') document.documentElement.classList.toggle('no-motion', !val);
+}
+function haptic(style) {
+  if (!PREFS.haptic || !navigator.vibrate) return;
+  const p = { light:[10], medium:[20], heavy:[40], success:[10,50,20], error:[30,30,30] };
+  navigator.vibrate(p[style] || [10]);
+}
+if (!PREFS.motion) document.documentElement.classList.add('no-motion');
+
+// ── Auth state ─────────────────────────────────────────────────────────
+let AUTH_TOKEN    = localStorage.getItem('pm_token') || '';
+let REFRESH_TOKEN = localStorage.getItem('pm_refresh') || '';
+let CURRENT_USER  = JSON.parse(localStorage.getItem('pm_user') || 'null');
+
+function saveAuth(token, refresh, user) {
+  AUTH_TOKEN = token; REFRESH_TOKEN = refresh; CURRENT_USER = user;
+  localStorage.setItem('pm_token', token);
+  localStorage.setItem('pm_refresh', refresh);
+  localStorage.setItem('pm_user', JSON.stringify(user));
+}
+function clearAuth() {
+  AUTH_TOKEN = ''; REFRESH_TOKEN = ''; CURRENT_USER = null;
+  localStorage.removeItem('pm_token');
+  localStorage.removeItem('pm_refresh');
+  localStorage.removeItem('pm_user');
+  sessionStorage.clear();
+}
+
+let DEVICE_ID   = localStorage.getItem('pm_device_id') || (() => { const id = crypto.randomUUID(); localStorage.setItem('pm_device_id', id); return id; })();
+let DEVICE_NAME = navigator.userAgent.includes('Android') ? 'Android' : navigator.userAgent.includes('iPhone') ? 'iPhone' : 'Navegador';
+let PIN_STATE   = 'verify';
+let PIN_FIRST   = '';
+let PIN_ENTERED = '';
+let PROFILE     = { name: '', avatar: '🐻', color: '#8FA0CA' };
+const COLORS    = ['#8FA0CA','#FF7F7F','#7ECBA1','#FFD166','#C9A8F0','#FF9F7F','#7EC8CB','#F0A8C9','#A8C9F0','#C9F0A8'];
+
+// ══════════════════════════════════════════════════════════════════════
+// INIT — FIX: splash siempre se oculta, independiente de lo que pase
+// ══════════════════════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   applyIcons();
   buildVoiceDropdown();
   checkStatus();
   setInterval(checkStatus, 30000);
-  setInterval(checkRevoked, 5000);  // check revocation every 5s
-  // Re-check immediately when tab becomes visible again (iOS Safari fix)
+  setInterval(checkRevoked, 5000);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && sessionStorage.getItem('pm_pin_verified')) {
       checkRevoked();
     }
   });
   loadConfig();
-  // Splash stays until auth is ready
+
+  // El splash SIEMPRE desaparece después de splashDuration
+  // independientemente del estado de auth — esto es el fix principal
   setTimeout(async () => {
-    await initAuth();
-    document.getElementById('splash').classList.add('fade-out');
-    setTimeout(() => document.getElementById('splash').remove(), 500);
+    try {
+      await initAuth();
+    } catch(e) {
+      console.error('initAuth error:', e);
+      // Si initAuth falla por cualquier razón, mostrar auth
+      if (!sessionStorage.getItem('pm_pin_verified')) {
+        showAuthOverlay();
+      }
+    } finally {
+      // SIEMPRE ocultar el splash, pase lo que pase
+      const splash = document.getElementById('splash');
+      if (splash) {
+        splash.classList.add('fade-out');
+        setTimeout(() => { try { splash.remove(); } catch(e){} }, 500);
+      }
+    }
   }, CONFIG.splashDuration);
 });
 
-// ── Voice dropdown ──────────────────────────────
+// ── Voice dropdown ─────────────────────────────────────────────────────
 function buildVoiceDropdown() {
   const container = document.getElementById('voice-options');
   container.innerHTML = CONFIG.voices.map((v, i) => `
-    <div class="voice-option" id="vopt-${i}" onclick="selectVoice('${v.id}', '${v.name}', ${i})">
+    <div class="voice-option" id="vopt-${i}" onclick="selectVoice('${v.id}','${v.name}',${i})">
       <div class="voice-dot"></div>
-      <div>
-        <div class="voice-option-name">${v.name}</div>
-        <div class="voice-option-id">${v.id.substring(0,8)}... · ${v.desc}</div>
-      </div>
+      <div><div class="voice-option-name">${v.name}</div><div class="voice-option-id">${v.id.substring(0,8)}... · ${v.desc}</div></div>
     </div>`).join('');
 }
-function toggleVoiceDropdown() {
-  playSound('tap');
-  document.getElementById('voice-dropdown').classList.toggle('open');
-}
+function toggleVoiceDropdown() { playSound('tap'); document.getElementById('voice-dropdown').classList.toggle('open'); }
 function selectVoice(id, name, idx) {
   selectedVoiceId = id;
   document.getElementById('voice-selected-name').textContent = name;
@@ -1512,63 +1121,8 @@ document.addEventListener('click', e => {
   if (dd && !dd.contains(e.target)) dd.classList.remove('open');
 });
 
-// ─── PREFERENCES ─────────────────────────────────
-const PREFS = {
-  sound:    localStorage.getItem('pref_sound')    !== 'false',
-  haptic:   localStorage.getItem('pref_haptic')   !== 'false',
-  motion:   localStorage.getItem('pref_motion')   !== 'false',
-};
-function savePref(key, val) {
-  PREFS[key] = val;
-  localStorage.setItem('pref_' + key, val);
-  if (key === 'motion') document.documentElement.classList.toggle('no-motion', !val);
-}
-function haptic(style) {
-  if (!PREFS.haptic) return;
-  if (!navigator.vibrate) return;
-  const patterns = { light: [10], medium: [20], heavy: [40], success: [10,50,20], error: [30,30,30] };
-  navigator.vibrate(patterns[style] || [10]);
-}
-if (!PREFS.motion) document.documentElement.classList.add('no-motion');
-
-// ─── AUTH STATE ────────────────────────────────────
-let AUTH_TOKEN     = localStorage.getItem('pm_token') || '';
-let REFRESH_TOKEN  = localStorage.getItem('pm_refresh') || '';
-let CURRENT_USER   = JSON.parse(localStorage.getItem('pm_user') || 'null');
-
-function saveAuth(token, refresh, user) {
-  AUTH_TOKEN = token; REFRESH_TOKEN = refresh; CURRENT_USER = user;
-  localStorage.setItem('pm_token', token);
-  localStorage.setItem('pm_refresh', refresh);
-  localStorage.setItem('pm_user', JSON.stringify(user));
-}
-function clearAuth() {
-  AUTH_TOKEN = ''; REFRESH_TOKEN = ''; CURRENT_USER = null;
-  localStorage.removeItem('pm_token');
-  localStorage.removeItem('pm_refresh');
-  localStorage.removeItem('pm_user');
-}
-function isAdmin() { return CURRENT_USER?.role === 'admin' || CURRENT_USER?.role === 'dev'; }
-
-// ─── SECURITY & PROFILE STATE ─────────────────────
-let DEVICE_ID   = localStorage.getItem('pm_device_id') || (() => { const id = crypto.randomUUID(); localStorage.setItem('pm_device_id', id); return id; })();
-let DEVICE_NAME = navigator.userAgent.includes('Android') ? 'Android' : navigator.userAgent.includes('iPhone') ? 'iPhone' : 'Navegador';
-let PIN_STATE   = 'verify'; // 'verify' | 'setup' | 'setup_confirm'
-let PIN_FIRST   = '';
-let PIN_ENTERED = '';
-let PROFILE     = { name: '', avatar: '🐻', color: '#8FA0CA' };
-// EMOJIS come from CONFIG.avatarEmojis
-const COLORS    = ['#8FA0CA','#FF7F7F','#7ECBA1','#FFD166','#C9A8F0','#FF9F7F','#7EC8CB','#F0A8C9','#A8C9F0','#C9F0A8'];
-
-// ── Icon helper ──────────────────────────────────
-// Devuelve <img> si hay ruta configurada, o el SVG por defecto
-function icon(key, defaultSvg, cls='', size='20') {
-  const src = CONFIG.icons[key];
-  if (src) return `<img src="${src}" class="${cls}" style="width:${size}px;height:${size}px;object-fit:contain;" onerror="this.style.display='none'">`;
-  return defaultSvg;
-}
-
-// ── Nav ─────────────────────────────────────────
+// ── Nav ────────────────────────────────────────────────────────────────
+let currentPageId = 'home';
 function goPage(id, btn) {
   playSound('tap');
   currentPageId = id;
@@ -1583,27 +1137,25 @@ function goPage(id, btn) {
   if (id === 'profile') { buildProfileUI(); loadDevices(); loadProfile(); }
 }
 
-// ── Toast ────────────────────────────────────────
+// ── Toast ──────────────────────────────────────────────────────────────
 function toast(msg, type) {
   const t = document.getElementById('toast');
-  const icon = document.getElementById('toast-icon');
   document.getElementById('toast-msg').textContent = msg;
   const icons = {
     success: '<polyline points="20 6 9 17 4 12"/>',
     error:   '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
     info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
   };
-  icon.innerHTML = icons[type] || icons.success;
+  document.getElementById('toast-icon').innerHTML = icons[type] || icons.success;
   t.className = 'toast show' + (type ? ' ' + type : '');
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── Status ────────────────────────────────────────
+// ── Status ─────────────────────────────────────────────────────────────
 async function checkStatus() {
   try {
-    const r = await fetch(BASE + '/health', {headers: hdr()});
-    const d = await r.json();
+    await fetch(BASE + '/health', {headers: hdr()});
     setStatus('listo', false);
   } catch(e) { setStatus('sin conexión', true); }
 }
@@ -1615,12 +1167,12 @@ function setStatus(txt, isErr) {
   label.style.color = isErr ? 'var(--coral)' : '';
 }
 
-// ── Activate ─────────────────────────────────────
+// ── Activate ───────────────────────────────────────────────────────────
 let isHolding = false;
 async function startActivate() {
   if (isHolding) return;
   isHolding = true;
-  playSound('activate');
+  haptic('medium'); playSound('activate');
   const card = document.getElementById('activate-card');
   const wrap = document.getElementById('act-icon-wrap');
   document.getElementById('act-icon-mic').style.display = 'none';
@@ -1639,7 +1191,7 @@ async function startActivate() {
 async function stopActivate() {
   if (!isHolding) return;
   isHolding = false;
-  playSound('send');
+  haptic('light'); playSound('send');
   resetBtn();
   try {
     await fetch(BASE + '/command', {method:'POST', headers:hdr(true), body:JSON.stringify({action:'stop'})});
@@ -1658,31 +1210,39 @@ function resetBtn() {
   setStatus('listo', false);
 }
 
-// ── History ───────────────────────────────────────
+// ── History — FIX: persistencia en localStorage ────────────────────────
 async function loadHistory() {
-  // Show cached history instantly while fetching
+  // Mostrar cache instantáneamente sin borrar el DOM
   const cached = localStorage.getItem('pm_chat_cache');
   if (cached) {
     try {
       const hist = JSON.parse(cached);
-      if (hist.length) renderHistory(hist);
+      if (hist.length) { renderHistory(hist); return; }
     } catch(e) {}
   }
+  // Si no hay cache, hacer fetch
+  await refreshHistory();
+}
+
+async function refreshHistory() {
+  haptic('light'); playSound('tap');
+  const btn = document.getElementById('refresh-btn');
+  if (btn) btn.classList.add('spinning');
   try {
-    const r = await fetch(BASE + '/memory');
+    const r = await fetch(BASE + '/memory', {headers: hdr()});
     const d = await r.json();
     const history = d.history || [];
-    document.getElementById('history-count-badge').textContent = history.length + ' msgs';
     renderHistory(history);
     updateHomePreview(history);
-  } catch(e) { console.error('loadHistory:', e); }
+    // Guardar en cache
+    try { localStorage.setItem('pm_chat_cache', JSON.stringify(history.slice(-50))); } catch(e){}
+  } catch(e) { console.error('refreshHistory:', e); }
+  finally { if (btn) btn.classList.remove('spinning'); }
 }
 
 function renderHistory(history) {
   const el = document.getElementById('history-list');
   if (!el) return;
-  // Cache to localStorage for instant reload
-  try { localStorage.setItem('pm_chat_cache', JSON.stringify(history.slice(-30))); } catch(e){}
   document.getElementById('history-count-badge').textContent = history.length + ' msgs';
   if (!history.length) {
     el.innerHTML = `<div class="empty-state">
@@ -1693,7 +1253,7 @@ function renderHistory(history) {
   el.innerHTML = '<div class="msg-wrap">' + history.map((m, i) => {
     const txt = stripTags(esc(m.content));
     const audioBtn = (m.role === 'assistant' && m.audio_url)
-      ? `<button class="audio-btn" id="abtn-${i}" onclick="playAudio('${m.audio_url}', 'abtn-${i}')">
+      ? `<button class="audio-btn" id="abtn-${i}" onclick="playAudio('${m.audio_url}','abtn-${i}')">
           <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir
          </button>` : '';
     return `<div class="msg-item ${m.role==='user'?'right':''}">
@@ -1705,6 +1265,7 @@ function renderHistory(history) {
   }).join('') + '</div>';
   setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
 }
+
 function updateHomePreview(history) {
   const el = document.getElementById('home-preview');
   const last = history.slice(-2);
@@ -1718,74 +1279,90 @@ function updateHomePreview(history) {
     </div>`).join('');
 }
 
-// ── Memory ────────────────────────────────────────
+// ── Memory — FIX: botón actualizar llama /memory/refresh ──────────────
 async function loadMemory() {
   const sectionsEl = document.getElementById('memory-sections');
-  const el = document.getElementById('memory-content');
   try {
-    const r = await fetch(BASE + '/memory');
+    const r = await fetch(BASE + '/memory', {headers: hdr()});
     const d = await r.json();
-    const summary = d.summary || '';
-    const formatted = d.summary_formatted || [];
     document.getElementById('mem-msgs').textContent = d.history_len || 0;
-    document.getElementById('mem-words').textContent = summary ? summary.split(' ').length : 0;
-
-    if (formatted && formatted.length > 0) {
-      sectionsEl.innerHTML = formatted.map(sec => `
-        <div class="mem-section">
-          <div class="mem-section-header">
-            <span class="mem-section-emoji">${sec.icon || '🧠'}</span>
-            <span class="mem-section-title">${esc(sec.title || '')}</span>
-          </div>
-          ${(sec.items || []).map(item => `<div class="mem-item">${esc(item)}</div>`).join('')}
-        </div>`).join('');
-    } else if (summary) {
-      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-text">${esc(summary)}</div></div>`;
-    } else {
-      sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-empty">Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻</div></div>`;
-    }
+    document.getElementById('mem-words').textContent = d.summary ? d.summary.split(' ').length : 0;
+    renderMemorySections(d.summary_formatted || [], d.summary || '', sectionsEl);
   } catch(e) {
     sectionsEl.innerHTML = '<div class="memory-box"><div class="memory-empty">Error al cargar la memoria.</div></div>';
   }
 }
-function confirmClear() { playSound('tap'); document.getElementById('modal').classList.add('show'); }
-function closeModal()   { document.getElementById('modal').classList.remove('show'); }
-async function clearMemory() {
-  closeModal();
-  requirePin(
-    '¿Borrar memoria?',
-    'Confirma con tu PIN para continuar',
-    async (pin) => {
-      try {
-        const r = await fetch(BASE + '/memory', {
-          method:'DELETE', headers:hdr(true),
-          body: JSON.stringify({pin})
-        });
-        if (r.ok) {
-          playSound('success'); haptic('heavy');
-          toast('Memoria borrada', 'success');
-          loadMemory();
-          closePinConfirm();
-          return true;
-        } else {
-          const d = await r.json();
-          if (d.error === 'PIN incorrecto') return false;
-          toast('Error al borrar', 'error'); closePinConfirm(); return true;
-        }
-      } catch(e) { toast('Error de conexión', 'error'); closePinConfirm(); return true; }
+
+async function refreshMemory() {
+  const sectionsEl = document.getElementById('memory-sections');
+  sectionsEl.innerHTML = '<div class="memory-box"><div class="memory-empty">Generando resumen con el historial actual...</div></div>';
+  playSound('tap'); haptic('light');
+  try {
+    const r = await fetch(BASE + '/memory/refresh', {method:'POST', headers:hdr(true)});
+    if (!r.ok) {
+      const d = await r.json();
+      toast(d.error || 'Sin historial para resumir aún', 'info');
+      await loadMemory();
+      return;
     }
-  );
+    const d = await r.json();
+    document.getElementById('mem-msgs').textContent = d.history_len || 0;
+    document.getElementById('mem-words').textContent = d.summary ? d.summary.split(' ').length : 0;
+    renderMemorySections(d.summary_formatted || [], d.summary || '', sectionsEl);
+    toast('Memoria actualizada', 'success');
+    playSound('success');
+  } catch(e) {
+    toast('Error al actualizar', 'error');
+    await loadMemory();
+  }
 }
 
-// ── Config ────────────────────────────────────────
+function renderMemorySections(formatted, summary, sectionsEl) {
+  if (formatted && formatted.length > 0) {
+    sectionsEl.innerHTML = formatted.map(sec => `
+      <div class="mem-section">
+        <div class="mem-section-header">
+          <span class="mem-section-emoji">${sec.icon || '🧠'}</span>
+          <span class="mem-section-title">${esc(sec.title || '')}</span>
+        </div>
+        ${(sec.items || []).map(item => `<div class="mem-item">${esc(item)}</div>`).join('')}
+      </div>`).join('');
+  } else if (summary) {
+    sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-text">${esc(summary)}</div></div>`;
+  } else {
+    sectionsEl.innerHTML = `<div class="memory-box"><div class="memory-empty">Sin memoria aún. PlushMate aprenderá de ti con cada conversación 🐻</div></div>`;
+  }
+}
+
+function confirmClear() { playSound('tap'); document.getElementById('modal').classList.add('show'); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+async function clearMemory() {
+  closeModal();
+  requirePin('¿Borrar memoria?', 'Confirma con tu PIN para continuar', async (pin) => {
+    try {
+      const r = await fetch(BASE + '/memory', {method:'DELETE', headers:hdr(true), body:JSON.stringify({pin})});
+      if (r.ok) {
+        playSound('success'); haptic('heavy');
+        toast('Memoria borrada', 'success');
+        localStorage.removeItem('pm_chat_cache');
+        loadMemory(); closePinConfirm();
+        return true;
+      } else {
+        const d = await r.json();
+        if (d.error === 'PIN incorrecto') return false;
+        toast('Error al borrar', 'error'); closePinConfirm(); return true;
+      }
+    } catch(e) { toast('Error de conexión', 'error'); closePinConfirm(); return true; }
+  });
+}
+
+// ── Config ─────────────────────────────────────────────────────────────
 async function loadConfig() {
-  // Auth via JWT — no secret needed
   try {
     const r = await fetch(BASE + '/plush/config', {headers:hdr()});
-    if (!r.ok) { if (r.status === 404) return; toast('Error al cargar configuración', 'error'); return; }
+    if (!r.ok) return;
     const d = await r.json();
     document.getElementById('cfg-persona').value = d.persona || '';
-    // set voice
     const vid = d.voice_id || '';
     selectedVoiceId = vid;
     document.getElementById('voice-manual').value = vid;
@@ -1799,7 +1376,6 @@ async function loadConfig() {
       document.getElementById('voice-selected-name').textContent = 'Voice ID personalizado';
       document.getElementById('voice-selected-id').textContent = vid.substring(0,8) + '...';
     }
-    // set model
     const sel = document.getElementById('cfg-model');
     if (d.model) {
       const exists = [...sel.options].some(o => o.value === d.model);
@@ -1810,13 +1386,11 @@ async function loadConfig() {
       const langSel = document.getElementById('cfg-language');
       if (langSel) langSel.value = d.stt_language;
     }
-    const short = (d.model||'').split('/').pop().split(':')[0];
-    document.getElementById('stat-model').textContent = short.length > 9 ? short.substring(0,9)+'…' : short;
   } catch(e) {}
 }
 async function saveConfig() {
   const btn = document.getElementById('save-btn');
-  btn.disabled = true; btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Guardando...';
+  btn.disabled = true;
   try {
     const voice = selectedVoiceId || document.getElementById('voice-manual').value;
     const r = await fetch(BASE + '/plush/config', {method:'POST', headers:hdr(true), body:JSON.stringify({
@@ -1829,35 +1403,17 @@ async function saveConfig() {
     else toast('Error al guardar', 'error');
   } catch(e) { toast('Error de conexión', 'error'); }
   btn.disabled = false;
-  btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar cambios';
 }
-function saveSecret() { /* deprecated */ }
 
-// ── WiFi ──────────────────────────────────────────
-// ── WIFI ─────────────────────────────────────────
+// ── WiFi ───────────────────────────────────────────────────────────────
 const SAVED_NETWORKS_KEY = 'pm_saved_networks';
-
-function getSavedNetworks() {
-  try { return JSON.parse(localStorage.getItem(SAVED_NETWORKS_KEY) || '[]'); } catch(e) { return []; }
-}
+function getSavedNetworks() { try { return JSON.parse(localStorage.getItem(SAVED_NETWORKS_KEY) || '[]'); } catch(e) { return []; } }
 function saveNetwork(ssid, pass) {
   const nets = getSavedNetworks().filter(n => n.ssid !== ssid);
   nets.unshift({ssid, pass, ts: Date.now()});
   localStorage.setItem(SAVED_NETWORKS_KEY, JSON.stringify(nets.slice(0, 10)));
 }
-function signalClass(rssi) {
-  if (rssi >= -60) return 'strong';
-  if (rssi >= -75) return 'medium';
-  return 'weak';
-}
-function signalBars(rssi, cls) {
-  const bars = rssi >= -60 ? 4 : rssi >= -70 ? 3 : rssi >= -80 ? 2 : 1;
-  const barHtml = [1,2,3,4].map(i =>
-    `<span style="${i <= bars ? '' : 'opacity:0.25'}"></span>`
-  ).join('');
-  return `<div class="net-signal ${cls}">${barHtml}</div>`;
-}
-
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function renderSavedNetworks() {
   const nets = getSavedNetworks();
   const wrap = document.getElementById('saved-nets-wrap');
@@ -1866,14 +1422,13 @@ function renderSavedNetworks() {
   if (!nets.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = 'block';
   list.innerHTML = nets.map(n => `
-    <div class="net-item" onclick="selectNetwork('${n.ssid.replace(/'/g,"\'")}','${n.pass.replace(/'/g,"\'")}')">
+    <div class="net-item" onclick="selectNetwork('${n.ssid.replace(/'/g,"\\'")}','${n.pass.replace(/'/g,"\\'")}')">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>
       <span class="net-name">${escHtml(n.ssid)}</span>
       <span class="net-saved-badge">guardada</span>
-      <button onclick="event.stopPropagation();forgetNetwork('${n.ssid.replace(/'/g, String.fromCharCode(39))}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 6px;line-height:1">×</button>
+      <button onclick="event.stopPropagation();forgetNetwork('${n.ssid.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 6px;line-height:1">×</button>
     </div>`).join('');
 }
-function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function selectNetwork(ssid, pass) {
   document.getElementById('wifi-ssid').value = ssid;
   document.getElementById('wifi-pass').value = pass;
@@ -1886,63 +1441,6 @@ function forgetNetwork(ssid) {
   renderSavedNetworks();
   toast('Red eliminada', 'info');
 }
-
-let scanPollInterval = null;
-async function scanNetworks() {
-  const btn = document.getElementById('scan-btn-txt');
-  const resultsWrap = document.getElementById('scan-results');
-  btn.textContent = 'Escaneando...';
-  haptic('medium');
-  try {
-    const r = await fetch(BASE + '/networks/scan', {method:'POST', headers:hdr(true)});
-    if (!r.ok) { toast('Error al iniciar scan', 'error'); btn.textContent = 'Buscar redes del peluche'; return; }
-    toast('Buscando redes... (~5s)', 'info');
-    // Poll for results
-    let attempts = 0;
-    clearInterval(scanPollInterval);
-    scanPollInterval = setInterval(async () => {
-      attempts++;
-      if (attempts > 12) {
-        clearInterval(scanPollInterval);
-        btn.textContent = 'Buscar redes del peluche';
-        toast('Sin respuesta del peluche — ¿está conectado?', 'error');
-        return;
-      }
-      try {
-        const rr = await fetch(BASE + '/networks/results', {headers: hdr()});
-        const d = await rr.json();
-        if (d.status === 'ready' && d.networks?.length) {
-          clearInterval(scanPollInterval);
-          btn.textContent = 'Buscar redes del peluche';
-          renderScanResults(d.networks);
-        }
-      } catch(e) {}
-    }, 1500);
-  } catch(e) {
-    toast('Error de conexión', 'error');
-    btn.textContent = 'Buscar redes del peluche';
-  }
-}
-
-function renderScanResults(networks) {
-  const wrap = document.getElementById('scan-results');
-  const list = document.getElementById('scan-list');
-  if (!wrap || !list) return;
-  wrap.style.display = 'block';
-  haptic('success'); playSound('success');
-  // Sort by signal strength
-  networks.sort((a,b) => b.rssi - a.rssi);
-  list.innerHTML = networks.map(n => {
-    const cls = signalClass(n.rssi);
-    return `<div class="net-item" onclick="selectNetwork('${n.ssid.replace(/'/g,"\'")}','')">
-      ${signalBars(n.rssi, cls)}
-      <span class="net-name">${escHtml(n.ssid)}</span>
-      ${n.secure ? '<svg class="net-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' : ''}
-    </div>`;
-  }).join('');
-  toast(networks.length + ' redes encontradas', 'success');
-}
-
 async function sendWifi() {
   const ssid = document.getElementById('wifi-ssid').value.trim();
   const pass = document.getElementById('wifi-pass').value;
@@ -1953,24 +1451,14 @@ async function sendWifi() {
   try {
     const r = await fetch(BASE + '/wifi', {method:'POST', headers:hdr(true), body:JSON.stringify({ssid, password:pass})});
     if (r.ok) {
-      playSound('success');
-      saveNetwork(ssid, pass);
-      renderSavedNetworks();
-      status.textContent = '✓ Comando enviado — el peluche intentará conectarse';
-      // Warning: we can't confirm connection, just that command was sent
+      playSound('success'); saveNetwork(ssid, pass); renderSavedNetworks();
+      status.textContent = '✓ Comando enviado';
       toast('Comando enviado · Verifica el LED del peluche', 'info');
       document.getElementById('wifi-ssid').value = '';
       document.getElementById('wifi-pass').value = '';
-      // If plush fails to connect, it will activate AP "PlushMate Setup"
-      setTimeout(() => {
-        status.textContent = '¿No conectó? Usa la pestaña "Sin internet" para configurar via hotspot';
-        status.style.color = 'var(--muted)';
-      }, 5000);
     } else { status.textContent = 'Error al enviar'; }
   } catch(e) { status.textContent = 'Error de conexión'; }
 }
-
-// ── WIFI MODE TOGGLE ─────────────────────────────
 function switchWifiMode(mode) {
   haptic('light'); playSound('tap');
   const connected = document.getElementById('wifi-mode-connected');
@@ -1978,69 +1466,43 @@ function switchWifiMode(mode) {
   const tabC = document.getElementById('tab-connected');
   const tabS = document.getElementById('tab-setup');
   if (mode === 'connected') {
-    connected.style.display = 'block';
-    setup.style.display = 'none';
-    tabC.classList.add('active');
-    tabS.classList.remove('active');
+    connected.style.display = 'block'; setup.style.display = 'none';
+    tabC.classList.add('active'); tabS.classList.remove('active');
   } else {
-    connected.style.display = 'none';
-    setup.style.display = 'block';
-    tabC.classList.remove('active');
-    tabS.classList.add('active');
+    connected.style.display = 'none'; setup.style.display = 'block';
+    tabC.classList.remove('active'); tabS.classList.add('active');
   }
 }
-
-function openSetupPage() {
-  haptic('medium');
-  window.open('http://192.168.4.1', '_blank');
-  toast('Abre en el navegador mientras estés en PlushMate Setup', 'info');
-}
-
+function openSetupPage() { haptic('medium'); window.open('http://192.168.4.1', '_blank'); }
 let _hotspotCooldown = false;
 async function activateHotspot() {
-  if (_hotspotCooldown) { toast('Espera unos segundos antes de intentar de nuevo', 'info'); return; }
+  if (_hotspotCooldown) { toast('Espera unos segundos', 'info'); return; }
   const btn = document.getElementById('hotspot-btn-txt');
-  const orig = btn.textContent;
   btn.textContent = 'Activando...';
-  haptic('medium');
-  _hotspotCooldown = true;
+  haptic('medium'); _hotspotCooldown = true;
   try {
-    const r = await fetch(BASE + '/command', {
-      method: 'POST', headers: hdr(true),
-      body: JSON.stringify({action: 'ap_mode'})
-    });
+    const r = await fetch(BASE + '/command', {method:'POST', headers:hdr(true), body:JSON.stringify({action:'ap_mode'})});
     if (r.ok) {
       playSound('success'); haptic('success');
       btn.textContent = '✓ El peluche reiniciará en modo hotspot...';
-      toast('Espera ~5s y busca "PlushMate Setup" en tu WiFi', 'success');
-      setTimeout(() => { btn.textContent = orig; _hotspotCooldown = false; }, 15000);
-    } else {
-      toast('Error — ¿el peluche está conectado a internet?', 'error');
-      btn.textContent = orig;
-      _hotspotCooldown = false;
-    }
-  } catch(e) {
-    toast('Error de conexión', 'error');
-    btn.textContent = orig;
-    _hotspotCooldown = false;
-  }
+      toast('Espera ~5s y busca "PlushMate Setup"', 'success');
+      setTimeout(() => { btn.textContent = 'Activar hotspot del peluche'; _hotspotCooldown = false; }, 15000);
+    } else { toast('Error — ¿el peluche está conectado?', 'error'); btn.textContent = 'Activar hotspot del peluche'; _hotspotCooldown = false; }
+  } catch(e) { toast('Error de conexión', 'error'); btn.textContent = 'Activar hotspot del peluche'; _hotspotCooldown = false; }
 }
+function initWifiSection() { renderSavedNetworks(); }
 
-// Init saved networks when settings loads
-function initWifiSection() {
-  renderSavedNetworks();
-}
-
-// ── Helpers ───────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────
 function hdr(ct) {
   const h = {};
   if (AUTH_TOKEN) h['Authorization'] = 'Bearer ' + AUTH_TOKEN;
   if (ct) h['Content-Type'] = 'application/json';
   return h;
 }
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function stripTags(text) { return String(text).replace(/\[.*?\]/g,'').replace(/\s+/g,' ').trim(); }
 
-// ── CUSTOM CONFIRM ───────────────────────────────
+// ── Custom confirm ─────────────────────────────────────────────────────
 let _confirmResolve = null;
 function customConfirm(title, desc, okText='Confirmar', okColor='var(--coral)') {
   return new Promise(resolve => {
@@ -2058,27 +1520,17 @@ function resolveConfirm(val) {
   if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
 }
 
-// ── STRIP ELEVENLABS TAGS ────────────────────────
-function stripTags(text) {
-  return text.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
-}
-
-// ── AUDIO PLAYBACK ────────────────────────────────
+// ── Audio playback ─────────────────────────────────────────────────────
 let currentAudio = null;
 let currentAudioBtn = null;
 function playAudio(url, btnId) {
-  haptic('light');
-  playSound('tap');
+  haptic('light'); playSound('tap');
   const btn = document.getElementById(btnId);
-  // If same button — stop
   if (currentAudio && currentAudioBtn === btnId) {
-    currentAudio.pause();
-    currentAudio = null;
-    currentAudioBtn = null;
+    currentAudio.pause(); currentAudio = null; currentAudioBtn = null;
     if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
     return;
   }
-  // Stop any playing audio
   if (currentAudio) {
     currentAudio.pause();
     const prev = document.getElementById(currentAudioBtn);
@@ -2089,8 +1541,7 @@ function playAudio(url, btnId) {
   if (btn) { btn.classList.add('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="10 15 10 9"/><polyline points="14 15 14 9"/></svg> Reproduciendo...'; }
   currentAudio.play();
   currentAudio.onended = () => {
-    currentAudio = null; currentAudioBtn = null;
-    haptic('light');
+    currentAudio = null; currentAudioBtn = null; haptic('light');
     if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Reproducir'; }
   };
   currentAudio.onerror = () => {
@@ -2100,12 +1551,11 @@ function playAudio(url, btnId) {
   };
 }
 
-// ── PIN CONFIRM (para borrar memoria) ─────────────
+// ── PIN confirm (para borrar memoria) ──────────────────────────────────
 let pinConfirmCb = null;
 let pinMiniEntered = '';
 function requirePin(title, desc, callback) {
-  pinConfirmCb = callback;
-  pinMiniEntered = '';
+  pinConfirmCb = callback; pinMiniEntered = '';
   document.getElementById('pin-confirm-title').textContent = title;
   document.getElementById('pin-confirm-desc').textContent = desc;
   document.getElementById('pin-confirm-error').textContent = '';
@@ -2148,14 +1598,14 @@ async function submitPinMini() {
   }
 }
 
-// ── CHAT TEXT & VOICE ────────────────────────────
+// ── Chat text & voice ──────────────────────────────────────────────────
 let chatSpeechRecognition = null;
 let chatVoiceActive = false;
 
 function toggleChatVoice() {
   if (chatVoiceActive) { stopChatVoice(); return; }
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { toast('Reconocimiento de voz no disponible en este navegador', 'error'); return; }
+  if (!SpeechRec) { toast('Reconocimiento de voz no disponible', 'error'); return; }
   haptic('medium');
   chatSpeechRecognition = new SpeechRec();
   chatSpeechRecognition.lang = document.getElementById('cfg-language')?.value || 'es-ES';
@@ -2167,15 +1617,14 @@ function toggleChatVoice() {
     chatVoiceActive = true;
     btn.classList.add('recording');
     icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="3" fill="white"/>';
-    playSound('activate');
-    toast('Escuchando...', 'info');
+    playSound('activate'); toast('Escuchando...', 'info');
   };
   chatSpeechRecognition.onresult = (e) => {
     const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
     document.getElementById('chat-input').value = transcript;
   };
   chatSpeechRecognition.onend = () => { stopChatVoice(); };
-  chatSpeechRecognition.onerror = () => { stopChatVoice(); toast('Error en reconocimiento de voz', 'error'); };
+  chatSpeechRecognition.onerror = () => { stopChatVoice(); toast('Error en reconocimiento', 'error'); };
   chatSpeechRecognition.start();
 }
 function stopChatVoice() {
@@ -2187,6 +1636,7 @@ function stopChatVoice() {
   icon.innerHTML = '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/>';
 }
 
+// FIX: sendTextMessage actualiza cache local inmediatamente
 async function sendTextMessage(sendToPlush = false) {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
@@ -2195,9 +1645,7 @@ async function sendTextMessage(sendToPlush = false) {
   input.value = '';
   stopChatVoice();
 
-  // Add user bubble immediately
   appendChatBubble('user', text, null);
-  // Show thinking indicator
   const thinkId = 'think-' + Date.now();
   appendThinking(thinkId);
 
@@ -2213,26 +1661,25 @@ async function sendTextMessage(sendToPlush = false) {
     appendChatBubble('assistant', d.response, d.audio_url, msgId);
     if (sendToPlush) toast('Enviado al peluche 🐻', 'success');
     else if (d.audio_url) { playSound('success'); playAudio(d.audio_url, 'abtn-' + msgId); }
-    // badge updated on next loadHistory
+    // Sincronizar cache con el servidor después de enviar
+    saveChatCache();
   } catch(e) {
     removeThinking(thinkId);
     toast('Error de conexión', 'error');
   }
 }
 
+// FIX: appendChatBubble no borra el DOM existente y actualiza cache
 function appendChatBubble(role, text, audioUrl, id) {
   const list = document.getElementById('history-list');
-  // Remove empty state if present
   const empty = list.querySelector('.empty-state');
   if (empty) empty.remove();
-  // Ensure msg-wrap exists
   let wrap = list.querySelector('.msg-wrap');
   if (!wrap) { wrap = document.createElement('div'); wrap.className = 'msg-wrap'; list.appendChild(wrap); }
   const btnId = id ? 'abtn-' + id : 'abtn-' + Date.now();
   const audioBtn = (role === 'assistant' && audioUrl)
-    ? `<button class="audio-btn" id="${btnId}" onclick="playAudio('${audioUrl}', '${btnId}')">
-        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Reproducir
+    ? `<button class="audio-btn" id="${btnId}" onclick="playAudio('${audioUrl}','${btnId}')">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>Reproducir
        </button>` : '';
   const div = document.createElement('div');
   div.className = 'msg-item' + (role === 'user' ? ' right' : '');
@@ -2243,6 +1690,23 @@ function appendChatBubble(role, text, audioUrl, id) {
     </div>`;
   wrap.appendChild(div);
   list.scrollTop = list.scrollHeight;
+  // Actualizar badge
+  const msgs = wrap.querySelectorAll('.msg-item');
+  document.getElementById('history-count-badge').textContent = msgs.length + ' msgs';
+}
+
+// Guarda el estado actual del DOM de chat en localStorage
+function saveChatCache() {
+  try {
+    const wrap = document.querySelector('#history-list .msg-wrap');
+    if (!wrap) return;
+    const msgs = [...wrap.querySelectorAll('.msg-item')].map(el => ({
+      role: el.classList.contains('right') ? 'user' : 'assistant',
+      content: el.querySelector('.bubble')?.innerText?.replace(/Reproducir$/, '').trim() || '',
+      audio_url: el.querySelector('.audio-btn')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || null
+    }));
+    localStorage.setItem('pm_chat_cache', JSON.stringify(msgs.slice(-50)));
+  } catch(e) {}
 }
 
 function appendThinking(id) {
@@ -2261,110 +1725,42 @@ function removeThinking(id) {
   if (el) el.remove();
 }
 
-// ── SWIPE BETWEEN PAGES ───────────────────────────
-const PAGE_ORDER = ['home', 'history', 'memory', 'profile', 'settings'];
+// ── Swipe ──────────────────────────────────────────────────────────────
+const PAGE_ORDER = ['home','history','memory','profile','settings'];
 let swipeStartX = 0, swipeStartY = 0, swipeDx = 0;
-let currentPageId = 'home';
-
-function getCurrentPageIndex() { return PAGE_ORDER.indexOf(currentPageId); }
-
-document.addEventListener('touchstart', e => {
-  swipeStartX = e.touches[0].clientX;
-  swipeStartY = e.touches[0].clientY;
-  swipeDx = 0;
-}, {passive: true});
-
-document.addEventListener('touchmove', e => {
-  if (!e.touches.length) return;
-  swipeDx = e.touches[0].clientX - swipeStartX;
-  const dy = Math.abs(e.touches[0].clientY - swipeStartY);
-  if (Math.abs(swipeDx) > dy * 1.5 && Math.abs(swipeDx) > 10) {
-    // Horizontal swipe — don't scroll vertically
-  }
-}, {passive: true});
-
+document.addEventListener('touchstart', e => { swipeStartX = e.touches[0].clientX; swipeStartY = e.touches[0].clientY; swipeDx = 0; }, {passive:true});
+document.addEventListener('touchmove', e => { if (!e.touches.length) return; swipeDx = e.touches[0].clientX - swipeStartX; }, {passive:true});
 document.addEventListener('touchend', e => {
   const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
   const dx = swipeDx;
-  if (Math.abs(dx) < 60 || dy > Math.abs(dx)) return; // Not a horizontal swipe
-  // Don't swipe if touching input or slider
+  if (Math.abs(dx) < 60 || dy > Math.abs(dx)) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-  const idx = getCurrentPageIndex();
-  if (dx < -60 && idx < PAGE_ORDER.length - 1) {
-    // Swipe left → next page
-    haptic('light');
-    goPage(PAGE_ORDER[idx + 1], document.getElementById('nav-' + PAGE_ORDER[idx + 1]));
-  } else if (dx > 60 && idx > 0) {
-    // Swipe right → prev page
-    haptic('light');
-    goPage(PAGE_ORDER[idx - 1], document.getElementById('nav-' + PAGE_ORDER[idx - 1]));
-  }
-}, {passive: true});
-
-// Close subpages/modals with swipe down
+  const idx = PAGE_ORDER.indexOf(currentPageId);
+  if (dx < -60 && idx < PAGE_ORDER.length - 1) { haptic('light'); goPage(PAGE_ORDER[idx+1], document.getElementById('nav-'+PAGE_ORDER[idx+1])); }
+  else if (dx > 60 && idx > 0) { haptic('light'); goPage(PAGE_ORDER[idx-1], document.getElementById('nav-'+PAGE_ORDER[idx-1])); }
+}, {passive:true});
 document.addEventListener('touchend', e => {
   const dy = e.changedTouches[0].clientY - swipeStartY;
   if (dy < 80) return;
-  // Check if we're in a subpage
   const openSubpages = document.querySelectorAll('.subpage.open');
   if (openSubpages.length) { haptic('light'); openSubpages.forEach(s => s.classList.remove('open')); return; }
-  // Check modal
   const modal = document.getElementById('modal');
   if (modal?.classList.contains('show')) { closeModal(); return; }
   const pinModal = document.getElementById('pin-confirm-overlay');
   if (pinModal?.classList.contains('show')) { closePinConfirm(); return; }
-}, {passive: true});
+}, {passive:true});
 
-// ── REFRESH HISTORY ──────────────────────────────
-async function refreshHistory() {
-  haptic('light');
-  playSound('tap');
-  const btn = document.getElementById('refresh-btn');
-  if (btn) btn.classList.add('spinning');
-  await loadHistory();
-  setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 600);
-}
-
-// ── AP MODE (captive portal) ──────────────────────
-async function activateAPMode() {
-  haptic('medium');
-  playSound('activate');
-  try {
-    await fetch(BASE + '/command', {
-      method: 'POST', headers: hdr(true),
-      body: JSON.stringify({action: 'ap_mode'})
-    });
-    toast('Activando hotspot... espera ~3s', 'info');
-    // Show instructions
-    setTimeout(() => {
-      toast('Conéctate a "PlushMate Setup" en WiFi', 'info');
-    }, 3500);
-  } catch(e) {
-    toast('Error al conectar con el servidor', 'error');
-  }
-}
-
-// ── VOLUME ────────────────────────────────────────
+// ── Volume ─────────────────────────────────────────────────────────────
 let currentVolume = parseFloat(localStorage.getItem('pm_volume') || '0.7');
-
 function initVolume() {
   const slider = document.getElementById('vol-slider');
-  if (slider) {
-    slider.value = Math.round(currentVolume * 100);
-    document.getElementById('vol-pct').textContent = Math.round(currentVolume * 100) + '%';
-  }
+  if (slider) { slider.value = Math.round(currentVolume * 100); document.getElementById('vol-pct').textContent = Math.round(currentVolume * 100) + '%'; }
 }
-function onVolSlider(val) {
-  currentVolume = parseInt(val) / 100;
-  document.getElementById('vol-pct').textContent = val + '%';
-}
+function onVolSlider(val) { currentVolume = parseInt(val) / 100; document.getElementById('vol-pct').textContent = val + '%'; }
 function sendVolume() {
-  haptic('light');
-  localStorage.setItem('pm_volume', currentVolume);
-  fetch(BASE + '/command', {
-    method: 'POST', headers: hdr(true),
-    body: JSON.stringify({action: 'volume_set', value: currentVolume})
-  }).then(() => toast('Volumen: ' + Math.round(currentVolume*100) + '%', 'info'))
+  haptic('light'); localStorage.setItem('pm_volume', currentVolume);
+  fetch(BASE + '/command', {method:'POST', headers:hdr(true), body:JSON.stringify({action:'volume_set', value:currentVolume})})
+    .then(() => toast('Volumen: ' + Math.round(currentVolume*100) + '%', 'info'))
     .catch(() => toast('Error al ajustar volumen', 'error'));
 }
 function adjustVolume(delta) {
@@ -2376,43 +1772,27 @@ function adjustVolume(delta) {
   sendVolume();
 }
 
-// ── ACCORDION ────────────────────────────────────
-function toggleAccordion(id) {
-  haptic('light');
-  playSound('tap');
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-}
-
-// ── SUB-PAGES ─────────────────────────────────────
+// ── Accordion & subpages ───────────────────────────────────────────────
+function toggleAccordion(id) { haptic('light'); playSound('tap'); document.getElementById(id).classList.toggle('open'); }
 function openSubpage(id) {
-  haptic('light');
-  playSound('tap');
+  haptic('light'); playSound('tap');
   document.getElementById(id).classList.add('open');
-  // init toggles
   setTimeout(() => {
     initVolume();
-  ['sound','haptic','motion'].forEach(k => {
+    ['sound','haptic','motion'].forEach(k => {
       const t = document.getElementById('tog-' + k);
       if (t) t.classList.toggle('on', PREFS[k]);
     });
   }, 50);
 }
-function closeSubpage(id) {
-  haptic('light');
-  document.getElementById(id).classList.remove('open');
-}
-
-// ── PREFERENCE TOGGLES ────────────────────────────
+function closeSubpage(id) { haptic('light'); document.getElementById(id).classList.remove('open'); }
 function togglePref(key, btnId) {
   const val = !PREFS[key];
   savePref(key, val);
   const btn = document.getElementById(btnId);
   if (btn) btn.classList.toggle('on', val);
-  haptic('medium');
-  playSound(val ? 'success' : 'tap');
+  haptic('medium'); playSound(val ? 'success' : 'tap');
 }
-// Apply saved toggle states on load
 window.addEventListener('DOMContentLoaded', () => {
   ['sound','haptic','motion'].forEach(k => {
     const t = document.getElementById('tog-' + k);
@@ -2420,112 +1800,99 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ── HAPTIC on key interactions ────────────────────
-// Pin keys already call playSound('tap') — add haptic there
-const _origPinKey = pinKey;
-// patch playSound to also vibrate
-const _origPlaySound = playSound;
-window.playSound = function(key) {
-  _origPlaySound(key);
-};
-
-// ── HAPTIC PATCHES ────────────────────────────────
-// Wrap startActivate/stopActivate with haptic
-const _origStart = startActivate;
-window.startActivate = async function() {
-  haptic('medium');
-  return _origStart.apply(this, arguments);
-};
-const _origStop = stopActivate;
-window.stopActivate = async function() {
-  haptic('light');
-  return _origStop.apply(this, arguments);
-};
-// Pin key haptic
-const _origPinKeyFn = window.pinKey;
-window.pinKey = function(k) {
-  haptic('light');
-  _origPinKeyFn(k);
-};
-// Pin del haptic
-const _origPinDel = window.pinDel;
-window.pinDel = function() {
-  haptic('light');
-  _origPinDel();
-};
-// Pin error haptic
-const _origPinError = window.pinError;
-window.pinError = function(msg) {
-  haptic('error');
-  _origPinError(msg);
-};
-// Save/delete haptic
-const _origSaveConfig = window.saveConfig;
-window.saveConfig = async function() {
-  haptic('medium');
-  return _origSaveConfig.apply(this, arguments);
-};
-const _origSaveProfile = window.saveProfile;
-window.saveProfile = async function() {
-  haptic('medium');
-  return _origSaveProfile.apply(this, arguments);
-};
-const _origClearMemory = window.clearMemory;
-window.clearMemory = async function() {
-  haptic('heavy');
-  return _origClearMemory.apply(this, arguments);
-};
-
-// prevent default on touch activate
-document.getElementById('activate-card').addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
-
-// ── PIN FLOW ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════
+// AUTH FLOW — FIX: orden correcto PIN → pairing, splash siempre cierra
+// ══════════════════════════════════════════════════════════════════════
 async function initAuth() {
-  if (!AUTH_TOKEN) { showAuthOverlay(); return; }
+  // Si ya verificó el PIN en esta sesión, ir directo a la app
+  if (sessionStorage.getItem('pm_pin_verified')) {
+    showApp();
+    return;
+  }
+
+  // Sin token → mostrar login
+  if (!AUTH_TOKEN) {
+    showAuthOverlay();
+    return;
+  }
+
+  // Verificar token con el servidor
   try {
     const r = await fetch(BASE + '/auth/me', {headers: hdr()});
+
     if (r.status === 401) {
+      // Token expirado → intentar refresh
       if (REFRESH_TOKEN) {
-        const rr = await fetch(BASE + '/auth/refresh', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({refresh_token: REFRESH_TOKEN})
-        });
-        if (rr.ok) {
-          const rd = await rr.json();
-          saveAuth(rd.token, rd.refresh_token, CURRENT_USER);
-          await initAuth(); return;
-        }
+        try {
+          const rr = await fetch(BASE + '/auth/refresh', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({refresh_token: REFRESH_TOKEN})
+          });
+          if (rr.ok) {
+            const rd = await rr.json();
+            saveAuth(rd.token, rd.refresh_token, CURRENT_USER);
+            await initAuth();
+            return;
+          }
+        } catch(e) {}
       }
-      clearAuth(); showAuthOverlay(); return;
+      clearAuth();
+      showAuthOverlay();
+      return;
     }
+
     if (r.ok) {
       const user = await r.json();
       CURRENT_USER = user;
       localStorage.setItem('pm_user', JSON.stringify(user));
-      if (!user.plush) { showPairingScreen(); return; }
-      // Check PIN after JWT is valid
+
+      // FIX: verificar PIN PRIMERO, independientemente de si tiene plush
       await checkPinRequired();
-    } else { showAuthOverlay(); }
+    } else {
+      showAuthOverlay();
+    }
   } catch(e) {
-    if (CURRENT_USER) showApp();
-    else showAuthOverlay();
+    // Sin conexión — usar datos locales si existen
+    if (CURRENT_USER) {
+      await checkPinRequired();
+    } else {
+      showAuthOverlay();
+    }
   }
 }
+
 async function checkPinRequired() {
-  // If already verified this session, skip
-  if (sessionStorage.getItem('pm_pin_verified')) { showApp(); return; }
   try {
     const r = await fetch(BASE + '/auth/status');
     const d = await r.json();
     if (d.has_pin) {
       showPinVerify();
     } else {
+      // Sin PIN → ir a la app (o al pairing si no tiene plush)
       showApp();
     }
   } catch(e) {
-    // If can't reach server, skip PIN
+    // Sin conexión → saltar PIN
     showApp();
   }
+}
+
+// FIX: showApp es síncrono, sin fetch extra que pueda colgarse
+// El pairing se muestra aquí si el usuario no tiene plush
+function showApp() {
+  sessionStorage.setItem('pm_pin_verified', '1');
+  document.getElementById('pin-screen').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'none';
+
+  // Mostrar pairing si no tiene plush y no lo ha saltado antes
+  if (CURRENT_USER && !CURRENT_USER.plush && !localStorage.getItem('pm_pairing_skipped')) {
+    showPairingScreen();
+    return;
+  }
+
+  // App lista
+  loadProfile();
+  if (CURRENT_USER) applyUserProfile(CURRENT_USER);
 }
 
 function showPinVerify() {
@@ -2542,6 +1909,7 @@ function showPinVerify() {
   const ps = document.getElementById('pin-sub');
   if (ps) ps.textContent = 'Ingresa tu PIN para continuar';
   document.getElementById('pin-screen').style.display = 'flex';
+  document.getElementById('auth-overlay').style.display = 'none';
   updatePinDots();
 }
 
@@ -2559,6 +1927,7 @@ function showPairingScreen() {
   document.getElementById('auth-overlay').style.display = 'flex';
   showAuthScreen('auth-pairing');
 }
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
@@ -2567,20 +1936,20 @@ async function doLogin() {
   if (!email || !pass) { err.textContent = 'Completa todos los campos'; return; }
   btn.disabled = true; btn.textContent = 'Entrando...';
   try {
-    const r = await fetch(BASE + '/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: pass})
-    });
+    const r = await fetch(BASE + '/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pass})});
     const d = await r.json();
     if (!r.ok) { err.textContent = d.error || 'Error al iniciar sesión'; return; }
     saveAuth(d.token, d.refresh_token, d.user);
     haptic('success'); playSound('success');
     document.getElementById('auth-overlay').style.display = 'none';
-    if (!d.user.plush) { showPairingScreen(); return; }
+    if (!d.user.plush && !localStorage.getItem('pm_pairing_skipped')) {
+      showPairingScreen(); return;
+    }
     showApp(); applyUserProfile(d.user);
   } catch(e) { err.textContent = 'Error de conexión'; }
   finally { btn.disabled = false; btn.textContent = 'Entrar'; }
 }
+
 async function doSignup() {
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
@@ -2590,16 +1959,10 @@ async function doSignup() {
   if (!email || !pass) { err.textContent = 'Completa email y contraseña'; return; }
   btn.disabled = true; btn.textContent = 'Creando cuenta...';
   try {
-    const r = await fetch(BASE + '/auth/signup', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: pass, name})
-    });
+    const r = await fetch(BASE + '/auth/signup', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pass, name})});
     const d = await r.json();
     if (!r.ok) { err.textContent = d.error || 'Error al registrar'; return; }
-    const lr = await fetch(BASE + '/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: pass})
-    });
+    const lr = await fetch(BASE + '/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pass})});
     const ld = await lr.json();
     if (lr.ok) {
       saveAuth(ld.token, ld.refresh_token, ld.user);
@@ -2610,6 +1973,7 @@ async function doSignup() {
   } catch(e) { err.textContent = 'Error de conexión'; }
   finally { btn.disabled = false; btn.textContent = 'Crear cuenta'; }
 }
+
 async function doPairing() {
   const token = document.getElementById('pair-token-input').value.trim().toUpperCase();
   const err = document.getElementById('pair-error');
@@ -2617,72 +1981,57 @@ async function doPairing() {
   if (!token) { err.textContent = 'Ingresa el código del peluche'; return; }
   btn.disabled = true; btn.textContent = 'Vinculando...';
   try {
-    const r = await fetch(BASE + '/plush/pair', {
-      method:'POST', headers:hdr(true), body: JSON.stringify({plush_token: token})
-    });
+    const r = await fetch(BASE + '/plush/pair', {method:'POST', headers:hdr(true), body: JSON.stringify({plush_token: token})});
     const d = await r.json();
     if (!r.ok) { err.textContent = d.error || 'Error al vincular'; return; }
     haptic('success'); playSound('success');
     const me = await fetch(BASE + '/auth/me', {headers: hdr()});
     if (me.ok) { CURRENT_USER = await me.json(); localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER)); }
     toast('🐻 ¡' + (d.plush?.name || 'PlushMate') + ' vinculado!', 'success');
+    localStorage.removeItem('pm_pairing_skipped');
     document.getElementById('auth-overlay').style.display = 'none';
     showApp();
     setTimeout(() => askSetupPin(), 600);
   } catch(e) { err.textContent = 'Error de conexión'; }
   finally { btn.disabled = false; btn.textContent = 'Vincular peluche'; }
 }
+
+// FIX: skipPairing guarda el flag y va directo a la app sin fetch
 function skipPairing() {
+  localStorage.setItem('pm_pairing_skipped', '1');
   document.getElementById('auth-overlay').style.display = 'none';
-  showApp();
-  // Only ask PIN on first time (new account)
-  if (!localStorage.getItem('pm_pin_asked')) {
-    setTimeout(() => askSetupPin(), 500);
-  }
+  sessionStorage.setItem('pm_pin_verified', '1');
+  loadProfile();
+  if (CURRENT_USER) applyUserProfile(CURRENT_USER);
 }
+
 async function askSetupPin(force=false) {
   if (!force && localStorage.getItem('pm_pin_asked')) return;
   localStorage.setItem('pm_pin_asked', '1');
   const want = await customConfirm('PIN de seguridad', '¿Quieres crear un PIN para proteger el acceso a la app?', 'Crear PIN', 'var(--brand)');
   if (want) openSubpage('subpage-pin-setup');
 }
-// QR Scanner — usa BarcodeDetector API nativo (Chrome/Android sin librería externa)
+
+// ── QR Scanner ─────────────────────────────────────────────────────────
 let qrScanAnimFrame = null;
 let qrDetector = null;
-
 async function startQRScan() {
   const wrap = document.getElementById('qr-preview-wrap');
   const video = document.getElementById('qr-video');
   const btn = document.getElementById('qr-scan-btn-txt');
-
-  // Check BarcodeDetector API (Chrome 83+, Android Chrome, Edge)
-  if (!('BarcodeDetector' in window)) {
-    toast('Escáner no disponible en este navegador — usa el código manual', 'error');
-    return;
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    toast('Cámara no disponible', 'error');
-    return;
-  }
+  if (!('BarcodeDetector' in window)) { toast('Escáner no disponible — usa el código manual', 'error'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { toast('Cámara no disponible', 'error'); return; }
   try {
     qrDetector = new BarcodeDetector({ formats: ['qr_code'] });
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal:'environment'}}});
     video.srcObject = stream;
     video.setAttribute('playsinline', true);
     await new Promise(res => { video.onloadedmetadata = res; });
     await video.play();
-    wrap.style.display = 'block';
-    btn.textContent = 'Escaneando...';
-    haptic('light');
-    scanFrame();
-  } catch(e) {
-    console.error('QR error:', e);
-    toast('No se pudo acceder a la cámara', 'error');
-  }
+    wrap.style.display = 'block'; btn.textContent = 'Escaneando...';
+    haptic('light'); scanFrame();
+  } catch(e) { toast('No se pudo acceder a la cámara', 'error'); }
 }
-
 async function scanFrame() {
   const video = document.getElementById('qr-video');
   if (!video?.srcObject || !qrDetector) return;
@@ -2691,91 +2040,51 @@ async function scanFrame() {
       const codes = await qrDetector.detect(video);
       if (codes.length > 0) {
         const token = codes[0].rawValue.trim().toUpperCase();
-        haptic('success'); playSound('success');
-        stopQRScan();
+        haptic('success'); playSound('success'); stopQRScan();
         document.getElementById('pair-token-input').value = token;
         toast('✓ QR detectado: ' + token, 'success');
         return;
       }
-    } catch(e) { /* continuar escaneando */ }
+    } catch(e) {}
   }
   qrScanAnimFrame = requestAnimationFrame(scanFrame);
 }
-
-// Voice input in plush world
-let _pwVoiceRec = null;
-function pwToggleVoice() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    toast('Micrófono no disponible en este navegador', 'error'); return;
-  }
-  if (_pwVoiceRec) { _pwVoiceRec.stop(); _pwVoiceRec = null;
-    document.getElementById('pw-voice-btn').style.color = '';
-    return;
-  }
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  _pwVoiceRec = new SR();
-  _pwVoiceRec.lang = 'es-MX';
-  _pwVoiceRec.continuous = false;
-  _pwVoiceRec.interimResults = false;
-  _pwVoiceRec.onresult = (e) => {
-    const txt = e.results[0][0].transcript;
-    document.getElementById('pw-text-input').value = txt;
-    pwSendText();
-  };
-  _pwVoiceRec.onend = () => { _pwVoiceRec = null; document.getElementById('pw-voice-btn').style.color = ''; };
-  _pwVoiceRec.start();
-  document.getElementById('pw-voice-btn').style.color = 'var(--coral)';
-  haptic('medium');
-}
-
 function stopQRScan() {
   if (qrScanAnimFrame) { cancelAnimationFrame(qrScanAnimFrame); qrScanAnimFrame = null; }
   const video = document.getElementById('qr-video');
-  const wrap  = document.getElementById('qr-preview-wrap');
-  const btn   = document.getElementById('qr-scan-btn-txt');
+  const wrap = document.getElementById('qr-preview-wrap');
+  const btn = document.getElementById('qr-scan-btn-txt');
   if (video?.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
   if (wrap) wrap.style.display = 'none';
   if (btn) btn.textContent = 'Escanear QR';
   qrDetector = null;
 }
+
+function doLogout() {
+  clearAuth();
+  localStorage.removeItem('pm_pairing_skipped');
+  localStorage.removeItem('pm_chat_cache');
+  showAuthOverlay();
+  toast('Sesión cerrada', 'info');
+}
+
 function applyUserProfile(user) {
   if (!user) return;
   PROFILE = { name: user.name || '', avatar: user.avatar || '🐻', color: user.color || '#8FA0CA' };
   renderProfile();
 }
-function doLogout() {
-  clearAuth(); sessionStorage.clear();
-  localStorage.removeItem('pm_pin_asked');
-  showAuthOverlay();
-  toast('Sesión cerrada', 'info');
-}
-async function showApp() {
-  sessionStorage.setItem('pm_pin_verified', '1');
-  document.getElementById('pin-screen').style.display = 'none';
-  document.getElementById('auth-overlay').style.display = 'none';
-  // Always re-fetch user to get latest role
-  if (AUTH_TOKEN) {
-    try {
-      const r = await fetch(BASE + '/auth/me', {headers: hdr()});
-      if (r.ok) {
-        CURRENT_USER = await r.json();
-        localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER));
-      }
-    } catch(e) {}
-  }
-  loadProfile();
-  if (CURRENT_USER) applyUserProfile(CURRENT_USER);
-}
+
+// ── PIN ────────────────────────────────────────────────────────────────
 function pinKey(k) {
   if (PIN_ENTERED.length >= 4) return;
-  playSound('tap');
+  haptic('light'); playSound('tap');
   PIN_ENTERED += k;
   updatePinDots();
   if (PIN_ENTERED.length === 4) setTimeout(submitPIN, 120);
 }
 function pinDel() {
   if (!PIN_ENTERED.length) return;
-  playSound('tap');
+  haptic('light');
   PIN_ENTERED = PIN_ENTERED.slice(0, -1);
   updatePinDots();
 }
@@ -2788,77 +2097,54 @@ function updatePinDots() {
 }
 async function submitPIN() {
   if (PIN_STATE === 'setup') {
-    PIN_FIRST = PIN_ENTERED; PIN_ENTERED = '';
-    PIN_STATE = 'setup_confirm';
+    PIN_FIRST = PIN_ENTERED; PIN_ENTERED = ''; PIN_STATE = 'setup_confirm';
     document.getElementById('pin-sub').textContent = 'Confirma tu PIN';
-    updatePinDots();
-    return;
+    updatePinDots(); return;
   }
   if (PIN_STATE === 'setup_confirm') {
-    if (PIN_ENTERED !== PIN_FIRST) {
-      pinError('Los PINs no coinciden');
-      return;
-    }
-    const r = await fetch(BASE + '/auth/setup', {
-      method:'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({new_pin: PIN_ENTERED})
-    });
-    if (r.ok) {
-      sessionStorage.setItem('pm_pin_verified', '1');
-      toast('PIN creado', 'success');
-      showApp();
-    } else {
-      pinError('Error al guardar PIN');
-    }
+    if (PIN_ENTERED !== PIN_FIRST) { pinError('Los PINs no coinciden'); return; }
+    const r = await fetch(BASE + '/auth/setup', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({new_pin: PIN_ENTERED})});
+    if (r.ok) { sessionStorage.setItem('pm_pin_verified','1'); toast('PIN creado','success'); showApp(); }
+    else pinError('Error al guardar PIN');
     return;
   }
-  // verify
-  const r = await fetch(BASE + '/auth/verify', {
-    method:'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({pin: PIN_ENTERED, device_id: DEVICE_ID, device_name: DEVICE_NAME})
-  });
+  // Verify
+  const r = await fetch(BASE + '/auth/verify', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({pin: PIN_ENTERED, device_id: DEVICE_ID, device_name: DEVICE_NAME})});
   if (r.ok) {
-    sessionStorage.setItem('pm_pin_verified', '1');
-    playSound('success');
+    sessionStorage.setItem('pm_pin_verified','1');
+    playSound('success'); haptic('success');
     showApp();
-  } else {
-    pinError('PIN incorrecto');
-  }
+  } else { pinError('PIN incorrecto'); }
 }
 function pinError(msg) {
-  playSound('error');
+  haptic('error'); playSound('error');
   for (let i = 0; i < 4; i++) document.getElementById('pd' + i).classList.add('error');
   document.getElementById('pin-dots-wrap').classList.add('shake');
   document.getElementById('pin-error').textContent = msg;
   setTimeout(() => {
-    PIN_ENTERED = '';
-    updatePinDots();
+    PIN_ENTERED = ''; updatePinDots();
     document.getElementById('pin-dots-wrap').classList.remove('shake');
     document.getElementById('pin-error').textContent = '';
     if (PIN_STATE === 'setup_confirm') { PIN_STATE = 'setup'; document.getElementById('pin-sub').textContent = 'Elige un PIN de 4 dígitos'; }
   }, 900);
 }
 
-// ── PROFILE ───────────────────────────────────────
+// ── Profile ────────────────────────────────────────────────────────────
 async function loadProfile() {
   try {
     const r = await fetch(BASE + '/profile', {headers: hdr()});
     if (!r.ok) return;
     PROFILE = await r.json();
     renderProfile();
-    // Update account display
     const emailEl = document.getElementById('profile-email-display');
     const roleEl = document.getElementById('profile-role-display');
     if (emailEl && CURRENT_USER) emailEl.textContent = CURRENT_USER.email || '—';
-    const roleMap = {user: 'Usuario', admin: '⚡ Administrador', dev: '🛠️ Developer'};
+    const roleMap = {user:'Usuario', admin:'⚡ Administrador', dev:'🛠️ Developer'};
     if (roleEl && CURRENT_USER) roleEl.textContent = roleMap[CURRENT_USER.role] || 'Usuario';
-    // Admin badge
     const badge = document.getElementById('admin-badge');
     if (badge) badge.style.display = (CURRENT_USER?.role === 'admin' || CURRENT_USER?.role === 'dev') ? 'block' : 'none';
-    // Advanced user-id
     const advId = document.getElementById('adv-user-id');
     if (advId && CURRENT_USER) advId.textContent = 'User ID: ' + (CURRENT_USER.id || '').substring(0,16) + '...';
-    // Plush pairing status
     const plushName = document.getElementById('plush-name-display');
     const plushPaired = document.getElementById('plush-paired-display');
     const pairBtn = document.getElementById('pair-action-btn');
@@ -2873,9 +2159,8 @@ async function loadProfile() {
     }
   } catch(e) {}
 }
-
 async function unpairPlush() {
-  if (!await customConfirm('Desvincular peluche', '¿Desvincular el peluche de tu cuenta? Podrás volver a vincularlo después.', 'Desvincular', 'var(--coral)')) return;
+  if (!await customConfirm('Desvincular peluche', '¿Desvincular el peluche de tu cuenta?', 'Desvincular', 'var(--coral)')) return;
   await fetch(BASE + '/plush/unpair', {method:'POST', headers:hdr()});
   toast('Peluche desvinculado', 'info');
   if (CURRENT_USER) { CURRENT_USER.plush = null; localStorage.setItem('pm_user', JSON.stringify(CURRENT_USER)); }
@@ -2883,13 +2168,11 @@ async function unpairPlush() {
 }
 function renderProfile() {
   const { name, avatar, color } = PROFILE;
-  // header avatar (status pill could show avatar)
   const disp = document.getElementById('profile-avatar-display');
   if (disp) {
     if (avatar.startsWith('http')) disp.innerHTML = `<img src="${avatar}" style="width:80px;height:80px;border-radius:50%;object-fit:cover">`;
     else disp.innerHTML = `<span style="font-size:38px">${avatar}</span>`;
   }
-  // pin screen avatar
   const pa = document.getElementById('pin-avatar');
   if (pa) {
     if (avatar.startsWith('http')) pa.innerHTML = `<img src="${avatar}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">`;
@@ -2906,15 +2189,12 @@ function renderProfile() {
   if (card) card.style.background = color;
 }
 function buildProfileUI() {
-  // emojis
   const eg = document.getElementById('emoji-grid');
   if (eg) eg.innerHTML = CONFIG.avatarEmojis.map(e =>
     `<div class="emoji-opt ${PROFILE.avatar===e?'active':''}" onclick="selectAvatar('${e}')">${e}</div>`).join('');
-  // colors
   const co = document.getElementById('color-options');
   if (co) co.innerHTML = COLORS.map(c =>
     `<div class="color-opt ${PROFILE.color===c?'active':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`).join('');
-  // url
   const au = document.getElementById('avatar-url');
   if (au && PROFILE.avatar.startsWith('http')) au.value = PROFILE.avatar;
 }
@@ -2931,27 +2211,25 @@ function selectAvatar(emoji) {
   renderProfile();
   document.getElementById('avatar-url').value = '';
 }
-function previewAvatarUrl(url) {
-  if (url.startsWith('http')) { PROFILE.avatar = url; renderProfile(); }
-}
+function previewAvatarUrl(url) { if (url.startsWith('http')) { PROFILE.avatar = url; renderProfile(); } }
 function selectColor(c) {
   PROFILE.color = c;
   document.querySelectorAll('.color-opt').forEach(e => e.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('profile-color-strip').style.background = c;
-  // Only update profile card background
   const card = document.getElementById('profile-card');
   if (card) card.style.background = c;
 }
 async function saveProfile() {
   const name = document.getElementById('profile-name-input').value.trim();
   PROFILE.name = name;
+  haptic('medium');
   const r = await fetch(BASE + '/profile', {method:'POST', headers:hdr(true), body:JSON.stringify(PROFILE)});
   if (r.ok) { playSound('success'); toast('Perfil guardado', 'success'); renderProfile(); }
   else toast('Error al guardar', 'error');
 }
 
-// ── DEVICES ───────────────────────────────────────
+// ── Devices ────────────────────────────────────────────────────────────
 async function loadDevices() {
   const el = document.getElementById('devices-list');
   if (!el) return;
@@ -2968,21 +2246,14 @@ async function loadDevices() {
       const isThis = d.id === DEVICE_ID;
       const time = new Date(d.last_seen).toLocaleDateString('es', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
       return `<div class="device-item">
-        <div class="device-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        </div>
-        <div class="device-info">
-          <div class="device-name">${esc(d.name)}</div>
-          <div class="device-time">Último acceso: ${time}</div>
-        </div>
-        ${isThis
-          ? '<span class="device-badge device-this">Este dispositivo</span>'
+        <div class="device-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+        <div class="device-info"><div class="device-name">${esc(d.name)}</div><div class="device-time">Último acceso: ${time}</div></div>
+        ${isThis ? '<span class="device-badge device-this">Este dispositivo</span>'
           : `<button class="device-revoke-btn" onclick="revokeDevice('${d.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`}
       </div>`;
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--coral);font-size:13px;font-weight:600">Error al cargar dispositivos</div>';
-    console.error('loadDevices error:', e);
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--coral);font-size:13px;font-weight:600">Error al cargar</div>';
   }
 }
 async function revokeDevice(id) {
@@ -2990,15 +2261,10 @@ async function revokeDevice(id) {
   if (r.ok) { toast('Dispositivo revocado', 'success'); loadDevices(); }
   else toast('Error', 'error');
 }
-
 async function checkRevoked() {
-  // Only check if user is authenticated in this session
   if (!sessionStorage.getItem('pm_pin_verified')) return;
   try {
-    const r = await fetch(BASE + '/auth/checkin', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({device_id: DEVICE_ID, device_name: DEVICE_NAME, user_id: CURRENT_USER?.id || ''})
-    });
+    const r = await fetch(BASE + '/auth/checkin', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({device_id: DEVICE_ID, device_name: DEVICE_NAME, user_id: CURRENT_USER?.id || ''})});
     if (!r.ok) return;
     const d = await r.json();
     if (d.revoked) {
@@ -3009,21 +2275,17 @@ async function checkRevoked() {
   } catch(e) {}
 }
 
-// ── CHANGE PIN ─────────────────────────────────────
+// ── Change PIN ─────────────────────────────────────────────────────────
 async function changePIN() {
-  const cur  = (document.getElementById('sec-pin-current') || document.getElementById('pin-current'))?.value.trim() || '';
-  const nw   = (document.getElementById('sec-pin-new') || document.getElementById('pin-new'))?.value.trim() || '';
-  const conf = (document.getElementById('sec-pin-confirm') || document.getElementById('pin-confirm'))?.value.trim() || '';
+  const cur  = document.getElementById('sec-pin-current')?.value.trim() || '';
+  const nw   = document.getElementById('sec-pin-new')?.value.trim() || '';
+  const conf = document.getElementById('sec-pin-confirm')?.value.trim() || '';
   if (nw !== conf) { toast('Los PINs nuevos no coinciden', 'error'); return; }
   if (nw.length !== 4 || !/^\d{4}$/.test(nw)) { toast('El PIN debe ser 4 dígitos', 'error'); return; }
-  const r = await fetch(BASE + '/auth/setup', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({current_pin: cur, new_pin: nw})
-  });
+  const r = await fetch(BASE + '/auth/setup', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({current_pin: cur, new_pin: nw})});
   if (r.ok) {
     playSound('success'); toast('PIN cambiado', 'success');
-    ['sec-pin-current','sec-pin-new','sec-pin-confirm','pin-current','pin-new','pin-confirm']
-      .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+    ['sec-pin-current','sec-pin-new','sec-pin-confirm'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
     closeSubpage('subpage-pin-setup');
   } else {
     const d = await r.json();
@@ -3031,7 +2293,8 @@ async function changePIN() {
   }
 }
 
+// Prevent default on touch activate
+document.getElementById('activate-card').addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
 </script>
 </body>
 </html>
-   </html>
