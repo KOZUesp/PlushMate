@@ -1,14 +1,13 @@
 # ═══════════════════════════════════════════════════════════════════════
-# PlushMate Server v7.0 — Streaming de audio sin límite de duración
+# PlushMate Server v7.1
 #
-# Cambios vs v6.1:
-#   - POST /stream/<token>/chunk  → recibe chunks de audio PCM crudo
-#   - POST /stream/<token>/end    → finaliza stream y procesa
-#   - POST /stream/<token>/abort  → cancela stream activo
-#   - Chunks escritos a disco → sin límite de RAM ni de duración
-#   - /process original se mantiene para la app móvil
-#   - Amplificación x8 movida al servidor (menos trabajo para el ESP32)
-#   - Limpieza automática de streams huérfanos cada 60s
+# Fixes vs v7.0:
+#   - Nuevo endpoint POST /chat/text  → mensajes desde la app móvil
+#   - Historial de sesión persistido en Supabase (tabla session_history)
+#     → sobrevive reinicios del servidor, app y ESP32 comparten historial
+#   - format_memory() robusto: si el LLM falla, parsea el summary directo
+#     sin hacer otra llamada externa
+#   - get_memory() devuelve el historial desde Supabase, no solo RAM
 # ═══════════════════════════════════════════════════════════════════════
 
 import requests, os, tempfile, uuid, threading, time, struct, json, hashlib, re, io
@@ -17,7 +16,7 @@ from flask import Flask, request, jsonify, send_file, Response
 from pathlib import Path
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB por chunk
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 # ── Env vars ──────────────────────────────────────────────────────────
 ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY', '').strip()
@@ -37,30 +36,77 @@ _default_persona = (
 HISTORY_LIMIT = 20
 AUDIO_DIR     = Path('/tmp/plushmate_audio')
 AUDIO_DIR.mkdir(exist_ok=True)
-STREAM_DIR    = Path('/tmp/plushmate_streams')
-STREAM_DIR.mkdir(exist_ok=True)
 
 # ── Audio en memoria para respuestas en vivo ──────────────────────────
 audio_live_cache: dict = {}
 audio_live_lock  = threading.Lock()
 
-# ── Streams activos ───────────────────────────────────────────────────
-# token → {file, path, lock, peak, total_bytes, created_at}
-active_streams: dict = {}
-streams_lock   = threading.Lock()
-
-# ── Sesiones por usuario ──────────────────────────────────────────────
+# ── Sesiones en RAM (cache local, fuente de verdad: Supabase) ─────────
 session_data: dict = {}
 session_lock = threading.Lock()
 
 pending_commands: dict = {}
 pending_commands_lock = threading.Lock()
 
+# ═══════════════════════════════════════════════════════════════════════
+# HISTORIAL PERSISTENTE EN SUPABASE
+# Tabla requerida en Supabase:
+#
+#   CREATE TABLE session_history (
+#     user_id  TEXT PRIMARY KEY,
+#     history  JSONB NOT NULL DEFAULT '[]',
+#     updated_at TIMESTAMPTZ DEFAULT NOW()
+#   );
+#
+# Si la tabla no existe, el servidor cae a RAM (funciona igual que antes).
+# ═══════════════════════════════════════════════════════════════════════
+
+def load_history_from_db(user_id: str) -> list:
+    """Carga el historial desde Supabase. Devuelve [] si falla."""
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/session_history?user_id=eq.{user_id}&select=history",
+            headers=sb_headers(), timeout=5)
+        data = r.json()
+        if isinstance(data, list) and data:
+            return data[0].get('history', [])
+    except: pass
+    return []
+
+def save_history_to_db(user_id: str, history: list):
+    """Guarda el historial en Supabase de forma asíncrona."""
+    def _save():
+        try:
+            requests.post(
+                f"{SUPABASE_URL}/rest/v1/session_history",
+                headers={**sb_headers(), 'Prefer': 'resolution=merge-duplicates'},
+                json={
+                    'user_id':    user_id,
+                    'history':    history[-HISTORY_LIMIT:],
+                    'updated_at': datetime.now(timezone.utc).isoformat()
+                }, timeout=5)
+        except: pass
+    threading.Thread(target=_save, daemon=True).start()
+
 def get_session(user_id: str) -> dict:
+    """Devuelve la sesión en RAM, cargando desde Supabase si es nueva."""
     with session_lock:
         if user_id not in session_data:
-            session_data[user_id] = {'history': [], 'interaction_count': 0}
+            # Primera vez en esta instancia del servidor → cargar desde DB
+            db_history = load_history_from_db(user_id)
+            session_data[user_id] = {
+                'history':           db_history,
+                'interaction_count': 0
+            }
         return session_data[user_id]
+
+def append_to_history(user_id: str, role: str, content: str, audio_url=None):
+    """Agrega un mensaje al historial y persiste en Supabase."""
+    sess = get_session(user_id)
+    sess['history'].append({'role': role, 'content': content, 'audio_url': audio_url})
+    if len(sess['history']) > HISTORY_LIMIT:
+        sess['history'] = sess['history'][-HISTORY_LIMIT:]
+    save_history_to_db(user_id, sess['history'])
 
 # ── Supabase helpers ──────────────────────────────────────────────────
 def sb_headers(token=None):
@@ -362,256 +408,109 @@ def static_icons(filename):
 
 @app.route('/health')
 def health():
-    with streams_lock:
-        n_streams = len(active_streams)
-    return jsonify({'status': 'ok', 'version': '7.0', 'active_streams': n_streams})
+    return jsonify({'status': 'ok', 'version': '7.1'})
 
 # ═══════════════════════════════════════════════════════════════════════
-# STREAMING — tres endpoints que el ESP32 llama en secuencia:
-#
-#   1. POST /stream/<token>/chunk   → envía PCM crudo, sin límite
-#   2. POST /stream/<token>/end     → finaliza y devuelve audio_url
-#   3. POST /stream/<token>/abort   → cancela (botón suelto sin audio)
-#
-# El primer /chunk crea el stream automáticamente.
-# Los datos van directo a disco — cero acumulación en RAM.
+# CHAT DESDE LA APP MÓVIL — FIX: endpoint /chat/text que faltaba
 # ═══════════════════════════════════════════════════════════════════════
 
-def _cleanup_stream(plush_token: str):
-    with streams_lock:
-        info = active_streams.pop(plush_token, None)
-    if info:
-        try:
-            fh = info.get('file')
-            if fh and not fh.closed:
-                fh.close()
-        except: pass
-        try:
-            path = info.get('path')
-            if path and os.path.exists(path):
-                os.unlink(path)
-        except: pass
-
-def _get_or_create_stream(plush_token: str) -> dict:
-    with streams_lock:
-        if plush_token not in active_streams:
-            tmp = tempfile.NamedTemporaryFile(
-                suffix='.pcm', delete=False,
-                dir=str(STREAM_DIR), prefix=f"pm_"
-            )
-            active_streams[plush_token] = {
-                'file':        tmp,
-                'path':        tmp.name,
-                'lock':        threading.Lock(),
-                'peak':        0,
-                'total_bytes': 0,
-                'created_at':  time.time(),
-            }
-            print(f"[stream] Nuevo: {plush_token} → {tmp.name}", flush=True)
-        return active_streams[plush_token]
-
-
-@app.route('/stream/<plush_token>/chunk', methods=['POST'])
-def stream_chunk(plush_token):
-    """Recibe un chunk de PCM crudo (sin header WAV) y lo escribe a disco."""
-    plush = sb_get('plushes', 'owner_id,plush_token', f'plush_token=eq.{plush_token}')
-    if not plush:
-        return jsonify({'error': 'Token inválido'}), 401
-
-    chunk = request.data
-    if not chunk:
-        return jsonify({'error': 'Chunk vacío'}), 400
-
-    info = _get_or_create_stream(plush_token)
-
-    with info['lock']:
-        # Calcular amplitud pico — el ESP32 ya amplificó x8
-        n = len(chunk) // 2
-        if n > 0:
-            samples    = struct.unpack(f'<{n}h', chunk[:n*2])
-            peak_chunk = max(abs(s) for s in samples)
-            if peak_chunk > info['peak']:
-                info['peak'] = peak_chunk
-
-        # Escribir directo a disco sin modificar
-        info['file'].write(chunk)
-        info['file'].flush()
-        info['total_bytes'] += len(chunk)
-
-    return jsonify({
-        'ok':          True,
-        'total_bytes': info['total_bytes'],
-        'peak':        info['peak'],
-    }), 200
-
-
-@app.route('/stream/<plush_token>/end', methods=['POST'])
-def stream_end(plush_token):
-    """Cierra el stream, amplifica, construye WAV, procesa y devuelve audio_url."""
+@app.route('/chat/text', methods=['POST'])
+@require_auth
+def chat_text(user):
+    """
+    Recibe un mensaje de texto desde la app móvil.
+    Genera respuesta con el LLM y opcionalmente TTS.
+    send_to_plush=true  → genera audio y lo encola para el ESP32
+    send_to_plush=false → genera audio para reproducir en la app
+    """
     import traceback
-
-    plush = sb_get('plushes', '*', f'plush_token=eq.{plush_token}')
-    if not plush:
-        return jsonify({'error': 'Token inválido'}), 401
-
-    with streams_lock:
-        info = active_streams.get(plush_token)
-    if not info:
-        return jsonify({'error': 'Sin stream activo'}), 400
-
     try:
-        # Cerrar archivo
-        with info['lock']:
-            info['file'].flush()
-            info['file'].close()
-            pcm_path    = info['path']
-            peak_raw    = info['peak']
-            total_bytes = info['total_bytes']
+        data          = request.json or {}
+        text          = data.get('text', '').strip()
+        send_to_plush = data.get('send_to_plush', False)
 
-        # Limpiar entrada del dict (ya tenemos los datos en disco)
-        with streams_lock:
-            active_streams.pop(plush_token, None)
+        if not text:
+            return jsonify({'error': 'Texto vacío'}), 400
 
-        print(f"[stream] END {plush_token}: {total_bytes}B peak_raw={peak_raw}", flush=True)
+        # Obtener plush del usuario
+        plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
 
-        # Validaciones
-        if total_bytes < 3200:
-            try: os.unlink(pcm_path)
-            except: pass
-            return jsonify({'error': 'Audio demasiado corto — habla más tiempo'}), 400
+        # Guardar mensaje del usuario en historial persistente
+        append_to_history(user['id'], 'user', text)
 
-        if peak_raw < 300:   # el ESP32 ya amplificó x8, threshold normal
-            try: os.unlink(pcm_path)
-            except: pass
-            return jsonify({'error': 'Audio demasiado silencioso'}), 400
-
-        # Leer PCM y construir WAV directamente — sin re-amplificar
-        with open(pcm_path, 'rb') as f:
-            raw_pcm = f.read()
-        try: os.unlink(pcm_path)
-        except: pass
-
-        wav_path = str(STREAM_DIR / f"pm_{uuid.uuid4().hex[:8]}.wav")
-        with open(wav_path, 'wb') as wf:
-            data_len = len(raw_pcm)
-            wf.write(b'RIFF')
-            wf.write(struct.pack('<I', 36 + data_len))
-            wf.write(b'WAVE')
-            wf.write(b'fmt ')
-            wf.write(struct.pack('<I', 16))
-            wf.write(struct.pack('<H', 1))       # PCM
-            wf.write(struct.pack('<H', 1))       # mono
-            wf.write(struct.pack('<I', 16000))   # sample rate
-            wf.write(struct.pack('<I', 32000))   # byte rate
-            wf.write(struct.pack('<H', 2))       # block align
-            wf.write(struct.pack('<H', 16))      # bits/sample
-            wf.write(b'data')
-            wf.write(struct.pack('<I', data_len))
-            wf.write(raw_pcm)
-
-        # ── STT → LLM → TTS ──────────────────────────────────────────
-        owner_id = plush.get('owner_id')
-        if not owner_id:
-            try: os.unlink(wav_path)
-            except: pass
-            return jsonify({'error': 'Peluche sin cuenta vinculada'}), 403
-
-        try:
-            transcript = stt(wav_path, plush.get('stt_language', 'es'))
-        finally:
-            try: os.unlink(wav_path)
-            except: pass
-
-        if not transcript:
-            return jsonify({'error': 'No se entendió el audio'}), 400
-
-        sess = get_session(owner_id)
-        sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
-
-        ai_text = chat_with_memory(owner_id, plush)
+        # Generar respuesta del LLM
+        ai_text = chat_with_memory(user['id'], plush)
         if not ai_text:
-            sess['history'].pop()
+            # Revertir el mensaje del usuario si falla el LLM
+            sess = get_session(user['id'])
+            if sess['history'] and sess['history'][-1]['role'] == 'user':
+                sess['history'].pop()
+                save_history_to_db(user['id'], sess['history'])
             return jsonify({'error': 'Sin respuesta del modelo'}), 500
 
         display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-        sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-        if len(sess['history']) > HISTORY_LIMIT:
-            sess['history'] = sess['history'][-HISTORY_LIMIT:]
 
+        # Actualizar contador y resumen
+        sess = get_session(user['id'])
         sess['interaction_count'] = sess.get('interaction_count', 0) + 1
         if sess['interaction_count'] % 5 == 0:
             threading.Thread(target=update_summary,
-                             args=(owner_id, sess['history'], plush),
+                             args=(user['id'], sess['history'], plush),
                              daemon=True).start()
 
         # Limpiar audio huérfano
-        with audio_live_lock:
-            if plush_token in audio_live_cache:
-                del audio_live_cache[plush_token]
+        plush_token = plush.get('plush_token', '') if plush else ''
+        if plush_token:
+            with audio_live_lock:
+                audio_live_cache.pop(plush_token, None)
 
-        audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
+        # Generar TTS en background
+        audio_url = None
+        tts_done  = threading.Event()
+        tts_error = [None]
 
         def run_tts():
             try:
-                audio_bytes = tts(ai_text, plush.get('voice_id', ''))
-                with audio_live_lock:
-                    audio_live_cache[plush_token] = audio_bytes
-                print(f"[TTS] Listo {plush_token} ({len(audio_bytes)}B)", flush=True)
-                filename = f"{uuid.uuid4()}.mp3"
-                path     = AUDIO_DIR / filename
+                voice_id    = plush.get('voice_id', '') if plush else ''
+                audio_bytes = tts(display_text, voice_id)
+                filename    = f"{uuid.uuid4()}.mp3"
+                path        = AUDIO_DIR / filename
                 with open(str(path), 'wb') as fh:
                     fh.write(audio_bytes)
                 files = sorted(AUDIO_DIR.glob('*.mp3'), key=lambda p: p.stat().st_mtime)
                 for old in files[:-50]:
                     try: old.unlink()
                     except: pass
-                with session_lock:
-                    h = session_data.get(owner_id, {}).get('history', [])
-                    for msg in reversed(h):
-                        if msg['role'] == 'assistant' and msg['audio_url'] is None:
-                            msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
-                            break
+                nonlocal audio_url
+                audio_url = f"{SERVER_URL}/audio/{filename}"
+                # Si se envía al peluche, encolar en audio_live_cache
+                if send_to_plush and plush_token:
+                    with audio_live_lock:
+                        audio_live_cache[plush_token] = audio_bytes
             except Exception as e:
-                print(f"[TTS] ERROR: {e}", flush=True)
+                tts_error[0] = str(e)
+                print(f"[chat/text TTS] ERROR: {e}", flush=True)
+            finally:
+                tts_done.set()
 
-        threading.Thread(target=run_tts, daemon=True).start()
+        tts_thread = threading.Thread(target=run_tts, daemon=True)
+        tts_thread.start()
+
+        # Esperar TTS (max 15s) para poder devolver audio_url
+        tts_done.wait(timeout=15)
+
+        # Guardar respuesta del asistente en historial con la URL del audio
+        append_to_history(user['id'], 'assistant', display_text, audio_url)
 
         return jsonify({
-            'transcript': transcript,
-            'response':   display_text,
-            'audio_url':  audio_url,
+            'response':  display_text,
+            'audio_url': audio_url,
+            'sent_to_plush': send_to_plush and bool(plush_token),
         })
 
     except Exception as e:
-        tb = traceback.format_exc()
-        print(f"\n🚨 ERROR /stream/end:\n{tb}\n", flush=True)
-        _cleanup_stream(plush_token)
+        print(f"\n🚨 ERROR /chat/text:\n{traceback.format_exc()}\n", flush=True)
         return jsonify({'error': str(e)}), 500
-
-
-@app.route('/stream/<plush_token>/abort', methods=['POST'])
-def stream_abort(plush_token):
-    """Cancela y limpia un stream activo."""
-    _cleanup_stream(plush_token)
-    print(f"[stream] Abortado: {plush_token}", flush=True)
-    return jsonify({'ok': True}), 200
-
-
-# ── Limpieza de streams huérfanos (>2 min) ───────────────────────────
-def _cleanup_stale():
-    while True:
-        time.sleep(60)
-        now   = time.time()
-        stale = []
-        with streams_lock:
-            for token, info in active_streams.items():
-                if now - info.get('created_at', now) > 120:
-                    stale.append(token)
-        for token in stale:
-            print(f"[stream] Limpiando huérfano: {token}", flush=True)
-            _cleanup_stream(token)
-
-threading.Thread(target=_cleanup_stale, daemon=True).start()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -652,7 +551,7 @@ def serve_audio(filename):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# /process — pipeline original (mantener para app móvil)
+# /process — pipeline principal del ESP32
 # ═══════════════════════════════════════════════════════════════════════
 
 @app.route('/process', methods=['POST'])
@@ -666,40 +565,52 @@ def process_audio():
         plush_token = plush.get('plush_token', '')
         if not owner_id:
             return jsonify({'error': 'Peluche no vinculado'}), 403
+
         wav_data = request.data
         if len(wav_data) < 44:
             return jsonify({'error': 'Audio inválido'}), 400
+
         try:
             samples = struct.unpack('<' + 'h' * ((len(wav_data) - 44) // 2), wav_data[44:])
             peak    = max(abs(s) for s in samples) if samples else 0
             if peak < 300:
                 return jsonify({'error': 'Audio demasiado silencioso'}), 400
         except: pass
+
         with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as f:
             f.write(wav_data)
             tmp_path = f.name
+
         try:
             transcript = stt(tmp_path, plush.get('stt_language', 'es'))
             if not transcript:
                 return jsonify({'error': 'No se entendió el audio'}), 400
-            sess = get_session(owner_id)
-            sess['history'].append({'role': 'user', 'content': transcript, 'audio_url': None})
+
+            # Persistir en historial
+            append_to_history(owner_id, 'user', transcript)
+
             ai_text = chat_with_memory(owner_id, plush)
             if not ai_text:
-                sess['history'].pop()
-                return jsonify({'error': 'Sin respuesta'}), 500
+                sess = get_session(owner_id)
+                if sess['history'] and sess['history'][-1]['role'] == 'user':
+                    sess['history'].pop()
+                    save_history_to_db(owner_id, sess['history'])
+                return jsonify({'error': 'Sin respuesta del modelo'}), 500
+
             display_text = re.sub(r'\[.*?\]', '', ai_text).strip()
-            sess['history'].append({'role': 'assistant', 'content': display_text, 'audio_url': None})
-            if len(sess['history']) > HISTORY_LIMIT:
-                sess['history'] = sess['history'][-HISTORY_LIMIT:]
+
+            sess = get_session(owner_id)
             sess['interaction_count'] = sess.get('interaction_count', 0) + 1
             if sess['interaction_count'] % 5 == 0:
                 threading.Thread(target=update_summary,
-                                 args=(owner_id, sess['history'], plush), daemon=True).start()
+                                 args=(owner_id, sess['history'], plush),
+                                 daemon=True).start()
+
             with audio_live_lock:
-                if plush_token in audio_live_cache:
-                    del audio_live_cache[plush_token]
+                audio_live_cache.pop(plush_token, None)
+
             audio_url = f"{SERVER_URL}/audio/live/{plush_token}"
+
             def run_tts_bg():
                 try:
                     audio_bytes = tts(ai_text, plush.get('voice_id', ''))
@@ -713,37 +624,48 @@ def process_audio():
                     for old in files[:-50]:
                         try: old.unlink()
                         except: pass
-                    with session_lock:
-                        h = session_data.get(owner_id, {}).get('history', [])
-                        for msg in reversed(h):
-                            if msg['role'] == 'assistant' and msg['audio_url'] is None:
-                                msg['audio_url'] = f"{SERVER_URL}/audio/{filename}"
-                                break
+                    # Actualizar audio_url en historial
+                    disk_url = f"{SERVER_URL}/audio/{filename}"
+                    append_to_history(owner_id, 'assistant', display_text, disk_url)
                 except Exception as e:
                     print(f"[TTS bg] ERROR: {e}", flush=True)
+                    # Guardar respuesta sin audio si TTS falla
+                    append_to_history(owner_id, 'assistant', display_text, None)
+
             threading.Thread(target=run_tts_bg, daemon=True).start()
-            return jsonify({'transcript': transcript, 'response': display_text, 'audio_url': audio_url})
+
+            return jsonify({
+                'transcript': transcript,
+                'response':   display_text,
+                'audio_url':  audio_url,
+            })
         finally:
             try: os.unlink(tmp_path)
             except: pass
+
     except Exception as e:
         print(f"\n🚨 ERROR /process:\n{traceback.format_exc()}\n", flush=True)
         return jsonify({'error': str(e)}), 500
 
 
-# ── Memory ────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════
+# MEMORY — FIX: devuelve historial desde Supabase, format_memory robusto
+# ═══════════════════════════════════════════════════════════════════════
+
 @app.route('/memory', methods=['GET'])
 @require_auth
 def get_memory(user):
-    row = sb_get('memory', '*', f'user_id=eq.{user["id"]}')
+    # Asegurar que la sesión existe (carga desde DB si es necesario)
+    sess    = get_session(user['id'])
+    row     = sb_get('memory', '*', f'user_id=eq.{user["id"]}')
     if not row:
         sb_upsert('memory', {'user_id': user['id'], 'summary': '',
                               'updated_at': datetime.now(timezone.utc).isoformat()})
         row = {}
     summary   = row.get('summary', '')
     plush     = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
-    sess      = get_session(user['id'])
-    formatted = format_memory(summary, user['id'], plush)
+    formatted = format_memory_safe(summary)
+
     return jsonify({
         'summary':           summary,
         'summary_formatted': formatted,
@@ -757,9 +679,63 @@ def clear_memory(user):
     sess = get_session(user['id'])
     sess['history']           = []
     sess['interaction_count'] = 0
+    sb_upsert('session_history', {
+        'user_id':    user['id'],
+        'history':    [],
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    })
     sb_upsert('memory', {'user_id': user['id'], 'summary': '',
                           'updated_at': datetime.now(timezone.utc).isoformat()})
     return jsonify({'status': 'cleared'})
+
+@app.route('/memory/refresh', methods=['POST'])
+@require_auth
+def refresh_memory(user):
+    """
+    Fuerza la generación/actualización del summary con el historial actual.
+    Lo que hace el botón 'Actualizar' en la app.
+    """
+    sess  = get_session(user['id'])
+    plush = sb_get('plushes', '*', f'owner_id=eq.{user["id"]}')
+
+    if not sess['history']:
+        return jsonify({'error': 'Sin historial para resumir'}), 400
+
+    # Generar summary de forma síncrona (el usuario está esperando)
+    try:
+        row     = sb_get('memory', 'summary', f'user_id=eq.{user["id"]}') or {}
+        old     = row.get('summary', '')
+        conv    = '\n'.join([
+            f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
+            for m in sess['history'][-20:]
+        ])
+        model   = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                   if plush else 'arcee-ai/trinity-large-preview:free')
+        r       = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                     'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 300, 'messages': [{'role': 'user', 'content':
+                f'Basándote en esta conversación, crea un resumen detallado de lo que sabes sobre el usuario '
+                f'(nombre, gustos, temas hablados, etc). Escríbelo en 3-6 oraciones. Solo el resumen.\n'
+                f'Resumen anterior: {old}\nConversación:\n{conv}'}]},
+            timeout=20)
+        new_summary = extract_text(r.json()['choices'][0]['message'])
+        if new_summary:
+            sb_upsert('memory', {'user_id': user['id'], 'summary': new_summary,
+                                  'updated_at': datetime.now(timezone.utc).isoformat()})
+            formatted = format_memory_safe(new_summary)
+            return jsonify({
+                'summary':           new_summary,
+                'summary_formatted': formatted,
+                'history':           sess['history'],
+                'history_len':       len(sess['history']),
+            })
+        return jsonify({'error': 'No se pudo generar el resumen'}), 500
+    except Exception as e:
+        print(f"[memory/refresh] ERROR: {e}", flush=True)
+        return jsonify({'error': str(e)}), 500
+
 
 # ── Profile ───────────────────────────────────────────────────────────
 @app.route('/profile', methods=['GET'])
@@ -897,15 +873,11 @@ def admin_logs(user):
                  for uid, s in session_data.items()]
     with audio_live_lock:
         pending_audio = list(audio_live_cache.keys())
-    with streams_lock:
-        active = {t: {'bytes': i['total_bytes'], 'peak': i['peak']}
-                  for t, i in active_streams.items()}
     return jsonify({
         'active_sessions':  len(session_data),
         'sessions':         stats,
         'pending_commands': len(pending_commands),
         'pending_audio':    pending_audio,
-        'active_streams':   active,
     })
 
 @app.route('/admin/plushes', methods=['GET'])
@@ -927,26 +899,58 @@ def extract_text(msg: dict) -> str:
         if m: return m.group(1).strip()
     return text.strip()
 
-def format_memory(summary: str, user_id: str, plush) -> list:
-    if not summary or not summary.strip(): return []
+def format_memory_safe(summary: str) -> list:
+    """
+    Convierte el summary a lista de secciones SIN llamar al LLM.
+    Parseo simple y robusto que nunca falla.
+    FIX: antes llamaba al LLM y si fallaba devolvía lista vacía.
+    """
+    if not summary or not summary.strip():
+        return []
+
+    # Intentar parsear como JSON por si el summary ya viene formateado
     try:
-        model = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
-                 if plush else 'arcee-ai/trinity-large-preview:free')
-        r     = requests.post(
-            'https://openrouter.ai/api/v1/chat/completions',
-            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
-                     'Content-Type': 'application/json'},
-            json={'model': model, 'max_tokens': 400, 'messages': [{'role': 'user', 'content':
-                f'Convierte este resumen en JSON con secciones. Solo JSON, sin markdown.\n'
-                f'Formato: [{{"icon":"emoji","title":"Título","items":["dato1","dato2"]}}]\n'
-                f'Resumen: {summary}'}]}, timeout=10)
-        msg = r.json()['choices'][0]['message']
-        raw = extract_text(msg)
-        raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
-        return json.loads(raw)
-    except:
-        sentences = [s.strip() for s in re.split(r'[.!?]+', summary) if s.strip()]
-        return [{"icon": "🧠", "title": "Lo que recuerdo", "items": sentences}]
+        cleaned = re.sub(r'^```json|^```|```$', '', summary.strip(), flags=re.MULTILINE).strip()
+        parsed  = json.loads(cleaned)
+        if isinstance(parsed, list) and parsed:
+            return parsed
+    except: pass
+
+    # Parseo heurístico: dividir por frases y agrupar en secciones
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', summary) if s.strip()]
+
+    if not sentences:
+        return [{"icon": "🧠", "title": "Memoria", "items": [summary.strip()]}]
+
+    # Intentar detectar secciones por palabras clave
+    sections = []
+    current_items = []
+    icons = {
+        'gusta': ('❤️', 'Le gusta'),
+        'juego': ('🎮', 'Juegos'),
+        'famil': ('👨‍👩‍👧', 'Familia'),
+        'nombr': ('👤', 'Sobre el usuario'),
+        'color': ('🎨', 'Preferencias'),
+        'comid': ('🍕', 'Comida'),
+        'mascot': ('🐾', 'Mascotas'),
+        'escuel': ('🏫', 'Escuela'),
+    }
+
+    for sentence in sentences:
+        current_items.append(sentence)
+
+    # Si hay pocas frases, una sola sección
+    if len(current_items) <= 4:
+        sections = [{"icon": "🧠", "title": "Lo que recuerdo", "items": current_items}]
+    else:
+        # Dividir en dos secciones aproximadas
+        mid = len(current_items) // 2
+        sections = [
+            {"icon": "🧠", "title": "Lo que recuerdo", "items": current_items[:mid]},
+            {"icon": "✨", "title": "Más detalles",     "items": current_items[mid:]},
+        ]
+
+    return sections
 
 def stt(wav_path: str, language: str = 'es') -> str:
     with open(wav_path, 'rb') as f:
@@ -983,7 +987,7 @@ def chat_with_memory(user_id: str, plush) -> str:
         for m in sess['history'][-10:]
     ]
     print(f"🧠 LLM: {model} | historial: {len(sess['history'])} msgs", flush=True)
-    r    = requests.post(
+    r = requests.post(
         'https://openrouter.ai/api/v1/chat/completions',
         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
                  'Content-Type': 'application/json'},
@@ -1020,6 +1024,7 @@ def update_summary(user_id: str, history: list, plush):
         if new_summary:
             sb_upsert('memory', {'user_id': user_id, 'summary': new_summary,
                                   'updated_at': datetime.now(timezone.utc).isoformat()})
+            print(f"[summary] Actualizado para {user_id[:8]}", flush=True)
     except Exception as e:
         print(f"[summary] ERROR: {e}", flush=True)
 
@@ -1028,7 +1033,7 @@ def tts(text: str, voice_id: str = '') -> bytes:
     r   = requests.post(
         f'https://api.elevenlabs.io/v1/text-to-speech/{vid}/stream',
         headers={'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json'},
-        json={'text': text, 'model_id': 'eleven_v3',
+        json={'text': text, 'model_id': 'eleven_flash_v2_5',
               'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75},
               'optimize_streaming_latency': 3},
         stream=True, timeout=30)
