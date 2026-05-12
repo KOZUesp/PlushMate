@@ -512,7 +512,8 @@ select option{background:var(--white)}
 
 <div class="nav">
   <button class="nav-btn active" onclick="goPage('home',this)" id="nav-home">
-    <span id="nav-home-icon"></span>Inicio<div class="nav-btn-pip"></div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+    Inicio<div class="nav-btn-pip"></div>
   </button>
   <button class="nav-btn" onclick="goPage('history',this)" id="nav-history">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 10h8M8 14h5M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"/></svg>
@@ -529,6 +530,10 @@ select option{background:var(--white)}
   <button class="nav-btn" onclick="goPage('settings',this)" id="nav-settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Ajustes<div class="nav-btn-pip"></div>
+  </button>
+  <button class="nav-btn" onclick="goPage('debug',this)" id="nav-debug">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    Debug<div class="nav-btn-pip"></div>
   </button>
 </div>
 
@@ -594,7 +599,7 @@ select option{background:var(--white)}
   <!-- CHAT -->
   <div class="page chat-page" id="page-history">
     <div class="history-header">
-      <span class="section-title">Chat</span>
+      <span class="section-title" id="chat-page-title">Chat</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="stat-badge badge-blue" id="history-count-badge">0 msgs</span>
         <button class="refresh-btn" id="refresh-btn" onclick="refreshHistory()">
@@ -716,9 +721,51 @@ select option{background:var(--white)}
         <div><div class="accordion-title">Inteligencia Artificial</div><div class="accordion-sub">Modelo, personalidad, voz</div></div>
         <svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-      <div class="accordion-body">
-        <div class="field-label" style="margin-top:14px">Personalidad</div>
-        <textarea id="cfg-persona" rows="3" placeholder="Describe cómo debe comportarse PlushMate..." style="margin-bottom:14px"></textarea>
+<div class="accordion-body">
+
+        <!-- PROMPT (reglas generales) -->
+        <div class="field-label" style="margin-top:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Prompt (reglas de comportamiento)
+        </div>
+        <textarea id="cfg-prompt" rows="3" placeholder="Ej: Habla siempre en español. Sé breve. No hables de política..." style="margin-bottom:14px"></textarea>
+
+        <!-- PERSONALIDAD -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+          <div class="field-label" style="margin-bottom:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+            Personalidad del peluche
+          </div>
+          <button onclick="openPersonalityGenerator()" style="background:var(--brand-pale);color:var(--brand);border:none;border-radius:var(--r-full);padding:6px 12px;font-size:11px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer">✨ Generar con IA</button>
+        </div>
+
+        <div style="background:var(--brand-pale);border-radius:var(--r-md);padding:14px;margin-bottom:14px" id="personality-preview">
+          <div style="font-size:12px;font-weight:700;color:var(--muted)" id="personality-preview-text">Sin personalidad configurada</div>
+        </div>
+
+        <div id="personality-fields" style="display:none">
+          <div class="field-label">Nombre</div>
+          <input type="text" id="pers-name" placeholder="Ej: Coco" style="margin-bottom:10px">
+          <div class="field-label">Género</div>
+          <select id="pers-gender" style="margin-bottom:10px" onchange="toggleGenderOther(this.value)">
+            <option value="">Sin especificar</option>
+            <option value="Hombre">Hombre</option>
+            <option value="Mujer">Mujer</option>
+            <option value="Otro">Otro</option>
+          </select>
+          <input type="text" id="pers-gender-other" placeholder="Especifica el género..." style="display:none;margin-bottom:10px">
+          <div class="field-label">Raza / especie (opcional)</div>
+          <input type="text" id="pers-species" placeholder="Ej: Oso panda, Zorro mágico..." style="margin-bottom:10px">
+          <div class="field-label">Rasgos de personalidad</div>
+          <div id="traits-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+          <div class="field-label">Historia (opcional)</div>
+          <textarea id="pers-backstory" rows="2" placeholder="Ej: Viene de un bosque encantado..." style="margin-bottom:14px"></textarea>
+          <button onclick="closePersonalityFields()" style="background:none;border:none;color:var(--muted);font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:14px">▲ Ocultar campos</button>
+        </div>
+
+        <button onclick="togglePersonalityFields()" id="personality-edit-btn" style="width:100%;padding:10px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:13px;font-weight:800;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:14px">✏️ Editar manualmente</button>
+
+        <!-- VOZ, MODELO, IDIOMA -->
         <div class="field-label">Voz de ElevenLabs</div>
         <div class="voice-custom" id="voice-dropdown" style="margin-bottom:14px">
           <div class="voice-selected" onclick="toggleVoiceDropdown()">
@@ -732,13 +779,14 @@ select option{background:var(--white)}
           </div>
         </div>
         <div class="field-label">Modelo de IA</div>
-        <select id="cfg-model" style="margin-bottom:16px">
+        <select id="cfg-model" style="margin-bottom:8px">
           <option value="arcee-ai/trinity-large-preview:free">Arcee Trinity (gratis)</option>
           <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (gratis)</option>
           <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (gratis)</option>
           <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (gratis)</option>
         </select>
-        <div class="field-label" style="margin-top:14px">
+        <input type="text" id="cfg-custom-model" placeholder="O escribe cualquier model ID de OpenRouter (tiene prioridad)" style="margin-bottom:16px;font-size:13px">
+        <div class="field-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>Idioma de reconocimiento de voz
         </div>
         <select id="cfg-language" style="margin-bottom:16px">
@@ -809,6 +857,21 @@ select option{background:var(--white)}
   </div>
 </div>
 
+<!-- DEBUG -->
+  <div class="page" id="page-debug">
+    <div class="memory-banner" style="background:linear-gradient(135deg,var(--text),#5a6a9a)">
+      <div class="memory-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+      <div class="memory-banner-text"><div class="title">Panel de Debug</div><div class="sub">Estado de los servicios</div></div>
+    </div>
+    <button class="save-btn" onclick="runAllDebug()" id="debug-run-btn" style="margin-bottom:16px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Verificar todo
+    </button>
+    <div id="debug-cards" style="display:flex;flex-direction:column;gap:10px">
+      <!-- cards inyectadas por JS -->
+    </div>
+  </div>
+  
 <!-- SUBPAGES -->
 <div class="subpage" id="subpage-access">
   <div class="subpage-header"><button class="subpage-back" onclick="closeSubpage('subpage-access')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="subpage-title">Accesibilidad</span></div>
@@ -827,6 +890,28 @@ select option{background:var(--white)}
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px">Estado del servidor</div>
       <div style="font-size:12px;font-weight:600;color:var(--muted)">Autenticación: JWT (Supabase)</div>
       <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:4px" id="adv-user-id">User ID: cargando...</div>
+    </div>
+  </div>
+</div>
+<div class="subpage" id="subpage-personality-gen">
+  <div class="subpage-header">
+    <button class="subpage-back" onclick="closeSubpage('subpage-personality-gen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+    <span class="subpage-title">✨ Generar Personalidad</span>
+  </div>
+  <div class="subpage-content">
+    <div class="field-label">Describe tu peluche en una o dos frases</div>
+    <textarea id="gen-description" rows="3" placeholder="Ej: Un osito travieso que le gusta contar chistes y vivir aventuras en el bosque encantado..." style="margin-bottom:14px"></textarea>
+    <button class="save-btn" onclick="doGeneratePersonality()" id="gen-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Generar con IA
+    </button>
+    <div id="gen-result" style="margin-top:16px;display:none">
+      <div class="field-label">Resultado generado</div>
+      <div style="background:var(--brand-pale);border-radius:var(--r-md);padding:14px;margin-bottom:14px" id="gen-result-preview"></div>
+      <button class="save-btn" onclick="applyGeneratedPersonality()" style="background:var(--mint)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Usar esta personalidad
+      </button>
     </div>
   </div>
 </div>
@@ -1135,6 +1220,7 @@ function goPage(id, btn) {
   if (id === 'memory') loadMemory();
   if (id === 'settings') { loadConfig(); initWifiSection(); }
   if (id === 'profile') { buildProfileUI(); loadDevices(); loadProfile(); }
+  if (id === 'debug')   { renderDebugCards({}); }
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────
@@ -1362,7 +1448,18 @@ async function loadConfig() {
     const r = await fetch(BASE + '/plush/config', {headers:hdr()});
     if (!r.ok) return;
     const d = await r.json();
-    document.getElementById('cfg-persona').value = d.persona || '';
+    // Prompt
+    document.getElementById('cfg-prompt').value = d.prompt || '';
+    // Personality
+    if (d.personality) {
+      try {
+        _currentPersonality = typeof d.personality === 'string'
+          ? JSON.parse(d.personality) : d.personality;
+      } catch(e) { _currentPersonality = null; }
+    }
+    updatePersonalityPreview(_currentPersonality);
+    // custom_model
+    if (d.custom_model) document.getElementById('cfg-custom-model').value = d.custom_model;
     const vid = d.voice_id || '';
     selectedVoiceId = vid;
     document.getElementById('voice-manual').value = vid;
@@ -1394,9 +1491,11 @@ async function saveConfig() {
   try {
     const voice = selectedVoiceId || document.getElementById('voice-manual').value;
     const r = await fetch(BASE + '/plush/config', {method:'POST', headers:hdr(true), body:JSON.stringify({
-      persona: document.getElementById('cfg-persona').value,
+      prompt: document.getElementById('cfg-prompt').value,
+      personality: JSON.stringify(getPersonalityFromFields()),
       voice_id: voice,
       model: document.getElementById('cfg-model').value,
+      custom_model: document.getElementById('cfg-custom-model').value.trim(),
       stt_language: document.getElementById('cfg-language').value,
     })});
     if (r.ok) { playSound('success'); toast('Guardado correctamente', 'success'); }
@@ -2295,6 +2394,184 @@ async function changePIN() {
 
 // Prevent default on touch activate
 document.getElementById('activate-card').addEventListener('touchstart', e=>e.preventDefault(), {passive:false});
+  // ══════════════════════════════════════════════════════════════════════
+// PERSONALITY SYSTEM
+// ══════════════════════════════════════════════════════════════════════
+const TRAITS_LIST = ['Cariñoso','Divertido','Curioso','Valiente','Tranquilo','Travieso',
+  'Sabio','Protector','Aventurero','Juguetón','Tierno','Misterioso'];
+let _currentPersonality = null;
+let _generatedPersonality = null;
+let _selectedTraits = [];
+
+function buildTraitsGrid() {
+  const grid = document.getElementById('traits-grid');
+  if (!grid) return;
+  grid.innerHTML = TRAITS_LIST.map(t => `
+    <button onclick="toggleTrait('${t}',this)" style="padding:6px 12px;border-radius:var(--r-full);border:2px solid var(--border);background:var(--white);font-size:12px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer;transition:all 0.15s;color:var(--text)">${t}</button>
+  `).join('');
+}
+function toggleTrait(trait, btn) {
+  const idx = _selectedTraits.indexOf(trait);
+  if (idx >= 0) {
+    _selectedTraits.splice(idx, 1);
+    btn.style.background = 'var(--white)'; btn.style.borderColor = 'var(--border)'; btn.style.color = 'var(--text)';
+  } else {
+    _selectedTraits.push(trait);
+    btn.style.background = 'var(--brand)'; btn.style.borderColor = 'var(--brand)'; btn.style.color = 'white';
+  }
+}
+function toggleGenderOther(val) {
+  const inp = document.getElementById('pers-gender-other');
+  if (inp) inp.style.display = val === 'Otro' ? 'block' : 'none';
+}
+function togglePersonalityFields() {
+  const fields = document.getElementById('personality-fields');
+  const btn = document.getElementById('personality-edit-btn');
+  if (!fields || !btn) return;
+  const open = fields.style.display === 'block';
+  fields.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? '✏️ Editar manualmente' : '▲ Ocultar campos';
+  if (!open) buildTraitsGrid();
+}
+function closePersonalityFields() {
+  const fields = document.getElementById('personality-fields');
+  const btn = document.getElementById('personality-edit-btn');
+  if (fields) fields.style.display = 'none';
+  if (btn) btn.textContent = '✏️ Editar manualmente';
+}
+
+function openPersonalityGenerator() {
+  playSound('tap');
+  document.getElementById('gen-description').value = '';
+  document.getElementById('gen-result').style.display = 'none';
+  document.getElementById('subpage-personality-gen').classList.add('open');
+}
+async function doGeneratePersonality() {
+  const desc = document.getElementById('gen-description').value.trim();
+  if (!desc) { toast('Escribe una descripción', 'error'); return; }
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.innerHTML = '⏳ Generando...';
+  try {
+    const r = await fetch(BASE + '/personality/generate', {
+      method: 'POST', headers: hdr(true),
+      body: JSON.stringify({description: desc})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.personality) { toast(d.error || 'Error al generar', 'error'); return; }
+    _generatedPersonality = d.personality;
+    const p = d.personality;
+    document.getElementById('gen-result-preview').innerHTML =
+      `<b>${p.name || '—'}</b> · ${p.gender || ''} · ${p.species || ''}<br>
+       <span style="font-size:12px;color:var(--muted)">${(p.traits||[]).join(', ')}</span><br>
+       <span style="font-size:12px">${p.backstory || ''}</span>`;
+    document.getElementById('gen-result').style.display = 'block';
+    playSound('success');
+  } catch(e) { toast('Error de conexión', 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Generar con IA'; }
+}
+function applyGeneratedPersonality() {
+  if (!_generatedPersonality) return;
+  _currentPersonality = _generatedPersonality;
+  updatePersonalityPreview(_currentPersonality);
+  fillPersonalityFields(_currentPersonality);
+  closeSubpage('subpage-personality-gen');
+  document.getElementById('personality-fields').style.display = 'block';
+  document.getElementById('personality-edit-btn').textContent = '▲ Ocultar campos';
+  buildTraitsGrid();
+  // Marcar rasgos
+  _selectedTraits = [...(_currentPersonality.traits || [])];
+  document.querySelectorAll('#traits-grid button').forEach(btn => {
+    if (_selectedTraits.includes(btn.textContent)) {
+      btn.style.background = 'var(--brand)'; btn.style.borderColor = 'var(--brand)'; btn.style.color = 'white';
+    }
+  });
+  toast('Personalidad aplicada', 'success');
+}
+function fillPersonalityFields(p) {
+  if (!p) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('pers-name', p.name);
+  set('pers-species', p.species);
+  set('pers-backstory', p.backstory);
+  const gSel = document.getElementById('pers-gender');
+  if (gSel) {
+    const options = ['Hombre','Mujer','Otro'];
+    gSel.value = options.includes(p.gender) ? p.gender : '';
+    if (p.gender && !options.includes(p.gender)) {
+      gSel.value = 'Otro';
+      const oth = document.getElementById('pers-gender-other');
+      if (oth) { oth.style.display = 'block'; oth.value = p.gender; }
+    }
+  }
+}
+function updatePersonalityPreview(p) {
+  const el = document.getElementById('personality-preview-text');
+  if (!el) return;
+  if (!p || !p.name) { el.textContent = 'Sin personalidad configurada'; return; }
+  el.innerHTML = `<b>${p.name}</b>${p.gender ? ' · '+p.gender : ''}${p.species ? ' · '+p.species : ''}` +
+    (p.traits?.length ? `<br><span style="font-size:11px">${p.traits.join(', ')}</span>` : '');
+  // Actualizar título del chat
+  const chatTitle = document.getElementById('chat-page-title');
+  if (chatTitle) chatTitle.textContent = p.name || 'Chat';
+}
+function getPersonalityFromFields() {
+  const gender = document.getElementById('pers-gender').value;
+  const genderOther = document.getElementById('pers-gender-other').value;
+  return {
+    name:      document.getElementById('pers-name').value.trim(),
+    gender:    gender === 'Otro' ? (genderOther.trim() || 'Otro') : gender,
+    species:   document.getElementById('pers-species').value.trim(),
+    traits:    [..._selectedTraits],
+    backstory: document.getElementById('pers-backstory').value.trim(),
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DEBUG PANEL
+// ══════════════════════════════════════════════════════════════════════
+const DEBUG_CHECKS = [
+  { key:'server',    label:'Servidor',         icon:'🖥️', endpoint:'/debug/server' },
+  { key:'supabase',  label:'Supabase',          icon:'🗄️', endpoint:'/debug/supabase' },
+  { key:'stt',       label:'ElevenLabs STT',    icon:'🎙️', endpoint:'/debug/elevenlabs/stt' },
+  { key:'tts',       label:'ElevenLabs TTS',    icon:'🔊', endpoint:'/debug/elevenlabs/tts' },
+  { key:'openrouter',label:'OpenRouter / Modelo',icon:'🤖', endpoint:'/debug/openrouter' },
+];
+function renderDebugCards(states) {
+  const container = document.getElementById('debug-cards');
+  if (!container) return;
+  container.innerHTML = DEBUG_CHECKS.map(c => {
+    const s = states[c.key] || { status:'idle' };
+    const icon = s.status === 'loading' ? '⏳' : s.status === 'ok' ? '✅' : s.status === 'error' ? '❌' : '⚪';
+    const detail = s.status === 'ok'
+      ? (s.latency_ms ? `${s.latency_ms}ms` : s.active_model || s.voices_available != null ? `${s.voices_available} voces` : 'OK')
+      : (s.error || '');
+    return `<div style="background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px">${c.icon}</span>
+      <div style="flex:1"><div style="font-size:14px;font-weight:800;color:var(--text)">${c.label}</div>
+        ${detail ? `<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px">${detail}</div>` : ''}</div>
+      <span style="font-size:20px">${icon}</span>
+    </div>`;
+  }).join('');
+}
+async function runAllDebug() {
+  playSound('tap'); haptic('medium');
+  const btn = document.getElementById('debug-run-btn');
+  if (btn) btn.disabled = true;
+  const states = {};
+  DEBUG_CHECKS.forEach(c => { states[c.key] = { status:'loading' }; });
+  renderDebugCards(states);
+  await Promise.all(DEBUG_CHECKS.map(async c => {
+    try {
+      const r = await fetch(BASE + c.endpoint, { headers: hdr() });
+      const d = await r.json();
+      states[c.key] = { status: d.ok ? 'ok' : 'error', ...d };
+    } catch(e) {
+      states[c.key] = { status:'error', error: 'Sin respuesta' };
+    }
+    renderDebugCards(states);
+  }));
+  if (btn) btn.disabled = false;
+}
 </script>
 </body>
 </html>
