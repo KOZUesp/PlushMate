@@ -709,8 +709,8 @@ def refresh_memory(user):
             f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
             for m in sess['history'][-20:]
         ])
-        model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
-                 if plush else 'arcee-ai/trinity-large-preview:free')
+        model   = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                   if plush else 'arcee-ai/trinity-large-preview:free')
         r       = requests.post(
             'https://openrouter.ai/api/v1/chat/completions',
             headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
@@ -1014,7 +1014,7 @@ def chat_with_memory(user_id: str, plush) -> str:
 
     # custom_model tiene prioridad sobre model
     model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
-                 if plush else 'arcee-ai/trinity-large-preview:free')
+             if plush else 'arcee-ai/trinity-large-preview:free')
 
     messages = [{'role': 'system', 'content': system_content}] + [
         {'role': m['role'], 'content': m['content']}
@@ -1044,7 +1044,7 @@ def update_summary(user_id: str, history: list, plush):
             f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
             for m in history[-10:]
         ])
-        model = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
+        model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
                  if plush else 'arcee-ai/trinity-large-preview:free')
         r     = requests.post(
             'https://openrouter.ai/api/v1/chat/completions',
@@ -1173,7 +1173,7 @@ def debug_openrouter(user):
         return jsonify({'ok': ok, 'active_model': model, 'status': r.status_code})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)})
-        
+
 # ── Keep-alive ────────────────────────────────────────────────────────
 def keep_alive():
     while True:
