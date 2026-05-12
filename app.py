@@ -383,7 +383,7 @@ def plush_config(user):
         return jsonify(plush)
     data   = request.json or {}
     update = {}
-    for field in ('name', 'persona', 'voice_id', 'model', 'stt_language'):
+    for field in ('name', 'persona', 'prompt', 'personality', 'voice_id', 'model', 'custom_model', 'stt_language'):
         if field in data: update[field] = data[field]
     if update:
         sb_patch('plushes', update, f'owner_id=eq.{user["id"]}')
@@ -709,8 +709,8 @@ def refresh_memory(user):
             f"{'Usuario' if m['role']=='user' else 'PlushMate'}: {m['content']}"
             for m in sess['history'][-20:]
         ])
-        model   = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
-                   if plush else 'arcee-ai/trinity-large-preview:free')
+        model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                 if plush else 'arcee-ai/trinity-large-preview:free')
         r       = requests.post(
             'https://openrouter.ai/api/v1/chat/completions',
             headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}',
@@ -969,7 +969,38 @@ def chat_with_memory(user_id: str, plush) -> str:
     sess    = get_session(user_id)
     row     = sb_get('memory', 'summary', f'user_id=eq.{user_id}') or {}
     summary = row.get('summary', '')
-    persona = (plush.get('persona', '') if plush else '') or _default_persona
+
+    # ── Construir system prompt: prompt + personality + persona (fallback) ──
+    base_prompt      = (plush.get('prompt', '')       if plush else '').strip()
+    personality_raw  = (plush.get('personality', '')  if plush else '')
+    legacy_persona   = (plush.get('persona', '')      if plush else '').strip()
+
+    # personality puede ser JSON o texto libre
+    personality_text = ''
+    if personality_raw:
+        try:
+            p = json.loads(personality_raw) if isinstance(personality_raw, str) else personality_raw
+            parts = []
+            if p.get('name'):    parts.append(f"Tu nombre es {p['name']}.")
+            if p.get('gender'):  parts.append(f"Tu género es {p['gender']}.")
+            if p.get('species'): parts.append(f"Eres un {p['species']}.")
+            if p.get('traits'):  parts.append(f"Tu personalidad: {', '.join(p['traits'])}.")
+            if p.get('backstory'): parts.append(p['backstory'])
+            personality_text = ' '.join(parts)
+        except:
+            personality_text = str(personality_raw).strip()
+
+    if base_prompt and personality_text:
+        system_content = f"{base_prompt}\n\n{personality_text}"
+    elif base_prompt:
+        system_content = base_prompt
+    elif personality_text:
+        system_content = personality_text
+    elif legacy_persona:
+        system_content = legacy_persona
+    else:
+        system_content = _default_persona
+
     brevity = (
         "\n\nIMPORTANTE: Estás hablando en voz alta con un niño. "
         "Responde SIEMPRE en máximo 2 oraciones cortas y naturales. "
@@ -977,11 +1008,14 @@ def chat_with_memory(user_id: str, plush) -> str:
         "Nunca uses listas, viñetas ni texto formateado. "
         "Si no sabes algo, di que no sabes de forma amigable en una oración."
     )
-    system_content = persona + brevity
+    system_content += brevity
     if summary:
         system_content += f"\n\nRecuerdas esto del usuario:\n{summary}"
-    model    = (plush.get('model', 'arcee-ai/trinity-large-preview:free')
-                if plush else 'arcee-ai/trinity-large-preview:free')
+
+    # custom_model tiene prioridad sobre model
+    model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
+                 if plush else 'arcee-ai/trinity-large-preview:free')
+
     messages = [{'role': 'system', 'content': system_content}] + [
         {'role': m['role'], 'content': m['content']}
         for m in sess['history'][-10:]
@@ -1044,6 +1078,102 @@ def tts(text: str, voice_id: str = '') -> bytes:
         if chunk: buf.write(chunk)
     return buf.getvalue()
 
+# ── Personality Generator ─────────────────────────────────────────────
+@app.route('/personality/generate', methods=['POST'])
+@require_auth
+def generate_personality(user):
+    data = request.json or {}
+    description = data.get('description', '').strip()
+    if not description:
+        return jsonify({'error': 'Descripción requerida'}), 400
+
+    plush = sb_get('plushes', 'model,custom_model', f'owner_id=eq.{user["id"]}')
+    model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
+             if plush else 'arcee-ai/trinity-large-preview:free')
+
+    prompt = (
+        f"A partir de esta descripción de un personaje de peluche, genera una personalidad completa en JSON. "
+        f"Descripción: \"{description}\"\n\n"
+        f"Responde ÚNICAMENTE con JSON válido, sin markdown, con esta estructura exacta:\n"
+        f'{{"name":"string","gender":"Hombre|Mujer|Otro","species":"string o vacío","traits":["rasgo1","rasgo2","rasgo3"],"backstory":"string o vacío"}}'
+    )
+    try:
+        r = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}', 'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': 400, 'messages': [{'role': 'user', 'content': prompt}]},
+            timeout=20)
+        raw = extract_text(r.json()['choices'][0]['message'])
+        raw = re.sub(r'^```json|^```|```$', '', raw, flags=re.MULTILINE).strip()
+        personality = json.loads(raw)
+        return jsonify({'ok': True, 'personality': personality})
+    except Exception as e:
+        print(f"[personality/generate] ERROR: {e}", flush=True)
+        return jsonify({'error': 'Error al generar personalidad'}), 500
+
+# ── Debug endpoints ───────────────────────────────────────────────────
+@app.route('/debug/server', methods=['GET'])
+@require_auth
+def debug_server(user):
+    return jsonify({'ok': True, 'version': '7.1', 'server_url': SERVER_URL})
+
+@app.route('/debug/supabase', methods=['GET'])
+@require_auth
+def debug_supabase(user):
+    import time as _time
+    t0 = _time.time()
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/profiles?select=id&limit=1",
+                         headers=sb_headers(), timeout=5)
+        ok = r.status_code < 400
+        latency = round((_time.time() - t0) * 1000)
+        return jsonify({'ok': ok, 'latency_ms': latency, 'status': r.status_code})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+@app.route('/debug/elevenlabs/stt', methods=['GET'])
+@require_auth
+def debug_stt(user):
+    if not ELEVENLABS_API_KEY:
+        return jsonify({'ok': False, 'error': 'ELEVENLABS_API_KEY no configurada'})
+    try:
+        r = requests.get('https://api.elevenlabs.io/v1/models',
+                         headers={'xi-api-key': ELEVENLABS_API_KEY}, timeout=8)
+        ok = r.status_code == 200
+        return jsonify({'ok': ok, 'status': r.status_code})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+@app.route('/debug/elevenlabs/tts', methods=['GET'])
+@require_auth
+def debug_tts(user):
+    if not ELEVENLABS_API_KEY:
+        return jsonify({'ok': False, 'error': 'ELEVENLABS_API_KEY no configurada'})
+    try:
+        r = requests.get('https://api.elevenlabs.io/v1/voices',
+                         headers={'xi-api-key': ELEVENLABS_API_KEY}, timeout=8)
+        ok = r.status_code == 200
+        count = len(r.json().get('voices', [])) if ok else 0
+        return jsonify({'ok': ok, 'voices_available': count, 'status': r.status_code})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+
+@app.route('/debug/openrouter', methods=['GET'])
+@require_auth
+def debug_openrouter(user):
+    if not OPENROUTER_API_KEY:
+        return jsonify({'ok': False, 'error': 'OPENROUTER_API_KEY no configurada'})
+    plush = sb_get('plushes', 'model,custom_model', f'owner_id=eq.{user["id"]}')
+    model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
+             if plush else 'arcee-ai/trinity-large-preview:free')
+    try:
+        r = requests.get('https://openrouter.ai/api/v1/models',
+                         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}'}, timeout=8)
+        ok = r.status_code == 200
+        return jsonify({'ok': ok, 'active_model': model, 'status': r.status_code})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+        
 # ── Keep-alive ────────────────────────────────────────────────────────
 def keep_alive():
     while True:
