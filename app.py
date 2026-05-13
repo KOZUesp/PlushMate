@@ -1111,69 +1111,6 @@ def generate_personality(user):
         print(f"[personality/generate] ERROR: {e}", flush=True)
         return jsonify({'error': 'Error al generar personalidad'}), 500
 
-# ── Debug endpoints ───────────────────────────────────────────────────
-@app.route('/debug/server', methods=['GET'])
-@require_auth
-def debug_server(user):
-    return jsonify({'ok': True, 'version': '7.1', 'server_url': SERVER_URL})
-
-@app.route('/debug/supabase', methods=['GET'])
-@require_auth
-def debug_supabase(user):
-    import time as _time
-    t0 = _time.time()
-    try:
-        r = requests.get(f"{SUPABASE_URL}/rest/v1/profiles?select=id&limit=1",
-                         headers=sb_headers(), timeout=5)
-        ok = r.status_code < 400
-        latency = round((_time.time() - t0) * 1000)
-        return jsonify({'ok': ok, 'latency_ms': latency, 'status': r.status_code})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)})
-
-@app.route('/debug/elevenlabs/stt', methods=['GET'])
-@require_auth
-def debug_stt(user):
-    if not ELEVENLABS_API_KEY:
-        return jsonify({'ok': False, 'error': 'ELEVENLABS_API_KEY no configurada'})
-    try:
-        r = requests.get('https://api.elevenlabs.io/v1/models',
-                         headers={'xi-api-key': ELEVENLABS_API_KEY}, timeout=8)
-        ok = r.status_code == 200
-        return jsonify({'ok': ok, 'status': r.status_code})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)})
-
-@app.route('/debug/elevenlabs/tts', methods=['GET'])
-@require_auth
-def debug_tts(user):
-    if not ELEVENLABS_API_KEY:
-        return jsonify({'ok': False, 'error': 'ELEVENLABS_API_KEY no configurada'})
-    try:
-        r = requests.get('https://api.elevenlabs.io/v1/voices',
-                         headers={'xi-api-key': ELEVENLABS_API_KEY}, timeout=8)
-        ok = r.status_code == 200
-        count = len(r.json().get('voices', [])) if ok else 0
-        return jsonify({'ok': ok, 'voices_available': count, 'status': r.status_code})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)})
-
-@app.route('/debug/openrouter', methods=['GET'])
-@require_auth
-def debug_openrouter(user):
-    if not OPENROUTER_API_KEY:
-        return jsonify({'ok': False, 'error': 'OPENROUTER_API_KEY no configurada'})
-    plush = sb_get('plushes', 'model,custom_model', f'owner_id=eq.{user["id"]}')
-    model = (plush.get('custom_model', '') or plush.get('model', 'arcee-ai/trinity-large-preview:free')
-             if plush else 'arcee-ai/trinity-large-preview:free')
-    try:
-        r = requests.get('https://openrouter.ai/api/v1/models',
-                         headers={'Authorization': f'Bearer {OPENROUTER_API_KEY}'}, timeout=8)
-        ok = r.status_code == 200
-        return jsonify({'ok': ok, 'active_model': model, 'status': r.status_code})
-    except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)})
-
 # ── Keep-alive ────────────────────────────────────────────────────────
 def keep_alive():
     while True:
