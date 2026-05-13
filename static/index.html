@@ -531,10 +531,6 @@ select option{background:var(--white)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
     Ajustes<div class="nav-btn-pip"></div>
   </button>
-  <button class="nav-btn" onclick="goPage('debug',this)" id="nav-debug">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    Debug<div class="nav-btn-pip"></div>
-  </button>
 </div>
 
 <div class="pages">
@@ -859,20 +855,6 @@ select option{background:var(--white)}
 
 <!-- SUBPAGES -->
 
-  <!-- DEBUG -->
-  <div class="page" id="page-debug">
-    <div class="memory-banner" style="background:linear-gradient(135deg,var(--text),#5a6a9a)">
-      <div class="memory-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-      <div class="memory-banner-text"><div class="title">Panel de Debug</div><div class="sub">Estado de los servicios</div></div>
-    </div>
-    <button class="save-btn" onclick="runAllDebug()" id="debug-run-btn" style="margin-bottom:16px">
-      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-      Verificar todo
-    </button>
-    <div id="debug-cards" style="display:flex;flex-direction:column;gap:10px">
-      <!-- cards inyectadas por JS -->
-    </div>
-  </div>
 <div class="subpage" id="subpage-personality-gen">
   <div class="subpage-header">
     <button class="subpage-back" onclick="closeSubpage('subpage-personality-gen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
@@ -1220,7 +1202,6 @@ function goPage(id, btn) {
   if (id === 'memory') loadMemory();
   if (id === 'settings') { loadConfig(); initWifiSection(); }
   if (id === 'profile') { buildProfileUI(); loadDevices(); loadProfile(); }
-  if (id === 'debug')   { renderDebugCards({}); }
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────
@@ -1453,11 +1434,19 @@ async function loadConfig() {
     // Personality
     if (d.personality) {
       try {
-        _currentPersonality = typeof d.personality === 'string'
+        const parsed = typeof d.personality === 'string'
           ? JSON.parse(d.personality) : d.personality;
+        // Solo usar si tiene al menos un campo significativo
+        _currentPersonality = (parsed && parsed.name) ? parsed : null;
       } catch(e) { _currentPersonality = null; }
+    } else {
+      _currentPersonality = null;
     }
     updatePersonalityPreview(_currentPersonality);
+    if (_currentPersonality) {
+      fillPersonalityFields(_currentPersonality);
+      _selectedTraits = [...(_currentPersonality.traits || [])];
+    }
     // custom_model
     if (d.custom_model) document.getElementById('cfg-custom-model').value = d.custom_model;
     const vid = d.voice_id || '';
@@ -1492,7 +1481,11 @@ async function saveConfig() {
     const voice = selectedVoiceId || document.getElementById('voice-manual').value;
     const r = await fetch(BASE + '/plush/config', {method:'POST', headers:hdr(true), body:JSON.stringify({
       prompt: document.getElementById('cfg-prompt').value,
-      personality: JSON.stringify(getPersonalityFromFields()),
+      personality: (() => {
+        const p = getPersonalityFromFields();
+        // No guardar si está completamente vacía
+        return (p && p.name) ? JSON.stringify(p) : '';
+      })(),
       voice_id: voice,
       model: document.getElementById('cfg-model').value,
       custom_model: document.getElementById('cfg-custom-model').value.trim(),
@@ -2514,63 +2507,25 @@ function updatePersonalityPreview(p) {
   if (chatTitle) chatTitle.textContent = p.name || 'Chat';
 }
 function getPersonalityFromFields() {
-  const gender = document.getElementById('pers-gender').value;
-  const genderOther = document.getElementById('pers-gender-other').value;
-  return {
-    name:      document.getElementById('pers-name').value.trim(),
-    gender:    gender === 'Otro' ? (genderOther.trim() || 'Otro') : gender,
-    species:   document.getElementById('pers-species').value.trim(),
-    traits:    [..._selectedTraits],
-    backstory: document.getElementById('pers-backstory').value.trim(),
-  };
+  // Si los campos están visibles, leer del DOM (el usuario los editó manualmente)
+  const fields = document.getElementById('personality-fields');
+  const fieldsOpen = fields && fields.style.display === 'block';
+  if (fieldsOpen) {
+    const gender = document.getElementById('pers-gender').value;
+    const genderOther = document.getElementById('pers-gender-other').value;
+    // Sincronizar _currentPersonality con lo que hay en el DOM
+    _currentPersonality = {
+      name:      document.getElementById('pers-name').value.trim(),
+      gender:    gender === 'Otro' ? (genderOther.trim() || 'Otro') : gender,
+      species:   document.getElementById('pers-species').value.trim(),
+      traits:    [..._selectedTraits],
+      backstory: document.getElementById('pers-backstory').value.trim(),
+    };
+  }
+  // Si los campos están cerrados, usar _currentPersonality directamente (no perder datos)
+  return _currentPersonality || {};
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// DEBUG PANEL
-// ══════════════════════════════════════════════════════════════════════
-const DEBUG_CHECKS = [
-  { key:'server',    label:'Servidor',          icon:'🖥️', endpoint:'/debug/server' },
-  { key:'supabase',  label:'Supabase',           icon:'🗄️', endpoint:'/debug/supabase' },
-  { key:'stt',       label:'ElevenLabs STT',     icon:'🎙️', endpoint:'/debug/elevenlabs/stt' },
-  { key:'tts',       label:'ElevenLabs TTS',     icon:'🔊', endpoint:'/debug/elevenlabs/tts' },
-  { key:'openrouter',label:'OpenRouter / Modelo',icon:'🤖', endpoint:'/debug/openrouter' },
-];
-function renderDebugCards(states) {
-  const container = document.getElementById('debug-cards');
-  if (!container) return;
-  container.innerHTML = DEBUG_CHECKS.map(c => {
-    const s = states[c.key] || { status:'idle' };
-    const icon = s.status === 'loading' ? '⏳' : s.status === 'ok' ? '✅' : s.status === 'error' ? '❌' : '⚪';
-    const detail = s.status === 'ok'
-      ? (s.latency_ms ? `${s.latency_ms}ms` : s.active_model || (s.voices_available != null ? `${s.voices_available} voces` : 'OK'))
-      : (s.error || '');
-    return `<div style="background:var(--white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:12px">
-      <span style="font-size:22px">${c.icon}</span>
-      <div style="flex:1"><div style="font-size:14px;font-weight:800;color:var(--text)">${c.label}</div>
-        ${detail ? `<div style="font-size:11px;font-weight:600;color:var(--muted);margin-top:2px">${detail}</div>` : ''}</div>
-      <span style="font-size:20px">${icon}</span>
-    </div>`;
-  }).join('');
-}
-async function runAllDebug() {
-  playSound('tap'); haptic('medium');
-  const btn = document.getElementById('debug-run-btn');
-  if (btn) btn.disabled = true;
-  const states = {};
-  DEBUG_CHECKS.forEach(c => { states[c.key] = { status:'loading' }; });
-  renderDebugCards(states);
-  await Promise.all(DEBUG_CHECKS.map(async c => {
-    try {
-      const r = await fetch(BASE + c.endpoint, { headers: hdr() });
-      const d = await r.json();
-      states[c.key] = { status: d.ok ? 'ok' : 'error', ...d };
-    } catch(e) {
-      states[c.key] = { status:'error', error: 'Sin respuesta' };
-    }
-    renderDebugCards(states);
-  }));
-  if (btn) btn.disabled = false;
-}
 
 </script>
 </body>
